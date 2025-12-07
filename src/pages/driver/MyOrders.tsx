@@ -156,7 +156,7 @@ export default function MyOrders() {
   const completedOrders = orders.filter(o => o.timeline_status === 'COMPLETED');
 
   return (
-    <AppLayout title="My Orders">
+    <AppLayout title="My Orders" showBackButton>
       <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
         <div className="p-4 space-y-6">
           <div className="space-y-4">

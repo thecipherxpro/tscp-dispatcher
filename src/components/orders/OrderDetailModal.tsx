@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, User, MapPin, Phone, Mail, Calendar, Package, Truck, Clock, Copy, ExternalLink, Eye } from 'lucide-react';
+import { User, MapPin, Package, Truck, Clock, Copy, ExternalLink, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Order, Profile } from '@/types/auth';
+import { Order } from '@/types/auth';
 import { DriverAssignmentModal } from './DriverAssignmentModal';
 import { useToast } from '@/hooks/use-toast';
 
@@ -113,25 +113,25 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Name</p>
-                    <p className="text-foreground">{order.client_name || 'N/A'}</p>
+                    <p className="text-foreground">{order.name || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">DOB</p>
-                    <p className="text-foreground">{formatDate(order.client_dob)}</p>
+                    <p className="text-foreground">{formatDate(order.dob)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Phone</p>
-                    <p className="text-foreground">{order.client_phone || 'N/A'}</p>
+                    <p className="text-foreground">{order.phone_number || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Email</p>
-                    <p className="text-foreground truncate">{order.client_email || 'N/A'}</p>
+                    <p className="text-foreground truncate">{order.email || 'N/A'}</p>
                   </div>
                 </div>
-                {order.client_call_notes && (
+                {order.call_notes && (
                   <div>
                     <p className="text-xs text-muted-foreground">Notes</p>
-                    <p className="text-foreground text-sm">{order.client_call_notes}</p>
+                    <p className="text-foreground text-sm">{order.call_notes}</p>
                   </div>
                 )}
               </CardContent>
@@ -145,9 +145,9 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                   Delivery Address
                 </h4>
                 <div className="text-sm text-foreground">
-                  <p>{order.address_line1}</p>
-                  {order.address_line2 && <p>{order.address_line2}</p>}
-                  <p>{order.city}, {order.province} {order.postal_code}</p>
+                  <p>{order.address_1}</p>
+                  {order.address_2 && <p>{order.address_2}</p>}
+                  <p>{order.city}, {order.province} {order.postal}</p>
                   <p>{order.country || 'Canada'}</p>
                 </div>
               </CardContent>

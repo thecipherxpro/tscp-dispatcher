@@ -16,40 +16,41 @@ export type Database = {
     Tables: {
       orders: {
         Row: {
-          address_line1: string | null
-          address_line2: string | null
+          address_1: string | null
+          address_2: string | null
           address_review_requested_at: string | null
           arrived_at: string | null
           assigned_driver_id: string | null
           authorizing_pharmacist: string | null
           billing_date: string | null
           call_datetime: string | null
+          call_notes: string | null
           city: string | null
-          client_call_notes: string | null
-          client_dob: string | null
-          client_email: string | null
-          client_health_card: string | null
-          client_name: string | null
-          client_phone: string | null
           completed_at: string | null
           confirmed_at: string | null
           country: string | null
           created_at: string | null
           delivery_status: Database["public"]["Enums"]["delivery_status"] | null
+          dob: string | null
           doses_injectable: number | null
           doses_nasal: number | null
           driver_id_import: string | null
+          email: string | null
+          health_card: string | null
           id: string
           in_route_at: string | null
           injection_rx: string | null
+          name: string | null
           nasal_rx: string | null
           pending_at: string | null
           pharmacy_name: string | null
-          postal_code: string | null
+          phone_number: string | null
+          postal: string | null
           province: string | null
           province_1: string | null
           ship_date: string | null
           shipment_id: string | null
+          shipment_id_import: string | null
           timeline_status: Database["public"]["Enums"]["timeline_status"] | null
           tracking_id: string | null
           tracking_url: string | null
@@ -58,21 +59,16 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          address_line1?: string | null
-          address_line2?: string | null
+          address_1?: string | null
+          address_2?: string | null
           address_review_requested_at?: string | null
           arrived_at?: string | null
           assigned_driver_id?: string | null
           authorizing_pharmacist?: string | null
           billing_date?: string | null
           call_datetime?: string | null
+          call_notes?: string | null
           city?: string | null
-          client_call_notes?: string | null
-          client_dob?: string | null
-          client_email?: string | null
-          client_health_card?: string | null
-          client_name?: string | null
-          client_phone?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
           country?: string | null
@@ -80,20 +76,26 @@ export type Database = {
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
+          dob?: string | null
           doses_injectable?: number | null
           doses_nasal?: number | null
           driver_id_import?: string | null
+          email?: string | null
+          health_card?: string | null
           id?: string
           in_route_at?: string | null
           injection_rx?: string | null
+          name?: string | null
           nasal_rx?: string | null
           pending_at?: string | null
           pharmacy_name?: string | null
-          postal_code?: string | null
+          phone_number?: string | null
+          postal?: string | null
           province?: string | null
           province_1?: string | null
           ship_date?: string | null
           shipment_id?: string | null
+          shipment_id_import?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
@@ -104,21 +106,16 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          address_line1?: string | null
-          address_line2?: string | null
+          address_1?: string | null
+          address_2?: string | null
           address_review_requested_at?: string | null
           arrived_at?: string | null
           assigned_driver_id?: string | null
           authorizing_pharmacist?: string | null
           billing_date?: string | null
           call_datetime?: string | null
+          call_notes?: string | null
           city?: string | null
-          client_call_notes?: string | null
-          client_dob?: string | null
-          client_email?: string | null
-          client_health_card?: string | null
-          client_name?: string | null
-          client_phone?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
           country?: string | null
@@ -126,20 +123,26 @@ export type Database = {
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
+          dob?: string | null
           doses_injectable?: number | null
           doses_nasal?: number | null
           driver_id_import?: string | null
+          email?: string | null
+          health_card?: string | null
           id?: string
           in_route_at?: string | null
           injection_rx?: string | null
+          name?: string | null
           nasal_rx?: string | null
           pending_at?: string | null
           pharmacy_name?: string | null
-          postal_code?: string | null
+          phone_number?: string | null
+          postal?: string | null
           province?: string | null
           province_1?: string | null
           ship_date?: string | null
           shipment_id?: string | null
+          shipment_id_import?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null

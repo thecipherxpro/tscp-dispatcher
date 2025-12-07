@@ -143,10 +143,10 @@ export default function DriverDashboard() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="font-medium text-foreground">
-                          {order.client_name || 'Unknown Client'}
+                          {order.name || 'Unknown Client'}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          DOB Year: {formatDOB(order.client_dob)}
+                          DOB Year: {formatDOB(order.dob)}
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
@@ -155,7 +155,7 @@ export default function DriverDashboard() {
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 mr-1" />
-                      {order.city}, {order.province} {order.postal_code}
+                      {order.city}, {order.province} {order.postal}
                     </div>
                   </CardContent>
                 </Card>

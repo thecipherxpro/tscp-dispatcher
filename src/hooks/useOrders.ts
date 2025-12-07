@@ -154,7 +154,7 @@ export async function assignDriverToOrder(
         injection_rx: orderData.injection_rx,
         city: orderData.city,
         province: orderData.province,
-        postal_code: orderData.postal_code,
+        postal_code: orderData.postal,
         country: orderData.country || 'Canada',
         timeline_status: 'CONFIRMED',
         pending_at: orderData.pending_at,

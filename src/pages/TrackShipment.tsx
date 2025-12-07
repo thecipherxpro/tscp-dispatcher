@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search, RefreshCw } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ const timelineSteps = [
 
 export default function TrackShipment() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const trackingId = searchParams.get('tracking');
   
   const [tracking, setTracking] = useState<PublicTracking | null>(null);
@@ -136,6 +137,14 @@ export default function TrackShipment() {
       <header className="bg-primary text-primary-foreground py-6 px-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 -ml-2 text-primary-foreground hover:bg-primary-foreground/10"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <Truck className="w-6 h-6" />
             <h1 className="text-xl font-bold">TSCP Dispatch</h1>
           </div>

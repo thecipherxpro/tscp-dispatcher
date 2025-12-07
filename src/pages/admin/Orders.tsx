@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Package, Search, ChevronRight, Upload } from 'lucide-react';
+import { Package, Search, Upload } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Order } from '@/types/auth';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderImportModal } from '@/components/orders/OrderImportModal';
 import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
+import { OrderCard } from '@/components/orders/OrderCard';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { Order } from '@/types/auth';
 
 type FilterType = 'all' | 'pending' | 'confirmed' | 'in_route' | 'completed' | 'address_review';
 
@@ -57,17 +58,6 @@ export default function Orders() {
 
   const filteredOrders = filterOrders(orders);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800';
-      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
-      case 'ARRIVED': return 'bg-indigo-100 text-indigo-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'REQUEST_ADDRESS_REVIEW': return 'bg-red-100 text-red-800';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -156,39 +146,11 @@ export default function Orders() {
         ) : (
           <div className="space-y-3">
             {filteredOrders.map((order) => (
-              <Card
+              <OrderCard
                 key={order.id}
-                className="bg-card border-border cursor-pointer hover:border-primary/50 transition-colors"
+                order={order}
                 onClick={() => setSelectedOrder(order)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-foreground truncate">
-                          {order.name || 'Unknown Client'}
-                        </p>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(order.timeline_status)}`}>
-                          {order.timeline_status.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {order.city}, {order.province}
-                      </p>
-                      {order.shipment_id ? (
-                        <p className="text-xs text-primary mt-1 font-mono">
-                          {order.shipment_id}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Not assigned
-                        </p>
-                      )}
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </CardContent>
-              </Card>
+              />
             ))}
           </div>
         )}

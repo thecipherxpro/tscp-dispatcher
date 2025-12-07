@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, Truck, Clock, CheckCircle, AlertCircle, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +16,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalOrders: 0,
@@ -93,13 +95,19 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-primary text-primary-foreground cursor-pointer hover:opacity-90 transition-opacity">
+            <Card 
+              className="bg-primary text-primary-foreground cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => navigate('/orders')}
+            >
               <CardContent className="p-4 text-center">
                 <Package className="w-8 h-8 mx-auto mb-2" />
-                <p className="font-medium">Import Orders</p>
+                <p className="font-medium">Manage Orders</p>
               </CardContent>
             </Card>
-            <Card className="bg-secondary text-secondary-foreground cursor-pointer hover:opacity-90 transition-opacity">
+            <Card 
+              className="bg-secondary text-secondary-foreground cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => navigate('/track')}
+            >
               <CardContent className="p-4 text-center">
                 <Truck className="w-8 h-8 mx-auto mb-2" />
                 <p className="font-medium">Track Shipment</p>

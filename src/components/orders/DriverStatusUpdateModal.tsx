@@ -1,0 +1,235 @@
+import { useState } from 'react';
+import { Truck, MapPin, CheckCircle, AlertTriangle, Navigation } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Order, DeliveryStatus, TimelineStatus } from '@/types/auth';
+import { updateOrderStatus } from '@/hooks/useOrders';
+import { useToast } from '@/hooks/use-toast';
+
+interface DriverStatusUpdateModalProps {
+  order: Order | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const DELIVERY_STATUSES: { value: DeliveryStatus; label: string }[] = [
+  { value: 'SUCCESSFULLY_DELIVERED', label: 'Successfully Delivered' },
+  { value: 'PACKAGE_DELIVERED_TO_CLIENT', label: 'Package Delivered to Client' },
+  { value: 'CLIENT_UNAVAILABLE', label: 'Client Unavailable' },
+  { value: 'NO_ONE_HOME', label: 'No One Home / No Answer' },
+  { value: 'WRONG_ADDRESS', label: 'Wrong Address' },
+  { value: 'ADDRESS_INCORRECT', label: 'Address Incorrect' },
+  { value: 'SAFETY_CONCERN', label: 'Safety Concern' },
+  { value: 'UNSAFE_LOCATION', label: 'Unsafe Location' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: DriverStatusUpdateModalProps) {
+  const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showDeliveryStatus, setShowDeliveryStatus] = useState(false);
+  const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState<DeliveryStatus | null>(null);
+
+  if (!order) return null;
+
+  const getNextStatus = (): TimelineStatus | null => {
+    switch (order.timeline_status) {
+      case 'CONFIRMED': return 'IN_ROUTE';
+      case 'IN_ROUTE': return 'ARRIVED';
+      case 'ARRIVED': return 'COMPLETED';
+      default: return null;
+    }
+  };
+
+  const nextStatus = getNextStatus();
+
+  const handleStatusUpdate = async (newStatus: TimelineStatus, deliveryStatus?: DeliveryStatus) => {
+    if (newStatus === 'COMPLETED' && !deliveryStatus) {
+      setShowDeliveryStatus(true);
+      return;
+    }
+
+    setIsUpdating(true);
+
+    const result = await updateOrderStatus(
+      order.id,
+      order.tracking_id,
+      newStatus,
+      deliveryStatus
+    );
+
+    setIsUpdating(false);
+
+    if (result.success) {
+      toast({
+        title: "Status Updated",
+        description: `Order marked as ${newStatus.replace('_', ' ')}.`,
+      });
+      onSuccess();
+    } else {
+      toast({
+        title: "Update Failed",
+        description: result.error || "Failed to update status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeliveryStatusSelect = async () => {
+    if (!selectedDeliveryStatus) {
+      toast({
+        title: "Select Outcome",
+        description: "Please select a delivery outcome.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await handleStatusUpdate('COMPLETED', selectedDeliveryStatus);
+  };
+
+  const handleAddressReview = async () => {
+    setIsUpdating(true);
+
+    const result = await updateOrderStatus(
+      order.id,
+      order.tracking_id,
+      'REQUEST_ADDRESS_REVIEW'
+    );
+
+    setIsUpdating(false);
+
+    if (result.success) {
+      toast({
+        title: "Address Review Requested",
+        description: "Admin has been notified about the address issue.",
+      });
+      onSuccess();
+    } else {
+      toast({
+        title: "Update Failed",
+        description: result.error || "Failed to request address review.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Update Delivery Status</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Order Info */}
+          <Card className="bg-muted/50 border-border">
+            <CardContent className="p-3">
+              <p className="font-medium text-foreground">{order.client_name || 'Unknown Client'}</p>
+              <p className="text-sm text-muted-foreground">
+                {order.address_line1}, {order.city}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Current: {order.timeline_status.replace('_', ' ')}
+              </p>
+            </CardContent>
+          </Card>
+
+          {!showDeliveryStatus ? (
+            <>
+              {/* Status Buttons */}
+              {order.timeline_status === 'CONFIRMED' && (
+                <Button
+                  className="w-full h-14"
+                  onClick={() => handleStatusUpdate('IN_ROUTE')}
+                  disabled={isUpdating}
+                >
+                  <Navigation className="w-5 h-5 mr-2" />
+                  Start Route
+                </Button>
+              )}
+
+              {order.timeline_status === 'IN_ROUTE' && (
+                <Button
+                  className="w-full h-14"
+                  onClick={() => handleStatusUpdate('ARRIVED')}
+                  disabled={isUpdating}
+                >
+                  <MapPin className="w-5 h-5 mr-2" />
+                  Mark as Arrived
+                </Button>
+              )}
+
+              {order.timeline_status === 'ARRIVED' && (
+                <Button
+                  className="w-full h-14"
+                  onClick={() => handleStatusUpdate('COMPLETED')}
+                  disabled={isUpdating}
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Complete Delivery
+                </Button>
+              )}
+
+              {/* Address Review Button */}
+              {order.timeline_status !== 'COMPLETED' && order.timeline_status !== 'PENDING' && (
+                <Button
+                  variant="outline"
+                  className="w-full text-destructive border-destructive hover:bg-destructive/10"
+                  onClick={handleAddressReview}
+                  disabled={isUpdating}
+                >
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Request Address Review
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Delivery Status Selection */}
+              <h4 className="font-medium text-foreground">Select Delivery Outcome</h4>
+              
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {DELIVERY_STATUSES.map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={() => setSelectedDeliveryStatus(status.value)}
+                    className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                      selectedDeliveryStatus === status.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <p className="font-medium text-foreground">{status.label}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowDeliveryStatus(false);
+                    setSelectedDeliveryStatus(null);
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleDeliveryStatusSelect}
+                  disabled={!selectedDeliveryStatus || isUpdating}
+                >
+                  {isUpdating ? 'Completing...' : 'Complete Delivery'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,39 +1,42 @@
-import { useEffect, useState } from 'react';
-import { Package, MapPin, Phone, Clock, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Package, MapPin, Phone, Clock, Navigation, CheckCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
+import { DriverStatusUpdateModal } from '@/components/orders/DriverStatusUpdateModal';
 
 export default function MyOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('assigned_driver_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setOrders(data as Order[]);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
-
-      try {
-        const { data } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('assigned_driver_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (data) {
-          setOrders(data as Order[]);
-        }
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchOrders();
-  }, [user]);
+  }, [fetchOrders]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -52,6 +55,55 @@ export default function MyOrders() {
     return new Date(dob).getFullYear().toString();
   };
 
+  const getActionButton = (order: Order) => {
+    switch (order.timeline_status) {
+      case 'CONFIRMED':
+        return (
+          <Button
+            size="sm"
+            className="w-full mt-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedOrder(order);
+            }}
+          >
+            <Navigation className="w-4 h-4 mr-1" />
+            Start Route
+          </Button>
+        );
+      case 'IN_ROUTE':
+        return (
+          <Button
+            size="sm"
+            className="w-full mt-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedOrder(order);
+            }}
+          >
+            <MapPin className="w-4 h-4 mr-1" />
+            Mark Arrived
+          </Button>
+        );
+      case 'ARRIVED':
+        return (
+          <Button
+            size="sm"
+            className="w-full mt-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedOrder(order);
+            }}
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Complete
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
+
   const activeOrders = orders.filter(o => o.timeline_status !== 'COMPLETED');
   const completedOrders = orders.filter(o => o.timeline_status === 'COMPLETED');
 
@@ -59,7 +111,12 @@ export default function MyOrders() {
     <AppLayout title="My Orders">
       <div className="p-4 space-y-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Active Deliveries</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-foreground">Active Deliveries</h3>
+            <span className="text-sm text-muted-foreground">
+              {activeOrders.length} active
+            </span>
+          </div>
           
           {isLoading ? (
             <div className="space-y-3">
@@ -75,14 +132,20 @@ export default function MyOrders() {
               <CardContent className="p-6 text-center">
                 <Package className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-muted-foreground">No active deliveries</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Orders will appear here when assigned
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
               {activeOrders.map((order) => (
-                <Card key={order.id} className="bg-card border-border">
+                <Card
+                  key={order.id}
+                  className="bg-card border-border"
+                >
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-start justify-between mb-3">
                       <div>
                         <p className="font-medium text-foreground">
                           {order.client_name || 'Unknown Client'}
@@ -92,7 +155,7 @@ export default function MyOrders() {
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
-                        {order.timeline_status.replace('_', ' ')}
+                        {order.timeline_status.replace(/_/g, ' ')}
                       </span>
                     </div>
                     
@@ -107,10 +170,14 @@ export default function MyOrders() {
                         </span>
                       </div>
                       {order.client_phone && (
-                        <div className="flex items-center text-muted-foreground">
+                        <a
+                          href={`tel:${order.client_phone}`}
+                          className="flex items-center text-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Phone className="w-4 h-4 mr-2" />
                           <span>{order.client_phone}</span>
-                        </div>
+                        </a>
                       )}
                     </div>
 
@@ -119,8 +186,9 @@ export default function MyOrders() {
                         <Clock className="w-3 h-3 mr-1" />
                         {order.shipment_id || 'No shipment ID'}
                       </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </div>
+
+                    {getActionButton(order)}
                   </CardContent>
                 </Card>
               ))}
@@ -130,7 +198,9 @@ export default function MyOrders() {
 
         {completedOrders.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Completed</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              Completed Today
+            </h3>
             <div className="space-y-3">
               {completedOrders.slice(0, 5).map((order) => (
                 <Card key={order.id} className="bg-card border-border opacity-75">
@@ -143,6 +213,11 @@ export default function MyOrders() {
                         <p className="text-sm text-muted-foreground">
                           {order.city}, {order.province}
                         </p>
+                        {order.delivery_status && (
+                          <p className="text-xs text-green-600 mt-1">
+                            {order.delivery_status.replace(/_/g, ' ')}
+                          </p>
+                        )}
                       </div>
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Completed
@@ -155,6 +230,16 @@ export default function MyOrders() {
           </div>
         )}
       </div>
+
+      <DriverStatusUpdateModal
+        order={selectedOrder}
+        isOpen={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onSuccess={() => {
+          setSelectedOrder(null);
+          fetchOrders();
+        }}
+      />
     </AppLayout>
   );
 }

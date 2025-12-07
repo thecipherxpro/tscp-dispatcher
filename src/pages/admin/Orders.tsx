@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Search, Filter, ChevronRight, Upload, Plus } from 'lucide-react';
+import { Package, Search, ChevronRight, Upload } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,15 +8,22 @@ import { Order } from '@/types/auth';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderImportModal } from '@/components/orders/OrderImportModal';
 import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 type FilterType = 'all' | 'pending' | 'confirmed' | 'in_route' | 'completed' | 'address_review';
 
 export default function Orders() {
-  const { orders, isLoading, refetch } = useOrders();
+  const { orders, isLoading, refetch } = useOrders(true); // Enable realtime
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const haptic = useHapticFeedback();
+
+  const handleRefresh = async () => {
+    await refetch();
+  };
 
   const filterOrders = (orders: Order[]) => {
     let filtered = orders;
@@ -73,45 +80,57 @@ export default function Orders() {
 
   return (
     <AppLayout title="Orders">
-      <div className="p-4 space-y-4">
-        {/* Actions */}
-        <Button
-          className="w-full"
-          onClick={() => setShowImportModal(true)}
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Import Orders
-        </Button>
+      <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
+        <div className="p-4 space-y-4">
+          {/* Actions */}
+          <Button
+            className="w-full"
+            onClick={() => {
+              haptic.light();
+              setShowImportModal(true);
+            }}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import Orders
+          </Button>
 
-        {/* Search */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search orders..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          {/* Search */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search orders..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-          {filters.map((filter) => (
-            <button
-              key={filter.key}
-              onClick={() => setActiveFilter(filter.key)}
-              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-                activeFilter === filter.key
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card border border-border text-foreground hover:bg-muted'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+          {/* Filters with live indicator */}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs text-muted-foreground">Live updates</span>
+          </div>
+          
+          <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+            {filters.map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => {
+                  haptic.light();
+                  setActiveFilter(filter.key);
+                }}
+                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  activeFilter === filter.key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border text-foreground hover:bg-muted'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
 
         {/* Orders List */}
         {isLoading ? (
@@ -174,13 +193,14 @@ export default function Orders() {
           </div>
         )}
 
-        {/* Stats */}
-        {orders.length > 0 && (
-          <div className="text-center text-xs text-muted-foreground pt-2">
-            Showing {filteredOrders.length} of {orders.length} orders
-          </div>
-        )}
-      </div>
+          {/* Stats */}
+          {orders.length > 0 && (
+            <div className="text-center text-xs text-muted-foreground pt-2">
+              Showing {filteredOrders.length} of {orders.length} orders
+            </div>
+          )}
+        </div>
+      </PullToRefresh>
 
       {/* Modals */}
       <OrderImportModal

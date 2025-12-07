@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search } from 'lucide-react';
+import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicTracking } from '@/types/auth';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 const timelineSteps = [
   { status: 'PENDING', label: 'Pending', icon: Clock },
@@ -24,8 +26,10 @@ export default function TrackShipment() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(trackingId || '');
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const haptic = useHapticFeedback();
 
-  const fetchTracking = async (id: string) => {
+  const fetchTracking = useCallback(async (id: string) => {
     setIsLoading(true);
     setError(null);
     
@@ -40,6 +44,7 @@ export default function TrackShipment() {
 
       if (data) {
         setTracking(data as PublicTracking);
+        setLastUpdated(new Date());
         
         if (data.driver_id) {
           const { data: profile } = await supabase
@@ -61,13 +66,46 @@ export default function TrackShipment() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (trackingId) {
       fetchTracking(trackingId);
     }
-  }, [trackingId]);
+  }, [trackingId, fetchTracking]);
+
+  // Realtime subscription for live updates
+  useEffect(() => {
+    if (!trackingId) return;
+
+    const channel = supabase
+      .channel(`tracking-${trackingId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'public_tracking',
+          filter: `tracking_id=eq.${trackingId}`
+        },
+        (payload) => {
+          setTracking(payload.new as PublicTracking);
+          setLastUpdated(new Date());
+          haptic.success();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [trackingId, haptic]);
+
+  const handleRefresh = async () => {
+    if (tracking?.tracking_id) {
+      await fetchTracking(tracking.tracking_id);
+    }
+  };
 
   const handleSearch = () => {
     if (searchInput.trim()) {
@@ -94,7 +132,7 @@ export default function TrackShipment() {
   const currentStatusIndex = tracking ? getStatusIndex(tracking.timeline_status) : -1;
 
   return (
-    <div className="min-h-screen bg-background safe-area-inset">
+    <div className="min-h-screen bg-background safe-area-inset flex flex-col">
       <header className="bg-primary text-primary-foreground py-6 px-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-2">
@@ -105,7 +143,8 @@ export default function TrackShipment() {
         </div>
       </header>
 
-      <main className="p-4 max-w-lg mx-auto space-y-6">
+      <PullToRefresh onRefresh={handleRefresh} className="flex-1">
+        <main className="p-4 max-w-lg mx-auto space-y-6">
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex gap-2">
@@ -240,9 +279,19 @@ export default function TrackShipment() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Live update indicator */}
+            {lastUpdated && (
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span>Live updates enabled</span>
+                <span>• Updated {lastUpdated.toLocaleTimeString('en-CA', { timeZone: 'America/Toronto' })}</span>
+              </div>
+            )}
           </>
         )}
-      </main>
+        </main>
+      </PullToRefresh>
     </div>
   );
 }

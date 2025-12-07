@@ -7,12 +7,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
 import { DriverStatusUpdateModal } from '@/components/orders/DriverStatusUpdateModal';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { toast } from '@/hooks/use-toast';
 
 export default function MyOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const haptic = useHapticFeedback();
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
@@ -37,6 +41,50 @@ export default function MyOrders() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Realtime subscription for driver's orders
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`driver-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'orders',
+          filter: `assigned_driver_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setOrders(prev => [payload.new as Order, ...prev]);
+            haptic.success();
+            toast({
+              title: 'New Order Assigned',
+              description: `Order for ${(payload.new as Order).client_name || 'a client'} has been assigned to you.`,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders(prev => 
+              prev.map(order => 
+                order.id === payload.new.id ? (payload.new as Order) : order
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, haptic]);
+
+  const handleRefresh = async () => {
+    await fetchOrders();
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -109,14 +157,18 @@ export default function MyOrders() {
 
   return (
     <AppLayout title="My Orders">
-      <div className="p-4 space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Active Deliveries</h3>
-            <span className="text-sm text-muted-foreground">
-              {activeOrders.length} active
-            </span>
-          </div>
+      <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
+        <div className="p-4 space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">Active Deliveries</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-sm text-muted-foreground">
+                  {activeOrders.length} active
+                </span>
+              </div>
+            </div>
           
           {isLoading ? (
             <div className="space-y-3">
@@ -229,7 +281,8 @@ export default function MyOrders() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </PullToRefresh>
 
       <DriverStatusUpdateModal
         order={selectedOrder}

@@ -68,19 +68,24 @@ function DashboardRedirect() {
 function AppRoutes() {
   const { user, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
-  const [splashComplete, setSplashComplete] = useState(false);
 
   const onboardingComplete = localStorage.getItem('tscp-onboarding-complete') === 'true';
 
-  useEffect(() => {
-    if (splashComplete && !isLoading) {
-      const timer = setTimeout(() => setShowSplash(false), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [splashComplete, isLoading]);
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
 
   if (showSplash) {
-    return <SplashScreen onComplete={() => setSplashComplete(true)} />;
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  // Show loading state after splash while auth is still loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (

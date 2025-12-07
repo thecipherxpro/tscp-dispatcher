@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import DriverDashboard from "./pages/driver/DriverDashboard";
+import DriverOnboarding from "./pages/driver/DriverOnboarding";
 import Orders from "./pages/admin/Orders";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
@@ -42,7 +43,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
 }
 
 function DashboardRedirect() {
-  const { role, isLoading } = useAuth();
+  const { role, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -50,6 +51,11 @@ function DashboardRedirect() {
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  // Check if driver needs onboarding
+  if (role === 'driver' && profile?.onboarding_status !== 'completed') {
+    return <Navigate to="/driver-onboarding" replace />;
   }
 
   if (role === 'pharmacy_admin') {
@@ -141,6 +147,14 @@ function AppRoutes() {
       />
 
       {/* Driver routes */}
+      <Route
+        path="/driver-onboarding"
+        element={
+          <ProtectedRoute allowedRoles={['driver']}>
+            <DriverOnboarding />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/my-orders"
         element={

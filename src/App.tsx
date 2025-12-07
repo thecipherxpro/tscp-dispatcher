@@ -14,6 +14,7 @@ import DriverDashboard from "./pages/driver/DriverDashboard";
 import DriverOnboarding from "./pages/driver/DriverOnboarding";
 import Orders from "./pages/admin/Orders";
 import AdminTracking from "./pages/admin/AdminTracking";
+import TrackingList from "./pages/admin/TrackingList";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
 import TrackShipment from "./pages/TrackShipment";
@@ -152,6 +153,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <Drivers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/track"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <TrackingList />
           </ProtectedRoute>
         }
       />

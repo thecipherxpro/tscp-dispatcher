@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, User, MapPin, Phone, Mail, Calendar, Package, Truck, Clock, Copy, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, User, MapPin, Phone, Mail, Calendar, Package, Truck, Clock, Copy, ExternalLink, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +18,7 @@ interface OrderDetailModalProps {
 
 export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = false }: OrderDetailModalProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showAssignModal, setShowAssignModal] = useState(false);
 
   if (!order) return null;
@@ -236,11 +238,27 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
             )}
 
             {/* Admin Actions */}
-            {isAdmin && order.timeline_status === 'PENDING' && (
-              <Button className="w-full" onClick={() => setShowAssignModal(true)}>
-                <Truck className="w-4 h-4 mr-2" />
-                Assign Driver
-              </Button>
+            {isAdmin && (
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => {
+                    onClose();
+                    navigate(`/admin/tracking/${order.id}`);
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Full Details
+                </Button>
+                
+                {order.timeline_status === 'PENDING' && (
+                  <Button className="w-full" onClick={() => setShowAssignModal(true)}>
+                    <Truck className="w-4 h-4 mr-2" />
+                    Assign Driver
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </DialogContent>

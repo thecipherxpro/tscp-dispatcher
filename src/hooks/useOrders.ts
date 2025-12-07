@@ -113,7 +113,7 @@ export async function assignDriverToOrder(
     const trackingId = trackingIdData as string;
 
     // Generate tracking URL
-    const trackingUrl = `${window.location.origin}/TrackShipment?tracking=${trackingId}`;
+    const trackingUrl = `${window.location.origin}/track/${trackingId}`;
 
     // Get client initials
     const { data: initialsData } = await supabase.rpc('get_client_initials', {

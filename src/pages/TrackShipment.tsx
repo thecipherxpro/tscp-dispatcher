@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,8 +19,10 @@ const timelineSteps = [
 
 export default function TrackShipment() {
   const [searchParams] = useSearchParams();
+  const { trackingId: pathTrackingId } = useParams();
   const navigate = useNavigate();
-  const trackingId = searchParams.get('tracking');
+  // Support both path param (/track/:trackingId) and query param (?tracking=)
+  const trackingId = pathTrackingId || searchParams.get('tracking');
   
   const [tracking, setTracking] = useState<PublicTracking | null>(null);
   const [driverName, setDriverName] = useState<string | null>(null);

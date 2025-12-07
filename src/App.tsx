@@ -90,13 +90,9 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public tracking route */}
+      {/* Public tracking routes */}
+      <Route path="/track/:trackingId" element={<TrackShipment />} />
       <Route path="/TrackShipment" element={<TrackShipment />} />
-      <Route path="/track" element={
-        <ProtectedRoute allowedRoles={['pharmacy_admin']}>
-          <TrackShipment />
-        </ProtectedRoute>
-      } />
 
       {/* Auth routes */}
       <Route

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,70 +13,74 @@ interface OrderImportModalProps {
 }
 
 interface ParsedOrder {
-  call_datetime?: string;
-  billing_date?: string;
-  ship_date?: string;
+  call_datetime?: string | null;
+  billing_date?: string | null;
+  ship_date?: string | null;
   doses_nasal?: number;
   nasal_rx?: string;
   doses_injectable?: number;
   injection_rx?: string;
   tracking_url_source?: string;
-  client_name?: string;
-  client_dob?: string;
-  client_health_card?: string;
-  client_phone?: string;
-  client_email?: string;
-  client_call_notes?: string;
-  address_line1?: string;
-  address_line2?: string;
+  name?: string;
+  dob?: string | null;
+  health_card?: string;
+  phone_number?: string;
+  email?: string;
+  call_notes?: string;
+  address_1?: string;
+  address_2?: string;
   city?: string;
   province?: string;
-  postal_code?: string;
+  postal?: string;
   country?: string;
-  province_1?: string;
+  shipment_id_import?: string;
   driver_id_import?: string;
   authorizing_pharmacist?: string;
   training_status?: string;
   pharmacy_name?: string;
 }
 
+// Exact XLSX column headers mapping
 const COLUMN_MAPPING: Record<string, keyof ParsedOrder> = {
-  'call_datetime': 'call_datetime',
+  'call date & time': 'call_datetime',
+  'call_date_&_time': 'call_datetime',
+  'billing date': 'billing_date',
   'billing_date': 'billing_date',
+  'ship date': 'ship_date',
   'ship_date': 'ship_date',
+  'doses nasal': 'doses_nasal',
   'doses_nasal': 'doses_nasal',
+  'nasal rx': 'nasal_rx',
   'nasal_rx': 'nasal_rx',
+  'doses injectable': 'doses_injectable',
   'doses_injectable': 'doses_injectable',
+  'injection rx': 'injection_rx',
   'injection_rx': 'injection_rx',
   'tracking_url': 'tracking_url_source',
-  'tracking_url_source': 'tracking_url_source',
-  'client_name': 'client_name',
-  'name': 'client_name',
-  'client_dob': 'client_dob',
-  'dob': 'client_dob',
-  'client_health_card': 'client_health_card',
-  'health_card': 'client_health_card',
-  'client_phone': 'client_phone',
-  'phone': 'client_phone',
-  'client_email': 'client_email',
-  'email': 'client_email',
-  'client_call_notes': 'client_call_notes',
-  'call_notes': 'client_call_notes',
-  'address_line1': 'address_line1',
-  'address': 'address_line1',
-  'address_line2': 'address_line2',
+  'name': 'name',
+  'dob': 'dob',
+  'health card': 'health_card',
+  'health_card': 'health_card',
+  'phone number': 'phone_number',
+  'phone_number': 'phone_number',
+  'email': 'email',
+  'call notes': 'call_notes',
+  'call_notes': 'call_notes',
+  'address 1': 'address_1',
+  'address_1': 'address_1',
+  'address 2': 'address_2',
+  'address_2': 'address_2',
   'city': 'city',
   'province': 'province',
-  'postal_code': 'postal_code',
-  'postal': 'postal_code',
+  'postal': 'postal',
   'country': 'country',
-  'province_1': 'province_1',
+  'shipment id': 'shipment_id_import',
+  'shipment_id': 'shipment_id_import',
+  'driver id': 'driver_id_import',
   'driver_id': 'driver_id_import',
-  'driver_id_import': 'driver_id_import',
+  'authorizing pharmacist': 'authorizing_pharmacist',
   'authorizing_pharmacist': 'authorizing_pharmacist',
-  'pharmacist': 'authorizing_pharmacist',
-  'training_status': 'training_status',
-  'pharmacy_name': 'pharmacy_name',
+  'training': 'training_status',
   'pharmacy': 'pharmacy_name',
 };
 
@@ -112,6 +116,19 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     parseFile(selectedFile);
   };
 
+  const parseDate = (value: unknown): string | null => {
+    if (!value) return null;
+    try {
+      const dateVal = value instanceof Date ? value : new Date(String(value));
+      if (!isNaN(dateVal.getTime())) {
+        return dateVal.toISOString();
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    return null;
+  };
+
   const parseFile = async (file: File) => {
     const reader = new FileReader();
     
@@ -127,20 +144,16 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
           const order: ParsedOrder = {};
           
           Object.entries(row).forEach(([key, value]) => {
-            const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').trim();
+            const normalizedKey = key.toLowerCase().trim();
             const mappedKey = COLUMN_MAPPING[normalizedKey];
             
-            if (mappedKey && value !== undefined && value !== null && value !== '') {
+            if (mappedKey) {
               if (mappedKey === 'doses_nasal' || mappedKey === 'doses_injectable') {
-                order[mappedKey] = parseInt(String(value), 10) || 0;
-              } else if (mappedKey.includes('date') || mappedKey.includes('datetime')) {
-                // Handle date parsing
-                const dateVal = value instanceof Date ? value : new Date(String(value));
-                if (!isNaN(dateVal.getTime())) {
-                  order[mappedKey] = dateVal.toISOString().split('T')[0];
-                }
+                order[mappedKey] = Number(value) || 0;
+              } else if (mappedKey === 'call_datetime' || mappedKey === 'billing_date' || mappedKey === 'ship_date' || mappedKey === 'dob') {
+                order[mappedKey] = parseDate(value);
               } else {
-                order[mappedKey] = String(value).trim();
+                order[mappedKey] = String(value || '').trim();
               }
             }
           });
@@ -148,7 +161,8 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
           return order;
         });
 
-        setParsedData(mapped.filter(o => o.client_name || o.address_line1));
+        // Never filter - insert ALL rows even if data is partial
+        setParsedData(mapped);
       } catch (error) {
         console.error('Parse error:', error);
         toast({
@@ -172,9 +186,37 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     for (const order of parsedData) {
       try {
         const { error } = await supabase.from('orders').insert({
-          ...order,
-          timeline_status: 'PENDING',
+          call_datetime: order.call_datetime || null,
+          billing_date: order.billing_date || null,
+          ship_date: order.ship_date || null,
+          doses_nasal: order.doses_nasal || 0,
+          nasal_rx: order.nasal_rx || '',
+          doses_injectable: order.doses_injectable || 0,
+          injection_rx: order.injection_rx || '',
+          tracking_url_source: order.tracking_url_source || '',
+          name: order.name || '',
+          dob: order.dob || null,
+          health_card: order.health_card || '',
+          phone_number: order.phone_number || '',
+          email: order.email || '',
+          call_notes: order.call_notes || '',
+          address_1: order.address_1 || '',
+          address_2: order.address_2 || '',
+          city: order.city || '',
+          province: order.province || '',
+          postal: order.postal || '',
           country: order.country || 'Canada',
+          shipment_id_import: order.shipment_id_import || '',
+          driver_id_import: order.driver_id_import || '',
+          authorizing_pharmacist: order.authorizing_pharmacist || '',
+          training_status: order.training_status || '',
+          pharmacy_name: order.pharmacy_name || '',
+          timeline_status: 'PENDING',
+          assigned_driver_id: null,
+          shipment_id: null,
+          tracking_id: null,
+          tracking_url: null,
+          delivery_status: null,
         });
 
         if (error) {
@@ -254,7 +296,7 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
                   <table className="w-full text-xs">
                     <thead className="bg-muted sticky top-0">
                       <tr>
-                        <th className="p-2 text-left text-muted-foreground">Client</th>
+                        <th className="p-2 text-left text-muted-foreground">Name</th>
                         <th className="p-2 text-left text-muted-foreground">City</th>
                         <th className="p-2 text-left text-muted-foreground">Phone</th>
                       </tr>
@@ -262,9 +304,9 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
                     <tbody className="divide-y divide-border">
                       {parsedData.slice(0, 10).map((order, i) => (
                         <tr key={i}>
-                          <td className="p-2 text-foreground">{order.client_name || '-'}</td>
+                          <td className="p-2 text-foreground">{order.name || '-'}</td>
                           <td className="p-2 text-foreground">{order.city || '-'}</td>
-                          <td className="p-2 text-foreground">{order.client_phone || '-'}</td>
+                          <td className="p-2 text-foreground">{order.phone_number || '-'}</td>
                         </tr>
                       ))}
                     </tbody>

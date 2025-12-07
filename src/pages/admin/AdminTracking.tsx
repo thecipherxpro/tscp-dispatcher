@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, 
-  ArrowLeft, User, Phone, Mail, Calendar, Copy, Building, 
-  FileText, Pill, Stethoscope
+  User, Phone, Mail, Calendar, Copy, Building, 
+  FileText, Pill
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -214,7 +214,7 @@ export default function AdminTracking() {
                       <User className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Full Name</p>
-                        <p className="font-medium text-foreground">{order.client_name || 'N/A'}</p>
+                        <p className="font-medium text-foreground">{order.name || 'N/A'}</p>
                       </div>
                     </div>
                     
@@ -222,7 +222,7 @@ export default function AdminTracking() {
                       <Calendar className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Date of Birth</p>
-                        <p className="font-medium text-foreground">{formatDate(order.client_dob)}</p>
+                        <p className="font-medium text-foreground">{formatDate(order.dob)}</p>
                       </div>
                     </div>
                     
@@ -230,7 +230,7 @@ export default function AdminTracking() {
                       <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Health Card</p>
-                        <p className="font-medium text-foreground">{order.client_health_card || 'N/A'}</p>
+                        <p className="font-medium text-foreground">{order.health_card || 'N/A'}</p>
                       </div>
                     </div>
                     
@@ -239,9 +239,9 @@ export default function AdminTracking() {
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Phone</p>
                         <p className="font-medium text-foreground">
-                          {order.client_phone ? (
-                            <a href={`tel:${order.client_phone}`} className="text-primary underline">
-                              {order.client_phone}
+                          {order.phone_number ? (
+                            <a href={`tel:${order.phone_number}`} className="text-primary underline">
+                              {order.phone_number}
                             </a>
                           ) : 'N/A'}
                         </p>
@@ -253,9 +253,9 @@ export default function AdminTracking() {
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Email</p>
                         <p className="font-medium text-foreground break-all">
-                          {order.client_email ? (
-                            <a href={`mailto:${order.client_email}`} className="text-primary underline">
-                              {order.client_email}
+                          {order.email ? (
+                            <a href={`mailto:${order.email}`} className="text-primary underline">
+                              {order.email}
                             </a>
                           ) : 'N/A'}
                         </p>
@@ -263,10 +263,10 @@ export default function AdminTracking() {
                     </div>
                   </div>
                   
-                  {order.client_call_notes && (
+                  {order.call_notes && (
                     <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-xs text-yellow-600 font-medium">Call Notes</p>
-                      <p className="text-sm text-yellow-900 mt-1">{order.client_call_notes}</p>
+                      <p className="text-sm text-yellow-900 mt-1">{order.call_notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -280,22 +280,22 @@ export default function AdminTracking() {
                     Complete Delivery Address
                   </h4>
                   <div className="p-4 bg-muted/50 rounded-lg space-y-1">
-                    <p className="font-medium text-foreground">{order.address_line1 || 'N/A'}</p>
-                    {order.address_line2 && (
-                      <p className="text-foreground">{order.address_line2}</p>
+                    <p className="font-medium text-foreground">{order.address_1 || 'N/A'}</p>
+                    {order.address_2 && (
+                      <p className="text-foreground">{order.address_2}</p>
                     )}
                     <p className="text-foreground">
-                      {order.city}, {order.province} {order.postal_code}
+                      {order.city}, {order.province} {order.postal}
                     </p>
                     <p className="text-muted-foreground">{order.country || 'Canada'}</p>
                   </div>
                   
-                  {order.address_line1 && (
+                  {order.address_1 && (
                     <Button 
                       variant="outline" 
                       className="w-full"
                       onClick={() => {
-                        const address = `${order.address_line1}, ${order.city}, ${order.province} ${order.postal_code}`;
+                        const address = `${order.address_1}, ${order.city}, ${order.province} ${order.postal}`;
                         window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
                       }}
                     >
@@ -413,15 +413,19 @@ export default function AdminTracking() {
                               <Icon className="w-5 h-5" />
                             </div>
                             {index < timelineSteps.length - 1 && (
-                              <div className={`w-0.5 h-8 ${isCompleted ? 'bg-primary' : 'bg-muted'}`} />
+                              <div className={`w-0.5 h-8 mt-1 ${
+                                isCompleted ? 'bg-primary' : 'bg-muted'
+                              }`} />
                             )}
                           </div>
-                          <div className="flex-1 pb-4">
-                            <p className={`font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          <div className="flex-1 pt-2">
+                            <p className={`font-medium ${
+                              isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                            }`}>
                               {step.label}
                             </p>
                             {timestamps[step.status] && (
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 {formatDateTime(timestamps[step.status])}
                               </p>
                             )}
@@ -437,66 +441,13 @@ export default function AdminTracking() {
               {order.delivery_status && (
                 <Card className="bg-green-50 border-green-200">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                      <div>
-                        <p className="text-xs text-green-600 font-medium">Delivery Outcome</p>
-                        <p className="font-semibold text-green-900">
-                          {order.delivery_status.replace(/_/g, ' ')}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="text-xs text-green-600 font-medium">Delivery Outcome</p>
+                    <p className="font-semibold text-green-900 text-lg">
+                      {order.delivery_status.replace(/_/g, ' ')}
+                    </p>
                   </CardContent>
                 </Card>
               )}
-
-              {/* Address Review Request */}
-              {order.timeline_status === 'REQUEST_ADDRESS_REVIEW' && (
-                <Card className="bg-red-50 border-red-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <AlertCircle className="w-6 h-6 text-red-600" />
-                      <div>
-                        <p className="font-semibold text-red-900">Address Review Requested</p>
-                        <p className="text-sm text-red-700">
-                          The driver has flagged this address for review.
-                        </p>
-                        {order.address_review_requested_at && (
-                          <p className="text-xs text-red-600 mt-1">
-                            Requested: {formatDateTime(order.address_review_requested_at)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Important Dates */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-4 space-y-3">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    Important Dates
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Billing Date</p>
-                      <p className="font-medium text-foreground">{formatDate(order.billing_date)}</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Ship Date</p>
-                      <p className="font-medium text-foreground">{formatDate(order.ship_date)}</p>
-                    </div>
-                    {order.call_datetime && (
-                      <div className="p-3 bg-muted/50 rounded-lg col-span-2">
-                        <p className="text-xs text-muted-foreground">Client Call</p>
-                        <p className="font-medium text-foreground">{formatDateTime(order.call_datetime)}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </>
           )}
         </div>

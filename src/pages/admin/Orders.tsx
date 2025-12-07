@@ -45,10 +45,10 @@ export default function Orders() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(order =>
-        order.client_name?.toLowerCase().includes(query) ||
+        order.name?.toLowerCase().includes(query) ||
         order.shipment_id?.toLowerCase().includes(query) ||
         order.city?.toLowerCase().includes(query) ||
-        order.client_phone?.includes(query)
+        order.phone_number?.includes(query)
       );
     }
 
@@ -166,7 +166,7 @@ export default function Orders() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-medium text-foreground truncate">
-                          {order.client_name || 'Unknown Client'}
+                          {order.name || 'Unknown Client'}
                         </p>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(order.timeline_status)}`}>
                           {order.timeline_status.replace(/_/g, ' ')}

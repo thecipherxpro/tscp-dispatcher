@@ -37,7 +37,7 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
     const result = await assignDriverToOrder(
       order.id,
       selectedDriverId,
-      order.client_name,
+      order.name,
       {
         doses_nasal: order.doses_nasal,
         nasal_rx: order.nasal_rx,
@@ -45,7 +45,7 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
         injection_rx: order.injection_rx,
         city: order.city,
         province: order.province,
-        postal_code: order.postal_code,
+        postal: order.postal,
         country: order.country,
         pending_at: order.pending_at,
       }
@@ -81,7 +81,7 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
         <div className="space-y-4">
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">Assigning to</p>
-            <p className="font-medium text-foreground">{order.client_name || 'Unknown Client'}</p>
+            <p className="font-medium text-foreground">{order.name || 'Unknown Client'}</p>
             <p className="text-sm text-muted-foreground">
               {order.city}, {order.province}
             </p>

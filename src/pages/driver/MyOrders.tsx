@@ -62,7 +62,7 @@ export default function MyOrders() {
             haptic.success();
             toast({
               title: 'New Order Assigned',
-              description: `Order for ${(payload.new as Order).client_name || 'a client'} has been assigned to you.`,
+              description: `Order for ${(payload.new as Order).name || 'a client'} has been assigned to you.`,
             });
           } else if (payload.eventType === 'UPDATE') {
             setOrders(prev => 
@@ -200,10 +200,10 @@ export default function MyOrders() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <p className="font-medium text-foreground">
-                          {order.client_name || 'Unknown Client'}
+                          {order.name || 'Unknown Client'}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          DOB Year: {formatDOB(order.client_dob)}
+                          DOB Year: {formatDOB(order.dob)}
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
@@ -215,20 +215,20 @@ export default function MyOrders() {
                       <div className="flex items-start text-muted-foreground">
                         <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                         <span>
-                          {order.address_line1}
-                          {order.address_line2 && `, ${order.address_line2}`}
+                          {order.address_1}
+                          {order.address_2 && `, ${order.address_2}`}
                           <br />
-                          {order.city}, {order.province} {order.postal_code}
+                          {order.city}, {order.province} {order.postal}
                         </span>
                       </div>
-                      {order.client_phone && (
+                      {order.phone_number && (
                         <a
-                          href={`tel:${order.client_phone}`}
+                          href={`tel:${order.phone_number}`}
                           className="flex items-center text-primary"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Phone className="w-4 h-4 mr-2" />
-                          <span>{order.client_phone}</span>
+                          <span>{order.phone_number}</span>
                         </a>
                       )}
                     </div>
@@ -260,7 +260,7 @@ export default function MyOrders() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-foreground">
-                          {order.client_name || 'Unknown Client'}
+                          {order.name || 'Unknown Client'}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {order.city}, {order.province}

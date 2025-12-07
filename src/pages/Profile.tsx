@@ -85,7 +85,7 @@ export default function Profile() {
   };
 
   return (
-    <AppLayout title="Profile">
+    <AppLayout title="Profile" showBackButton>
       <div className="p-4 space-y-6">
         <div className="flex flex-col items-center py-6">
           <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">

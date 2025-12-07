@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import DriverDashboard from "./pages/driver/DriverDashboard";
 import DriverOnboarding from "./pages/driver/DriverOnboarding";
 import Orders from "./pages/admin/Orders";
+import AdminTracking from "./pages/admin/AdminTracking";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
 import TrackShipment from "./pages/TrackShipment";
@@ -130,6 +131,14 @@ function AppRoutes() {
       />
 
       {/* Admin routes */}
+      <Route
+        path="/admin/tracking/:orderId"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <AdminTracking />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/orders"
         element={

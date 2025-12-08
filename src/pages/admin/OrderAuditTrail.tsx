@@ -414,6 +414,7 @@ export default function OrderAuditTrail() {
       package: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
       user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
       truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>',
+      building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>',
       clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
       shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>',
       phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
@@ -514,6 +515,45 @@ export default function OrderAuditTrail() {
               <div class="info-row">
                 <span class="info-icon">${icons.mapPin}</span>
                 ${[order?.address_1, order?.city, order?.province, order?.postal].filter(Boolean).join(', ') || 'No address'}
+              </div>
+            </div>
+          </div>
+
+          <!-- Pharmacy Details Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.building}</span>
+              <span class="card-title">Pharmacy Details</span>
+            </div>
+            <div class="card-content">
+              <div class="grid-2">
+                <div>
+                  <div class="field-label">Pharmacy Name</div>
+                  <div class="field-value">${order?.pharmacy_name || 'Not provided'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Authorizing Pharmacist</div>
+                  <div class="field-value">${order?.authorizing_pharmacist || 'Not provided'}</div>
+                </div>
+              </div>
+              <div class="separator"></div>
+              <div class="grid-2">
+                <div>
+                  <div class="field-label">Nasal RX</div>
+                  <div class="field-value mono">${order?.nasal_rx || '—'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Injection RX</div>
+                  <div class="field-value mono">${order?.injection_rx || '—'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Doses Nasal</div>
+                  <div class="field-value">${order?.doses_nasal ?? '—'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Doses Injectable</div>
+                  <div class="field-value">${order?.doses_injectable ?? '—'}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -783,6 +823,47 @@ export default function OrderAuditTrail() {
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
                   {[order.address_1, order.city, order.province, order.postal].filter(Boolean).join(', ') || <EmptyField label="No address" />}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pharmacy Details Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building className="w-4 h-4" />
+                Pharmacy Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Pharmacy Name</p>
+                  <p className="text-sm font-semibold">{order.pharmacy_name || <EmptyField label="Not provided" />}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Authorizing Pharmacist</p>
+                  <p className="text-sm font-semibold">{order.authorizing_pharmacist || <EmptyField label="Not provided" />}</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Nasal RX</p>
+                  <p className="text-sm font-mono">{order.nasal_rx || <EmptyField label="—" />}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Injection RX</p>
+                  <p className="text-sm font-mono">{order.injection_rx || <EmptyField label="—" />}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Doses Nasal</p>
+                  <p className="text-sm font-semibold">{order.doses_nasal ?? <EmptyField label="—" />}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Doses Injectable</p>
+                  <p className="text-sm font-semibold">{order.doses_injectable ?? <EmptyField label="—" />}</p>
                 </div>
               </div>
             </CardContent>

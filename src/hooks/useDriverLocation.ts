@@ -41,9 +41,9 @@ function getBrowserGeolocation(): Promise<{ lat: number; lng: number } | null> {
         resolve(null);
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
+        enableHighAccuracy: false,
+        timeout: 3000,
+        maximumAge: 300000,
       }
     );
   });

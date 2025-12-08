@@ -67,17 +67,33 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
   const handleStatusUpdate = async (newStatus: TimelineStatus, deliveryStatus?: DeliveryStatus, reviewData?: { review_reason?: string; review_notes?: string }) => {
     setIsUpdating(true);
 
-    // Fetch driver location data for audit logging
-    const locationData = await fetchDriverLocationData();
-
+    // Update status immediately without waiting for location data
     const result = await updateOrderStatus(
       order.id,
       order.tracking_id,
       newStatus,
       deliveryStatus,
-      locationData,
+      undefined, // Location data will be fetched in background
       reviewData
     );
+
+    // Fetch location in background and update audit log (non-blocking)
+    fetchDriverLocationData().then(locationData => {
+      if (locationData.ip_address || locationData.geolocation) {
+        // Update the audit log with location data asynchronously
+        import('@/integrations/supabase/client').then(({ supabase }) => {
+          supabase.from('order_audit_logs')
+            .update({
+              ip_address: locationData.ip_address,
+              geolocation: locationData.geolocation,
+              access_location: locationData.access_location,
+            })
+            .eq('order_id', order.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        });
+      }
+    }).catch(console.error);
 
     setIsUpdating(false);
 

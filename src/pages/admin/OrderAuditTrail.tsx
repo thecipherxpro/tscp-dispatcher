@@ -1013,7 +1013,7 @@ export default function OrderAuditTrail() {
             </CardHeader>
             <CardContent>
               <div className="relative">
-                <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-border" />
+                <div className="absolute left-[11px] top-6 bottom-6 w-0.5 bg-border" />
                 
                 {/* Pending */}
                 <div className="relative flex items-start gap-3 pb-4">

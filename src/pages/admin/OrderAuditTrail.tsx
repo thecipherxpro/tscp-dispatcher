@@ -587,11 +587,15 @@ export default function OrderAuditTrail() {
                   <div class="avatar avatar-emerald">${driverInitials}</div>
                   <div class="user-info">
                     <div class="user-name">${driver.full_name || 'Unknown Driver'}</div>
-                    <div class="user-detail">${driver.phone || 'No phone'}</div>
+                    <div class="user-detail">${driver.driver_id || 'No Driver ID'} • ${driver.phone || 'No phone'}</div>
                   </div>
                 </div>
                 <div class="separator"></div>
                 <div class="grid-2">
+                  <div>
+                    <div class="field-label">Driver ID</div>
+                    <div class="field-value mono" style="color: #2563eb;">${driver.driver_id || 'Not assigned'}</div>
+                  </div>
                   <div>
                     <div class="field-label">Assigned At</div>
                     <div class="field-value">${formatDateTime(order?.confirmed_at || null) || 'Unknown'}</div>
@@ -953,6 +957,10 @@ export default function OrderAuditTrail() {
                   </div>
                   <Separator />
                   <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Driver ID</p>
+                      <p className="text-sm font-mono font-semibold text-primary">{driver.driver_id || <EmptyField label="Not assigned" />}</p>
+                    </div>
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Assigned At</p>
                       <p className="text-sm font-medium">{formatDateTime(order.confirmed_at) || 'Unknown'}</p>

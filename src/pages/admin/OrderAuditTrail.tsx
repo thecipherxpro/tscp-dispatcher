@@ -183,160 +183,470 @@ export default function OrderAuditTrail() {
   };
 
   const handleExportPDF = () => {
-    // Create a printable version
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast({ title: 'Error', description: 'Please allow popups to export PDF', variant: 'destructive' });
       return;
     }
 
+    const clientInitials = order?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA';
+    const driverInitials = driver?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'DR';
+
     const styles = `
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #1a1a1a; }
-        h1 { font-size: 24px; margin-bottom: 8px; }
-        h2 { font-size: 18px; margin: 24px 0 12px; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }
-        h3 { font-size: 14px; margin: 16px 0 8px; color: #666; }
-        .header { border-bottom: 2px solid #000; padding-bottom: 16px; margin-bottom: 24px; }
-        .section { margin-bottom: 24px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .field { margin-bottom: 8px; }
-        .label { font-size: 10px; text-transform: uppercase; color: #666; margin-bottom: 2px; }
-        .value { font-size: 14px; font-weight: 500; }
-        .timeline-item { display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px; }
-        .timeline-dot { width: 24px; height: 24px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-        .badge-success { background: #dcfce7; color: #166534; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e5e5; font-size: 12px; }
-        th { background: #f5f5f5; font-weight: 600; }
-        .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 10px; color: #666; }
-        @media print { body { padding: 20px; } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+          padding: 24px; 
+          color: #1a1a1a; 
+          background: #f8fafc;
+          line-height: 1.5;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        /* Header */
+        .header { 
+          background: white;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+          border: 1px solid #e5e7eb;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .header-title { font-size: 20px; font-weight: 600; color: #111827; }
+        .header-subtitle { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        
+        /* Badge */
+        .badge { 
+          display: inline-block; 
+          padding: 4px 10px; 
+          border-radius: 9999px; 
+          font-size: 11px; 
+          font-weight: 500;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .badge-purple { background: #f3e8ff; color: #7c3aed; border: 1px solid #c4b5fd; }
+        .badge-emerald { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .badge-outline { background: white; color: #374151; border: 1px solid #d1d5db; }
+        
+        /* Card */
+        .card { 
+          background: white; 
+          border-radius: 12px; 
+          border: 1px solid #e5e7eb; 
+          margin-bottom: 16px;
+          overflow: hidden;
+        }
+        .card-header { 
+          padding: 16px 20px 12px; 
+          border-bottom: 1px solid #f3f4f6;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .card-icon { 
+          width: 16px; 
+          height: 16px; 
+          color: #6b7280;
+        }
+        .card-title { 
+          font-size: 14px; 
+          font-weight: 600; 
+          color: #111827;
+        }
+        .card-content { padding: 16px 20px; }
+        
+        /* Avatar */
+        .avatar { 
+          width: 40px; 
+          height: 40px; 
+          border-radius: 50%; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+        .avatar-primary { background: #eff6ff; color: #2563eb; }
+        .avatar-emerald { background: #d1fae5; color: #059669; }
+        
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        
+        /* Field */
+        .field-label { 
+          font-size: 10px; 
+          text-transform: uppercase; 
+          color: #9ca3af; 
+          letter-spacing: 0.05em;
+          font-weight: 500;
+          margin-bottom: 2px;
+        }
+        .field-value { font-size: 14px; font-weight: 500; color: #111827; }
+        .field-value.mono { font-family: ui-monospace, monospace; }
+        
+        /* Separator */
+        .separator { height: 1px; background: #f3f4f6; margin: 12px 0; }
+        
+        /* Info row */
+        .info-row { 
+          display: flex; 
+          align-items: center; 
+          gap: 8px; 
+          font-size: 13px; 
+          color: #374151;
+          margin-bottom: 6px;
+        }
+        .info-icon { width: 16px; height: 16px; color: #9ca3af; }
+        
+        /* User card */
+        .user-card { display: flex; align-items: center; gap: 12px; }
+        .user-info { flex: 1; }
+        .user-name { font-size: 14px; font-weight: 600; color: #111827; }
+        .user-detail { font-size: 12px; color: #6b7280; }
+        
+        /* Timeline */
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before { 
+          content: ''; 
+          position: absolute; 
+          left: 11px; 
+          top: 12px; 
+          bottom: 12px; 
+          width: 2px; 
+          background: #e5e7eb;
+        }
+        .timeline-item { 
+          position: relative; 
+          padding-bottom: 16px; 
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot { 
+          width: 24px; 
+          height: 24px; 
+          border-radius: 50%; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          font-size: 12px;
+          position: relative;
+          z-index: 1;
+          margin-left: -12px;
+        }
+        .timeline-dot-amber { background: #fef3c7; color: #d97706; }
+        .timeline-dot-blue { background: #dbeafe; color: #2563eb; }
+        .timeline-dot-purple { background: #f3e8ff; color: #7c3aed; }
+        .timeline-dot-emerald { background: #d1fae5; color: #059669; }
+        .timeline-dot-muted { background: #f3f4f6; color: #9ca3af; }
+        .timeline-content { flex: 1; padding-top: 2px; }
+        .timeline-title { font-size: 13px; font-weight: 500; color: #111827; }
+        .timeline-time { font-size: 11px; color: #6b7280; }
+        
+        /* Audit log item */
+        .audit-item { 
+          background: #f9fafb; 
+          border-radius: 8px; 
+          padding: 12px;
+          margin-bottom: 10px;
+        }
+        .audit-item:last-child { margin-bottom: 0; }
+        .audit-header { display: flex; align-items: flex-start; gap: 12px; }
+        .audit-icon { 
+          width: 32px; 
+          height: 32px; 
+          border-radius: 50%; 
+          background: #eff6ff; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .audit-content { flex: 1; }
+        .audit-action { font-size: 13px; font-weight: 500; color: #111827; }
+        .audit-time { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .audit-meta { 
+          display: flex; 
+          gap: 12px; 
+          margin-top: 8px; 
+          font-size: 10px; 
+          color: #9ca3af;
+        }
+        .audit-meta-item { display: flex; align-items: center; gap: 4px; }
+        
+        /* Empty state */
+        .empty-state { 
+          text-align: center; 
+          padding: 24px; 
+          color: #9ca3af;
+        }
+        .empty-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+        
+        /* Footer */
+        .footer { 
+          margin-top: 24px; 
+          padding-top: 16px; 
+          border-top: 1px solid #e5e7eb;
+          font-size: 10px;
+          color: #9ca3af;
+          text-align: center;
+        }
+        
+        /* SVG Icons */
+        .svg-icon { width: 14px; height: 14px; }
+        
+        @media print { 
+          body { padding: 16px; background: white; }
+          .card { break-inside: avoid; }
+        }
       </style>
     `;
+
+    // SVG icons as inline strings
+    const icons = {
+      package: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+      user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>',
+      clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>',
+      phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+      mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
+      mapPin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
+      navigation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
+      circle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>',
+      smartphone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>',
+      globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>',
+      ip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"/><path d="m13.56 11.747 4.332-.924"/><path d="m16 21-3.105-6.21"/><path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z"/><path d="m6.158 8.633 1.114 4.456"/><path d="m8 21 3.105-6.21"/></svg>'
+    };
+
+    const getStatusBadgeClass = (status: string) => {
+      switch (status) {
+        case 'PENDING': return 'badge-amber';
+        case 'CONFIRMED': return 'badge-blue';
+        case 'IN_ROUTE': return 'badge-purple';
+        case 'ARRIVED': return 'badge-blue';
+        case 'COMPLETED': return 'badge-emerald';
+        case 'REQUEST_ADDRESS_REVIEW': return 'badge-red';
+        default: return 'badge-outline';
+      }
+    };
 
     const content = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Order Audit Trail - ${order?.shipment_id || order?.id}</title>
+        <title>Audit Trail - ${order?.shipment_id || order?.id}</title>
         ${styles}
       </head>
       <body>
-        <div class="header">
-          <h1>Order Audit Trail</h1>
-          <p>Shipment ID: <strong>${order?.shipment_id || 'Not assigned'}</strong></p>
-          <p>Tracking ID: <strong>${order?.tracking_id || 'Not assigned'}</strong></p>
-          <p>Generated: ${new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto' })}</p>
-        </div>
-
-        <div class="section">
-          <h2>Order Information</h2>
-          <div class="grid">
-            <div class="field">
-              <div class="label">Current Status</div>
-              <div class="value"><span class="badge badge-info">${order?.timeline_status?.replace('_', ' ') || 'Unknown'}</span></div>
+        <div class="container">
+          <!-- Header -->
+          <div class="header">
+            <div>
+              <div class="header-title">Audit Trail</div>
+              <div class="header-subtitle">${order?.shipment_id || 'No Shipment ID'}</div>
             </div>
-            <div class="field">
-              <div class="label">Delivery Status</div>
-              <div class="value">${order?.delivery_status?.replace(/_/g, ' ') || 'Pending'}</div>
-            </div>
-            <div class="field">
-              <div class="label">Ship Date</div>
-              <div class="value">${formatDate(order?.ship_date || null)}</div>
-            </div>
-            <div class="field">
-              <div class="label">Billing Date</div>
-              <div class="value">${formatDate(order?.billing_date || null)}</div>
+            <div style="text-align: right;">
+              <span class="badge ${getStatusBadgeClass(order?.timeline_status || 'PENDING')}">${statusConfig.label}</span>
+              ${order?.delivery_status ? `<span class="badge badge-emerald" style="margin-left: 8px;">${order.delivery_status.replace(/_/g, ' ')}</span>` : ''}
             </div>
           </div>
-        </div>
 
-        <div class="section">
-          <h2>Client Information</h2>
-          <div class="grid">
-            <div class="field">
-              <div class="label">Name</div>
-              <div class="value">${order?.name || 'Not provided'}</div>
+          <!-- Order Summary Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.package}</span>
+              <span class="card-title">Order Summary</span>
             </div>
-            <div class="field">
-              <div class="label">Date of Birth</div>
-              <div class="value">${formatDate(order?.dob || null)}</div>
-            </div>
-            <div class="field">
-              <div class="label">Phone</div>
-              <div class="value">${order?.phone_number || 'Not provided'}</div>
-            </div>
-            <div class="field">
-              <div class="label">Email</div>
-              <div class="value">${order?.email || 'Not provided'}</div>
+            <div class="card-content">
+              <div class="grid-2">
+                <div>
+                  <div class="field-label">Shipment ID</div>
+                  <div class="field-value mono">${order?.shipment_id || 'Not assigned'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Tracking ID</div>
+                  <div class="field-value mono">${order?.tracking_id || 'Not assigned'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Ship Date</div>
+                  <div class="field-value">${formatDate(order?.ship_date || null)}</div>
+                </div>
+                <div>
+                  <div class="field-label">Billing Date</div>
+                  <div class="field-value">${formatDate(order?.billing_date || null)}</div>
+                </div>
+              </div>
             </div>
           </div>
-          <h3>Delivery Address</h3>
-          <div class="value">${[order?.address_1, order?.address_2, order?.city, order?.province, order?.postal, order?.country].filter(Boolean).join(', ') || 'Not provided'}</div>
-        </div>
 
-        <div class="section">
-          <h2>Driver Assignment</h2>
-          <div class="grid">
-            <div class="field">
-              <div class="label">Driver Name</div>
-              <div class="value">${driver?.full_name || 'Not assigned'}</div>
+          <!-- Client Information Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.user}</span>
+              <span class="card-title">Client Information</span>
             </div>
-            <div class="field">
-              <div class="label">Driver Phone</div>
-              <div class="value">${driver?.phone || 'Not provided'}</div>
-            </div>
-            <div class="field">
-              <div class="label">Assigned At</div>
-              <div class="value">${formatDateTime(order?.confirmed_at || null) || 'Not assigned'}</div>
+            <div class="card-content">
+              <div class="user-card">
+                <div class="avatar avatar-primary">${clientInitials}</div>
+                <div class="user-info">
+                  <div class="user-name">${order?.name || 'No name'}</div>
+                  <div class="user-detail">DOB: ${formatDate(order?.dob || null)}</div>
+                </div>
+              </div>
+              <div class="separator"></div>
+              <div class="info-row">
+                <span class="info-icon">${icons.phone}</span>
+                ${order?.phone_number || 'No phone'}
+              </div>
+              <div class="info-row">
+                <span class="info-icon">${icons.mail}</span>
+                ${order?.email || 'No email'}
+              </div>
+              <div class="info-row">
+                <span class="info-icon">${icons.mapPin}</span>
+                ${[order?.address_1, order?.city, order?.province, order?.postal].filter(Boolean).join(', ') || 'No address'}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="section">
-          <h2>Delivery Timeline</h2>
-          ${order?.pending_at ? `<div class="timeline-item"><div class="timeline-dot">1</div><div><strong>Pending</strong><br/>${formatDateTime(order.pending_at)}</div></div>` : ''}
-          ${order?.confirmed_at ? `<div class="timeline-item"><div class="timeline-dot">2</div><div><strong>Confirmed</strong><br/>${formatDateTime(order.confirmed_at)}</div></div>` : ''}
-          ${order?.in_route_at ? `<div class="timeline-item"><div class="timeline-dot">3</div><div><strong>In Route</strong><br/>${formatDateTime(order.in_route_at)}</div></div>` : ''}
-          ${order?.arrived_at ? `<div class="timeline-item"><div class="timeline-dot">4</div><div><strong>Arrived</strong><br/>${formatDateTime(order.arrived_at)}</div></div>` : ''}
-          ${order?.completed_at ? `<div class="timeline-item"><div class="timeline-dot">5</div><div><strong>Completed</strong><br/>${formatDateTime(order.completed_at)}${order.delivery_status ? `<br/><span class="badge badge-success">${order.delivery_status.replace(/_/g, ' ')}</span>` : ''}</div></div>` : ''}
-        </div>
+          <!-- Driver Assignment Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.truck}</span>
+              <span class="card-title">Driver Assignment</span>
+            </div>
+            <div class="card-content">
+              ${driver ? `
+                <div class="user-card">
+                  <div class="avatar avatar-emerald">${driverInitials}</div>
+                  <div class="user-info">
+                    <div class="user-name">${driver.full_name || 'Unknown Driver'}</div>
+                    <div class="user-detail">${driver.phone || 'No phone'}</div>
+                  </div>
+                </div>
+                <div class="separator"></div>
+                <div class="grid-2">
+                  <div>
+                    <div class="field-label">Assigned At</div>
+                    <div class="field-value">${formatDateTime(order?.confirmed_at || null) || 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Onboarding</div>
+                    <span class="badge badge-outline">${driver.onboarding_status?.replace('_', ' ') || 'Unknown'}</span>
+                  </div>
+                </div>
+              ` : `
+                <div class="empty-state">
+                  <div class="empty-icon">${icons.user}</div>
+                  <div>No driver assigned yet</div>
+                </div>
+              `}
+            </div>
+          </div>
 
-        <div class="section">
-          <h2>Audit Log</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Timestamp (EST)</th>
-                <th>Action</th>
-                <th>Status Change</th>
-                <th>Device Info</th>
-                <th>IP Address</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${auditLogs.map(log => {
+          <!-- Delivery Timeline Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.clock}</span>
+              <span class="card-title">Delivery Timeline</span>
+            </div>
+            <div class="card-content">
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order?.pending_at ? 'timeline-dot-amber' : 'timeline-dot-muted'}">${icons.circle}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Pending</div>
+                    <div class="timeline-time">${order?.pending_at ? formatDateTime(order.pending_at) : 'Awaiting processing'}</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order?.confirmed_at ? 'timeline-dot-blue' : 'timeline-dot-muted'}">${icons.check}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Confirmed</div>
+                    <div class="timeline-time">${order?.confirmed_at ? formatDateTime(order.confirmed_at) : 'Not yet assigned'}</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order?.in_route_at ? 'timeline-dot-purple' : 'timeline-dot-muted'}">${icons.navigation}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">In Route</div>
+                    <div class="timeline-time">${order?.in_route_at ? formatDateTime(order.in_route_at) : 'Driver not started'}</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order?.completed_at ? 'timeline-dot-emerald' : 'timeline-dot-muted'}">${icons.truck}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Delivered</div>
+                    <div class="timeline-time">${order?.completed_at ? formatDateTime(order.completed_at) : 'Awaiting delivery'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit Log Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.shield}</span>
+              <span class="card-title">Audit Log</span>
+            </div>
+            <div class="card-content">
+              ${auditLogs.length === 0 ? `
+                <div class="empty-state">
+                  <div class="empty-icon">${icons.shield}</div>
+                  <div>No audit logs recorded yet</div>
+                  <div style="font-size: 11px; margin-top: 4px;">Activity will be logged as the order progresses</div>
+                </div>
+              ` : auditLogs.map(log => {
                 const deviceInfo = parseUserAgent(log.user_agent);
                 return `
-                  <tr>
-                    <td>${formatDateTime(log.created_at)}</td>
-                    <td>${log.action.replace(/_/g, ' ')}</td>
-                    <td>${log.previous_status ? `${log.previous_status} → ${log.new_status}` : log.new_status || '-'}</td>
-                    <td>${deviceInfo.browser} / ${deviceInfo.os} (${deviceInfo.device})</td>
-                    <td>${log.ip_address || 'Not captured'}</td>
-                  </tr>
+                  <div class="audit-item">
+                    <div class="audit-header">
+                      <div class="audit-icon">${icons.navigation}</div>
+                      <div class="audit-content">
+                        <div class="audit-action">
+                          ${log.action.replace(/_/g, ' ')}
+                          ${log.previous_status && log.new_status ? `<span class="badge badge-outline" style="margin-left: 8px; font-size: 10px;">${log.previous_status} → ${log.new_status}</span>` : ''}
+                        </div>
+                        <div class="audit-time">${formatDateTime(log.created_at)}</div>
+                        <div class="audit-meta">
+                          <span class="audit-meta-item">
+                            <span class="svg-icon">${icons.smartphone}</span>
+                            ${deviceInfo.device}
+                          </span>
+                          <span class="audit-meta-item">
+                            <span class="svg-icon">${icons.globe}</span>
+                            ${deviceInfo.browser} / ${deviceInfo.os}
+                          </span>
+                          ${log.ip_address ? `
+                            <span class="audit-meta-item">
+                              <span class="svg-icon">${icons.ip}</span>
+                              ${log.ip_address}
+                            </span>
+                          ` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 `;
               }).join('')}
-              ${auditLogs.length === 0 ? '<tr><td colspan="5" style="text-align: center; color: #666;">No audit logs recorded yet</td></tr>' : ''}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
 
-        <div class="footer">
-          <p>This document was generated automatically by TSCP Delivery Dispatch System.</p>
-          <p>All timestamps are in Eastern Standard Time (EST/EDT).</p>
+          <!-- Footer -->
+          <div class="footer">
+            <p>Generated: ${new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto' })} EST</p>
+            <p>TSCP Delivery Dispatch System • All timestamps in Eastern Time</p>
+          </div>
         </div>
       </body>
       </html>

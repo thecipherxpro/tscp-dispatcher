@@ -51,33 +51,27 @@ export function OrderDetailSheet({
           variant: 'secondary' as const,
           className: 'bg-amber-100 text-amber-800 border-amber-200'
         };
-      case 'CONFIRMED':
+      case 'PICKED_UP':
         return {
-          label: 'Confirmed',
+          label: 'Picked Up',
           variant: 'secondary' as const,
           className: 'bg-blue-100 text-blue-800 border-blue-200'
         };
-      case 'IN_ROUTE':
+      case 'SHIPPED':
         return {
-          label: 'In Route',
+          label: 'Shipped',
           variant: 'secondary' as const,
           className: 'bg-purple-100 text-purple-800 border-purple-200'
         };
-      case 'ARRIVED':
+      case 'DELIVERED':
         return {
-          label: 'Arrived',
-          variant: 'secondary' as const,
-          className: 'bg-indigo-100 text-indigo-800 border-indigo-200'
-        };
-      case 'COMPLETED':
-        return {
-          label: 'Completed',
+          label: 'Delivered',
           variant: 'secondary' as const,
           className: 'bg-emerald-100 text-emerald-800 border-emerald-200'
         };
-      case 'REQUEST_ADDRESS_REVIEW':
+      case 'DELIVERY_INCOMPLETE':
         return {
-          label: 'Address Review',
+          label: 'Incomplete',
           variant: 'destructive' as const,
           className: 'bg-red-100 text-red-800 border-red-200'
         };
@@ -377,14 +371,36 @@ export function OrderDetailSheet({
 
               {/* Delivery Status */}
               {order.delivery_status && <section>
-                  <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-900">
+                  <div className={`rounded-xl p-4 border ${
+                    order.timeline_status === 'DELIVERED' 
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900'
+                      : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
+                  }`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        order.timeline_status === 'DELIVERED'
+                          ? 'bg-emerald-100 dark:bg-emerald-900'
+                          : 'bg-red-100 dark:bg-red-900'
+                      }`}>
+                        <FileText className={`w-5 h-5 ${
+                          order.timeline_status === 'DELIVERED'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`} />
                       </div>
                       <div>
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Delivery Outcome</p>
-                        <p className="font-semibold text-emerald-900 dark:text-emerald-100">
+                        <p className={`text-xs font-medium ${
+                          order.timeline_status === 'DELIVERED'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          Delivery Outcome
+                        </p>
+                        <p className={`font-semibold ${
+                          order.timeline_status === 'DELIVERED'
+                            ? 'text-emerald-900 dark:text-emerald-100'
+                            : 'text-red-900 dark:text-red-100'
+                        }`}>
                           {order.delivery_status.replace(/_/g, ' ')}
                         </p>
                       </div>

@@ -17,33 +17,27 @@ const getStatusConfig = (status: string) => {
         variant: 'outline' as const,
         className: 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
       };
-    case 'CONFIRMED':
+    case 'PICKED_UP':
       return { 
-        label: 'Confirmed', 
+        label: 'Picked Up', 
         variant: 'outline' as const,
         className: 'border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400'
       };
-    case 'IN_ROUTE':
+    case 'SHIPPED':
       return { 
-        label: 'In Route', 
+        label: 'Shipped', 
         variant: 'outline' as const,
         className: 'border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-400'
       };
-    case 'ARRIVED':
+    case 'DELIVERED':
       return { 
-        label: 'Arrived', 
-        variant: 'outline' as const,
-        className: 'border-indigo-500/50 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-      };
-    case 'COMPLETED':
-      return { 
-        label: 'Completed', 
+        label: 'Delivered', 
         variant: 'outline' as const,
         className: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
       };
-    case 'REQUEST_ADDRESS_REVIEW':
+    case 'DELIVERY_INCOMPLETE':
       return { 
-        label: 'Address Review', 
+        label: 'Incomplete', 
         variant: 'outline' as const,
         className: 'border-destructive/50 bg-destructive/10 text-destructive'
       };

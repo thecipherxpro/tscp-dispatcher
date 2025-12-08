@@ -26,11 +26,10 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800';
-      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
-      case 'ARRIVED': return 'bg-indigo-100 text-indigo-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'REQUEST_ADDRESS_REVIEW': return 'bg-red-100 text-red-800';
+      case 'PICKED_UP': return 'bg-blue-100 text-blue-800';
+      case 'SHIPPED': return 'bg-purple-100 text-purple-800';
+      case 'DELIVERED': return 'bg-green-100 text-green-800';
+      case 'DELIVERY_INCOMPLETE': return 'bg-red-100 text-red-800';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -207,27 +206,23 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                       <span className="text-foreground">{formatDateTime(order.pending_at)}</span>
                     </div>
                   )}
-                  {order.confirmed_at && (
+                  {order.picked_up_at && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Confirmed</span>
-                      <span className="text-foreground">{formatDateTime(order.confirmed_at)}</span>
+                      <span className="text-muted-foreground">Picked Up</span>
+                      <span className="text-foreground">{formatDateTime(order.picked_up_at)}</span>
                     </div>
                   )}
-                  {order.in_route_at && (
+                  {order.shipped_at && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">In Route</span>
-                      <span className="text-foreground">{formatDateTime(order.in_route_at)}</span>
-                    </div>
-                  )}
-                  {order.arrived_at && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Arrived</span>
-                      <span className="text-foreground">{formatDateTime(order.arrived_at)}</span>
+                      <span className="text-muted-foreground">Shipped</span>
+                      <span className="text-foreground">{formatDateTime(order.shipped_at)}</span>
                     </div>
                   )}
                   {order.completed_at && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Completed</span>
+                      <span className="text-muted-foreground">
+                        {order.timeline_status === 'DELIVERED' ? 'Delivered' : 'Completed'}
+                      </span>
                       <span className="text-foreground">{formatDateTime(order.completed_at)}</span>
                     </div>
                   )}
@@ -237,10 +232,20 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
 
             {/* Delivery Status */}
             {order.delivery_status && (
-              <Card className="bg-green-50 border-green-200">
+              <Card className={
+                order.timeline_status === 'DELIVERED' 
+                  ? "bg-green-50 border-green-200" 
+                  : "bg-red-50 border-red-200"
+              }>
                 <CardContent className="p-4">
-                  <p className="text-xs text-green-600">Delivery Outcome</p>
-                  <p className="font-medium text-green-900">
+                  <p className={`text-xs ${
+                    order.timeline_status === 'DELIVERED' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    Delivery Outcome
+                  </p>
+                  <p className={`font-medium ${
+                    order.timeline_status === 'DELIVERED' ? 'text-green-900' : 'text-red-900'
+                  }`}>
                     {order.delivery_status.replace(/_/g, ' ')}
                   </p>
                 </CardContent>

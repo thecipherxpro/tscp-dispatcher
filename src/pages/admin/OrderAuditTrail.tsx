@@ -449,11 +449,10 @@ export default function OrderAuditTrail() {
     const getStatusBadgeClass = (status: string) => {
       switch (status) {
         case 'PENDING': return 'badge-amber';
-        case 'CONFIRMED': return 'badge-blue';
-        case 'IN_ROUTE': return 'badge-purple';
-        case 'ARRIVED': return 'badge-blue';
-        case 'COMPLETED': return 'badge-emerald';
-        case 'REQUEST_ADDRESS_REVIEW': return 'badge-red';
+        case 'PICKED_UP': return 'badge-blue';
+        case 'SHIPPED': return 'badge-purple';
+        case 'DELIVERED': return 'badge-emerald';
+        case 'DELIVERY_INCOMPLETE': return 'badge-red';
         default: return 'badge-outline';
       }
     };

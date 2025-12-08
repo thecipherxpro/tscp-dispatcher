@@ -109,16 +109,14 @@ export default function AdminTracking() {
     switch (status) {
       case 'PENDING':
         return { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200' };
-      case 'CONFIRMED':
-        return { label: 'Confirmed', className: 'bg-blue-100 text-blue-800 border-blue-200' };
-      case 'IN_ROUTE':
-        return { label: 'In Route', className: 'bg-purple-100 text-purple-800 border-purple-200' };
-      case 'ARRIVED':
-        return { label: 'Arrived', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
-      case 'COMPLETED':
-        return { label: 'Completed', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
-      case 'REQUEST_ADDRESS_REVIEW':
-        return { label: 'Address Review', className: 'bg-red-100 text-red-800 border-red-200' };
+      case 'PICKED_UP':
+        return { label: 'Picked Up', className: 'bg-blue-100 text-blue-800 border-blue-200' };
+      case 'SHIPPED':
+        return { label: 'Shipped', className: 'bg-purple-100 text-purple-800 border-purple-200' };
+      case 'DELIVERED':
+        return { label: 'Delivered', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      case 'DELIVERY_INCOMPLETE':
+        return { label: 'Incomplete', className: 'bg-red-100 text-red-800 border-red-200' };
       default:
         return { label: status, className: '' };
     }
@@ -279,7 +277,7 @@ export default function AdminTracking() {
               </div>
               <div className="bg-muted/30 rounded-xl p-4">
                 <div className="relative">
-                  {/* Timeline Line */}
+                {/* Timeline Line */}
                   <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-border" />
                   
                   {/* Pending */}
@@ -297,32 +295,32 @@ export default function AdminTracking() {
                     </div>
                   </div>
                   
-                  {/* Confirmed */}
+                  {/* Picked Up */}
                   <div className="relative flex items-start gap-3 pb-4">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.confirmed_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
+                      order.picked_up_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
                     }`}>
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <p className="text-sm font-medium text-foreground">Confirmed</p>
+                      <p className="text-sm font-medium text-foreground">Picked Up</p>
                       <p className="text-xs text-muted-foreground">
-                        {order.confirmed_at ? `Assigned ${formatDateTime(order.confirmed_at)}` : 'Not yet assigned'}
+                        {order.picked_up_at ? `Assigned ${formatDateTime(order.picked_up_at)}` : 'Not yet assigned'}
                       </p>
                     </div>
                   </div>
                   
-                  {/* In Route */}
+                  {/* Shipped */}
                   <div className="relative flex items-start gap-3 pb-4">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.in_route_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
+                      order.shipped_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
                     }`}>
                       <Navigation className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <p className="text-sm font-medium text-foreground">In Route</p>
+                      <p className="text-sm font-medium text-foreground">Shipped</p>
                       <p className="text-xs text-muted-foreground">
-                        {order.in_route_at ? formatDateTime(order.in_route_at) : 'Driver not started'}
+                        {order.shipped_at ? formatDateTime(order.shipped_at) : 'Driver not started'}
                       </p>
                     </div>
                   </div>
@@ -330,17 +328,27 @@ export default function AdminTracking() {
                   {/* Delivered */}
                   <div className="relative flex items-start gap-3">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.completed_at ? 'bg-emerald-100 text-emerald-600' : 'bg-muted text-muted-foreground'
+                      order.completed_at 
+                        ? order.timeline_status === 'DELIVERED' 
+                          ? 'bg-emerald-100 text-emerald-600' 
+                          : 'bg-red-100 text-red-600'
+                        : 'bg-muted text-muted-foreground'
                     }`}>
                       <Truck className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <p className="text-sm font-medium text-foreground">Delivered</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {order.timeline_status === 'DELIVERY_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}
+                      </p>
                       {order.completed_at ? (
                         <div>
                           <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
                           {order.delivery_status && (
-                            <Badge variant="secondary" className="mt-1 text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                            <Badge variant="secondary" className={`mt-1 text-[10px] ${
+                              order.timeline_status === 'DELIVERED' 
+                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                : 'bg-red-100 text-red-700 border-red-200'
+                            }`}>
                               {order.delivery_status.replace(/_/g, ' ')}
                             </Badge>
                           )}

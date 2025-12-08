@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, FileDown, Package, User, Calendar, Clock, MapPin, 
   Phone, Mail, Truck, CheckCircle2, CircleDot, Navigation, 
-  Building, AlertTriangle, Shield, Globe, Smartphone, FileText,
-  Eye, UserCheck, Database, Lock
+  Building, AlertTriangle, Shield, Globe, Smartphone,
+  UserCheck, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,17 +26,12 @@ interface AuditLog {
   user_agent: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
-  // PHIPA-compliant fields
-  phi_type: string | null;
-  phi_fields_accessed: string[] | null;
-  access_purpose: string | null;
   user_role: string | null;
   user_full_name: string | null;
-  client_identifier: string | null;
+  driver_id: string | null;
   session_id: string | null;
-  geolocation: string | null;
-  consent_verified: boolean | null;
   access_location: string | null;
+  consent_verified: boolean | null;
 }
 
 // Empty state component
@@ -688,58 +683,35 @@ export default function OrderAuditTrail() {
                       </div>
                     </div>
                     
-                    <!-- PHIPA Required Fields -->
+                    <!-- Audit Fields -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
                       <div>
                         <div class="field-label" style="display: flex; align-items: center; gap: 4px;">
                           ${icons.user}
                           Accessed By
                         </div>
-                        <div class="field-value">${log.user_full_name || 'Unknown User'}</div>
+                        <div class="field-value">${log.user_full_name || 'Unknown User'}${log.driver_id ? ` (${log.driver_id})` : ''}</div>
                         <div style="font-size: 10px; color: #9ca3af; text-transform: capitalize;">${log.user_role?.replace('_', ' ') || 'Unknown Role'}</div>
                       </div>
                       <div>
-                        <div class="field-label">Client (PHI Subject)</div>
-                        <div class="field-value">${log.client_identifier || 'Not recorded'}</div>
+                        <div class="field-label">Device Type</div>
+                        <div class="field-value">${log.access_location || deviceInfo.device}</div>
                       </div>
                       <div>
-                        <div class="field-label">PHI Type</div>
-                        <span class="badge badge-outline" style="text-transform: capitalize;">${log.phi_type?.replace('_', ' ') || 'Not specified'}</span>
+                        <div class="field-label">Browser</div>
+                        <div class="field-value">${deviceInfo.browser} / ${deviceInfo.os}</div>
                       </div>
                       <div>
-                        <div class="field-label">Access Purpose</div>
-                        <div class="field-value" style="text-transform: capitalize;">${log.access_purpose?.replace(/_/g, ' ') || 'Not specified'}</div>
+                        <div class="field-label">IP Address</div>
+                        <div class="field-value">${log.ip_address || 'Not recorded'}</div>
                       </div>
                     </div>
 
-                    ${log.phi_fields_accessed && log.phi_fields_accessed.length > 0 ? `
-                      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-                        <div class="field-label">PHI Fields Accessed</div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                          ${log.phi_fields_accessed.map(field => `<span class="badge badge-outline" style="font-size: 9px;">${field.replace(/_/g, ' ')}</span>`).join('')}
-                        </div>
-                      </div>
-                    ` : ''}
-
                     <div class="audit-meta" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                      <span class="audit-meta-item">
-                        <span class="svg-icon">${icons.smartphone}</span>
-                        ${log.access_location || deviceInfo.device}
-                      </span>
-                      <span class="audit-meta-item">
-                        <span class="svg-icon">${icons.globe}</span>
-                        ${deviceInfo.browser} / ${deviceInfo.os}
-                      </span>
                       ${log.session_id ? `
                         <span class="audit-meta-item">
                           <span class="svg-icon">${icons.shield}</span>
                           Session: ${log.session_id.slice(0, 12)}...
-                        </span>
-                      ` : ''}
-                      ${log.ip_address ? `
-                        <span class="audit-meta-item">
-                          <span class="svg-icon">${icons.ip}</span>
-                          IP: ${log.ip_address}
                         </span>
                       ` : ''}
                       ${log.consent_verified ? `
@@ -1127,86 +1099,56 @@ export default function OrderAuditTrail() {
                           </div>
                         </div>
 
-                        {/* PHIPA Required Fields */}
+                        {/* Audit Details */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
-                          {/* Person Accessing PHI */}
+                          {/* Accessed By with Driver ID */}
                           <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
                               <UserCheck className="w-3 h-3" />
                               Accessed By
                             </p>
-                            <p className="text-xs font-medium">{log.user_full_name || 'Unknown User'}</p>
+                            <p className="text-xs font-medium">
+                              {log.user_full_name || 'Unknown User'}
+                              {log.driver_id && <span className="text-primary ml-1">({log.driver_id})</span>}
+                            </p>
                             <p className="text-[10px] text-muted-foreground capitalize">{log.user_role?.replace('_', ' ') || 'Unknown Role'}</p>
                           </div>
 
-                          {/* Client Identifier */}
+                          {/* Device Type */}
                           <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
-                              <User className="w-3 h-3" />
-                              Client (PHI Subject)
+                              <Smartphone className="w-3 h-3" />
+                              Device Type
                             </p>
-                            <p className="text-xs font-medium">{log.client_identifier || 'Not recorded'}</p>
+                            <p className="text-xs font-medium">{log.access_location || deviceInfo.device}</p>
                           </div>
 
-                          {/* PHI Type */}
+                          {/* Browser Type */}
                           <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
-                              <Database className="w-3 h-3" />
-                              PHI Type
+                              <Globe className="w-3 h-3" />
+                              Browser
                             </p>
-                            <Badge variant="secondary" className="text-[9px] capitalize">
-                              {log.phi_type?.replace('_', ' ') || 'Not specified'}
-                            </Badge>
+                            <p className="text-xs font-medium">{deviceInfo.browser} / {deviceInfo.os}</p>
                           </div>
 
-                          {/* Access Purpose */}
+                          {/* IP Address */}
                           <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              Access Purpose
+                              <AlertTriangle className="w-3 h-3" />
+                              IP Address
                             </p>
-                            <p className="text-xs capitalize">{log.access_purpose?.replace(/_/g, ' ') || 'Not specified'}</p>
+                            <p className="text-xs font-medium">{log.ip_address || 'Not recorded'}</p>
                           </div>
                         </div>
 
-                        {/* PHI Fields Accessed */}
-                        {log.phi_fields_accessed && log.phi_fields_accessed.length > 0 && (
-                          <div className="pt-2 border-t border-border/50">
-                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1 mb-1">
-                              <Eye className="w-3 h-3" />
-                              PHI Fields Accessed
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {log.phi_fields_accessed.map((field, idx) => (
-                                <Badge key={idx} variant="outline" className="text-[9px]">
-                                  {field.replace(/_/g, ' ')}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Technical Details */}
+                        {/* Session & Consent Details */}
                         <div className="pt-2 border-t border-border/50">
                           <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
-                            <div className="flex items-center gap-1">
-                              <Smartphone className="w-3 h-3" />
-                              {log.access_location || deviceInfo.device}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Globe className="w-3 h-3" />
-                              {deviceInfo.browser} / {deviceInfo.os}
-                            </div>
                             {log.session_id && (
                               <div className="flex items-center gap-1">
                                 <Shield className="w-3 h-3" />
                                 Session: {log.session_id.slice(0, 12)}...
-                              </div>
-                            )}
-                            {log.ip_address && (
-                              <div className="flex items-center gap-1">
-                                <AlertTriangle className="w-3 h-3" />
-                                IP: {log.ip_address}
                               </div>
                             )}
                             {log.consent_verified && (

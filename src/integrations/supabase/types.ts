@@ -23,6 +23,7 @@ export type Database = {
           consent_verified: boolean | null
           created_at: string
           delivery_status: string | null
+          driver_id: string | null
           geolocation: string | null
           id: string
           ip_address: string | null
@@ -46,6 +47,7 @@ export type Database = {
           consent_verified?: boolean | null
           created_at?: string
           delivery_status?: string | null
+          driver_id?: string | null
           geolocation?: string | null
           id?: string
           ip_address?: string | null
@@ -69,6 +71,7 @@ export type Database = {
           consent_verified?: boolean | null
           created_at?: string
           delivery_status?: string | null
+          driver_id?: string | null
           geolocation?: string | null
           id?: string
           ip_address?: string | null
@@ -250,6 +253,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           dob: string | null
+          driver_id: string | null
           full_name: string | null
           id: string
           onboarding_status:
@@ -264,6 +268,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           dob?: string | null
+          driver_id?: string | null
           full_name?: string | null
           id: string
           onboarding_status?:
@@ -278,6 +283,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           dob?: string | null
+          driver_id?: string | null
           full_name?: string | null
           id?: string
           onboarding_status?:
@@ -417,6 +423,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_driver_id: { Args: never; Returns: string }
       generate_shipment_id: { Args: never; Returns: string }
       generate_tracking_id: { Args: never; Returns: string }
       get_client_initials: { Args: { full_name: string }; Returns: string }

@@ -1,0 +1,302 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Order } from '@/types/auth';
+import { Loader2, MapPin, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+interface DriverMapViewProps {
+  onOrderSelect?: (order: Order) => void;
+}
+
+export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const { user } = useAuth();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  // Fetch Mapbox token
+  const fetchMapboxToken = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      if (error) throw error;
+      return data.token;
+    } catch (err) {
+      console.error('Error fetching Mapbox token:', err);
+      throw new Error('Failed to load map configuration');
+    }
+  }, []);
+
+  // Fetch driver's orders
+  const fetchOrders = useCallback(async () => {
+    if (!user) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('assigned_driver_id', user.id)
+        .neq('timeline_status', 'COMPLETED')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Order[];
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      return [];
+    }
+  }, [user]);
+
+  // Geocode an address to coordinates
+  const geocodeAddress = async (order: Order, token: string): Promise<[number, number] | null> => {
+    const address = [
+      order.address_1,
+      order.city,
+      order.province,
+      order.postal,
+      order.country || 'Canada'
+    ].filter(Boolean).join(', ');
+
+    if (!address) return null;
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        return data.features[0].center as [number, number];
+      }
+      return null;
+    } catch (err) {
+      console.error('Geocoding error:', err);
+      return null;
+    }
+  };
+
+  // Get user's current location
+  const getUserLocation = useCallback((): Promise<[number, number] | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve([position.coords.longitude, position.coords.latitude]);
+        },
+        () => {
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }, []);
+
+  // Get status color for markers
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case 'CONFIRMED': return '#3b82f6'; // blue
+      case 'IN_ROUTE': return '#f59e0b'; // amber
+      case 'ARRIVED': return '#22c55e'; // green
+      default: return '#6b7280'; // gray
+    }
+  };
+
+  // Initialize map
+  useEffect(() => {
+    const initMap = async () => {
+      if (!mapContainer.current) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const token = await fetchMapboxToken();
+        mapboxgl.accessToken = token;
+
+        const fetchedOrders = await fetchOrders();
+        setOrders(fetchedOrders);
+
+        const location = await getUserLocation();
+        setUserLocation(location);
+
+        // Default to Toronto if no location
+        const center = location || [-79.3832, 43.6532];
+
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: center,
+          zoom: 12,
+        });
+
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.current.addControl(
+          new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true
+          }),
+          'top-right'
+        );
+
+        // Wait for map to load
+        map.current.on('load', async () => {
+          // Add order markers
+          for (const order of fetchedOrders) {
+            const coords = await geocodeAddress(order, token);
+            if (coords) {
+              const el = document.createElement('div');
+              el.className = 'order-marker';
+              el.style.cssText = `
+                width: 32px;
+                height: 32px;
+                background-color: ${getStatusColor(order.timeline_status)};
+                border: 3px solid white;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              `;
+              el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
+
+              const marker = new mapboxgl.Marker(el)
+                .setLngLat(coords)
+                .addTo(map.current!);
+
+              el.addEventListener('click', () => {
+                setSelectedOrder(order);
+              });
+
+              markersRef.current.push(marker);
+            }
+          }
+
+          setIsLoading(false);
+        });
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load map');
+        setIsLoading(false);
+      }
+    };
+
+    initMap();
+
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      map.current?.remove();
+    };
+  }, [fetchMapboxToken, fetchOrders, getUserLocation]);
+
+  const handleNavigate = (order: Order) => {
+    const address = [
+      order.address_1,
+      order.city,
+      order.province,
+      order.postal
+    ].filter(Boolean).join(', ');
+    
+    // Open in Google Maps for navigation
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">Map Error</h3>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-full w-full">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Loading map...</span>
+          </div>
+        </div>
+      )}
+
+      <div ref={mapContainer} className="absolute inset-0" />
+
+      {/* Order count badge */}
+      <div className="absolute top-4 left-4 z-10">
+        <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-md">
+          <MapPin className="w-3 h-3 mr-1" />
+          {orders.length} {orders.length === 1 ? 'delivery' : 'deliveries'}
+        </Badge>
+      </div>
+
+      {/* Selected order card */}
+      {selectedOrder && (
+        <div className="absolute bottom-4 left-4 right-4 z-10">
+          <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h4 className="font-semibold text-foreground">{selectedOrder.name || 'Unknown Client'}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedOrder.address_1}, {selectedOrder.city}
+                  </p>
+                </div>
+                <Badge 
+                  variant="secondary"
+                  className={
+                    selectedOrder.timeline_status === 'IN_ROUTE' ? 'bg-amber-100 text-amber-800' :
+                    selectedOrder.timeline_status === 'ARRIVED' ? 'bg-green-100 text-green-800' :
+                    'bg-blue-100 text-blue-800'
+                  }
+                >
+                  {selectedOrder.timeline_status?.replace('_', ' ') || 'Pending'}
+                </Badge>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => handleNavigate(selectedOrder)}
+                >
+                  Navigate
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => {
+                    onOrderSelect?.(selectedOrder);
+                    setSelectedOrder(null);
+                  }}
+                >
+                  View Details
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -97,22 +97,37 @@ export default function AdminTracking() {
           label: 'Pending',
           className: 'bg-amber-100 text-amber-800 border-amber-200'
         };
-      case 'PICKED_UP':
+      case 'PICKED_UP_AND_ASSIGNED':
         return {
-          label: 'Picked Up',
+          label: 'Assigned',
           className: 'bg-blue-100 text-blue-800 border-blue-200'
         };
-      case 'SHIPPED':
+      case 'REVIEW_REQUESTED':
         return {
-          label: 'Shipped',
+          label: 'Review Requested',
+          className: 'bg-amber-100 text-amber-800 border-amber-200'
+        };
+      case 'CONFIRMED':
+        return {
+          label: 'Confirmed',
+          className: 'bg-indigo-100 text-indigo-800 border-indigo-200'
+        };
+      case 'IN_ROUTE':
+        return {
+          label: 'In Route',
           className: 'bg-purple-100 text-purple-800 border-purple-200'
         };
-      case 'DELIVERED':
+      case 'ARRIVED':
+        return {
+          label: 'Arrived',
+          className: 'bg-cyan-100 text-cyan-800 border-cyan-200'
+        };
+      case 'COMPLETED_DELIVERED':
         return {
           label: 'Delivered',
           className: 'bg-emerald-100 text-emerald-800 border-emerald-200'
         };
-      case 'DELIVERY_INCOMPLETE':
+      case 'COMPLETED_INCOMPLETE':
         return {
           label: 'Incomplete',
           className: 'bg-red-100 text-red-800 border-red-200'
@@ -307,16 +322,16 @@ export default function AdminTracking() {
                   
                   {/* Delivered */}
                   <div className="relative flex items-start gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.completed_at ? order.timeline_status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600' : 'bg-muted text-muted-foreground'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.completed_at ? order.timeline_status === 'COMPLETED_DELIVERED' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600' : 'bg-muted text-muted-foreground'}`}>
                       <Truck className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
                       <p className="text-sm font-medium text-foreground">
-                        {order.timeline_status === 'DELIVERY_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}
+                        {order.timeline_status === 'COMPLETED_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}
                       </p>
                       {order.completed_at ? <div>
                           <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
-                          {order.delivery_status && <Badge variant="secondary" className={`mt-1 text-[10px] ${order.timeline_status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
+                          {order.delivery_status && <Badge variant="secondary" className={`mt-1 text-[10px] ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
                               {order.delivery_status.replace(/_/g, ' ')}
                             </Badge>}
                         </div> : <p className="text-xs text-muted-foreground">Awaiting delivery</p>}

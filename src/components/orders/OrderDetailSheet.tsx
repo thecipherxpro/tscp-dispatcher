@@ -199,12 +199,36 @@ export function OrderDetailSheet({
                   <MapPin className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Delivery Address</h3>
                 </div>
-                <div className="bg-muted/30 rounded-xl p-4">
-                  <div className="text-sm text-foreground space-y-0.5">
-                    <p className="font-medium">{order.address_1}</p>
-                    {order.address_2 && <p className="text-muted-foreground">{order.address_2}</p>}
-                    <p>{order.city}, {order.province} {order.postal}</p>
-                    <p className="text-muted-foreground">{order.country || 'Canada'}</p>
+                <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                  {/* Street Address */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Street</p>
+                    <p className="text-sm font-medium text-foreground">{order.address_1}</p>
+                    {order.address_2 && (
+                      <p className="text-sm text-muted-foreground mt-0.5">{order.address_2}</p>
+                    )}
+                  </div>
+                  
+                  {/* City, Province, Postal */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">City</p>
+                      <p className="text-sm font-medium text-foreground">{order.city}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Province</p>
+                      <p className="text-sm font-medium text-foreground">{order.province}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Postal</p>
+                      <p className="text-sm font-medium text-foreground">{order.postal}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Country */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Country</p>
+                    <p className="text-sm font-medium text-foreground">{order.country || 'Canada'}</p>
                   </div>
                 </div>
               </section>

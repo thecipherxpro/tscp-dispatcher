@@ -62,7 +62,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         .from('orders')
         .select('*')
         .eq('assigned_driver_id', user.id)
-        .neq('timeline_status', 'COMPLETED')
+        .not('timeline_status', 'in', '("DELIVERED","DELIVERY_INCOMPLETE")')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -124,9 +124,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   // Get status color for markers
   const getStatusColor = (status: string | null) => {
     switch (status) {
-      case 'CONFIRMED': return '#3b82f6'; // blue
-      case 'IN_ROUTE': return '#f59e0b'; // amber
-      case 'ARRIVED': return '#22c55e'; // green
+      case 'PICKED_UP': return '#3b82f6'; // blue
+      case 'SHIPPED': return '#f59e0b'; // amber
+      case 'DELIVERED': return '#22c55e'; // green
+      case 'DELIVERY_INCOMPLETE': return '#ef4444'; // red
       default: return '#6b7280'; // gray
     }
   };
@@ -464,8 +465,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                 <Badge 
                   variant="secondary"
                   className={
-                    selectedOrder.timeline_status === 'IN_ROUTE' ? 'bg-amber-100 text-amber-800' :
-                    selectedOrder.timeline_status === 'ARRIVED' ? 'bg-green-100 text-green-800' :
+                    selectedOrder.timeline_status === 'SHIPPED' ? 'bg-amber-100 text-amber-800' :
+                    selectedOrder.timeline_status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                    selectedOrder.timeline_status === 'DELIVERY_INCOMPLETE' ? 'bg-red-100 text-red-800' :
                     'bg-blue-100 text-blue-800'
                   }
                 >

@@ -124,7 +124,7 @@ export async function assignDriverToOrder(
 
     const now = new Date().toISOString();
 
-    // Update order
+    // Update order - assignment sets status to PICKED_UP
     const { error: orderError } = await supabase
       .from('orders')
       .update({
@@ -132,8 +132,8 @@ export async function assignDriverToOrder(
         shipment_id: shipmentId,
         tracking_id: trackingId,
         tracking_url: trackingUrl,
-        timeline_status: 'CONFIRMED',
-        confirmed_at: now,
+        timeline_status: 'PICKED_UP',
+        picked_up_at: now,
       })
       .eq('id', orderId);
 
@@ -157,9 +157,9 @@ export async function assignDriverToOrder(
         province: orderData.province,
         postal_code: orderData.postal,
         country: orderData.country || 'Canada',
-        timeline_status: 'CONFIRMED',
+        timeline_status: 'PICKED_UP',
         pending_at: orderData.pending_at,
-        confirmed_at: now,
+        picked_up_at: now,
       }, {
         onConflict: 'tracking_id'
       });
@@ -195,16 +195,19 @@ export async function updateOrderStatus(
     const previousStatus = currentOrder?.timeline_status;
     const now = new Date().toISOString();
     
+    // Map internal status updates to timeline fields
     const timestampField: Record<string, string> = {
-      'IN_ROUTE': 'in_route_at',
-      'ARRIVED': 'arrived_at',
-      'COMPLETED': 'completed_at',
-      'REQUEST_ADDRESS_REVIEW': 'address_review_requested_at',
+      'ORDER_CONFIRMED': 'confirmed_at',
+      'ORDER_SHIPPED': 'shipped_at',
+      'ORDER_ARRIVED': 'arrived_at',
+      'DELIVERED': 'completed_at',
+      'DELIVERY_INCOMPLETE': 'completed_at',
+      'REVIEW_REQUESTED': 'review_requested_at',
     };
 
     const updateData: Record<string, unknown> = {
       timeline_status: newStatus,
-      [timestampField[newStatus]]: now,
+      [timestampField[newStatus] || 'updated_at']: now,
     };
 
     if (deliveryStatus) {
@@ -233,12 +236,28 @@ export async function updateOrderStatus(
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData?.session?.user?.id;
 
+    // Determine the internal audit action based on status
+    let auditAction = 'STATUS_CHANGE';
+    if (newStatus === 'DELIVERED') {
+      auditAction = 'DELIVERY_COMPLETED_SUCCESS';
+    } else if (newStatus === 'DELIVERY_INCOMPLETE') {
+      auditAction = 'DELIVERY_COMPLETED_INCOMPLETE';
+    } else if (newStatus === 'SHIPPED') {
+      auditAction = 'ORDER_SHIPPED';
+    } else if (newStatus === 'PICKED_UP' && previousStatus === 'PICKED_UP') {
+      auditAction = 'ORDER_CONFIRMED';
+    } else if (deliveryStatus) {
+      auditAction = deliveryStatus.includes('SUCCESSFULLY') || deliveryStatus.includes('PACKAGE_DELIVERED') 
+        ? 'DELIVERY_COMPLETED_SUCCESS' 
+        : 'DELIVERY_COMPLETED_INCOMPLETE';
+    }
+
     await supabase
       .from('order_audit_logs')
       .insert([{
         order_id: orderId,
         user_id: userId,
-        action: deliveryStatus ? 'DELIVERY_COMPLETED' : 'STATUS_CHANGE',
+        action: auditAction,
         previous_status: previousStatus,
         new_status: newStatus,
         delivery_status: deliveryStatus,

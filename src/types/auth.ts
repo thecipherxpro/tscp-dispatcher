@@ -4,11 +4,21 @@ export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
 
 export type TimelineStatus = 
   | 'PENDING'
-  | 'CONFIRMED'
-  | 'IN_ROUTE'
-  | 'ARRIVED'
-  | 'REQUEST_ADDRESS_REVIEW'
-  | 'COMPLETED';
+  | 'PICKED_UP'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'DELIVERY_INCOMPLETE';
+
+// Internal audit events for detailed tracking
+export type InternalAuditEvent = 
+  | 'ORDER_IMPORTED'
+  | 'ORDER_ASSIGNED'
+  | 'REVIEW_REQUESTED'
+  | 'ORDER_CONFIRMED'
+  | 'ORDER_SHIPPED'
+  | 'ORDER_ARRIVED'
+  | 'DELIVERY_COMPLETED_SUCCESS'
+  | 'DELIVERY_COMPLETED_INCOMPLETE';
 
 export type DeliveryStatus = 
   | 'SUCCESSFULLY_DELIVERED'
@@ -76,10 +86,13 @@ export interface Order {
   timeline_status: TimelineStatus;
   delivery_status: DeliveryStatus | null;
   pending_at: string | null;
+  picked_up_at: string | null;
   confirmed_at: string | null;
+  shipped_at: string | null;
   in_route_at: string | null;
   arrived_at: string | null;
   completed_at: string | null;
+  review_requested_at: string | null;
   address_review_requested_at: string | null;
   created_at: string;
   updated_at: string;
@@ -104,10 +117,13 @@ export interface PublicTracking {
   timeline_status: TimelineStatus;
   delivery_status: DeliveryStatus | null;
   pending_at: string | null;
+  picked_up_at: string | null;
   confirmed_at: string | null;
+  shipped_at: string | null;
   in_route_at: string | null;
   arrived_at: string | null;
   completed_at: string | null;
+  review_requested_at: string | null;
   address_review_requested_at: string | null;
   created_at: string;
   updated_at: string;

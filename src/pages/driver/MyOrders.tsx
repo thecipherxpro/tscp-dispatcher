@@ -90,7 +90,7 @@ export default function MyOrders() {
 
   const getActionButton = (order: Order) => {
     switch (order.timeline_status) {
-      case 'CONFIRMED':
+      case 'PICKED_UP':
         return (
           <Button
             size="sm"
@@ -101,24 +101,10 @@ export default function MyOrders() {
             }}
           >
             <Navigation className="w-4 h-4 mr-1" />
-            Start Route
+            Confirm & Start Route
           </Button>
         );
-      case 'IN_ROUTE':
-        return (
-          <Button
-            size="sm"
-            className="w-full mt-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedOrder(order);
-            }}
-          >
-            <MapPin className="w-4 h-4 mr-1" />
-            Mark Arrived
-          </Button>
-        );
-      case 'ARRIVED':
+      case 'SHIPPED':
         return (
           <Button
             size="sm"
@@ -129,7 +115,7 @@ export default function MyOrders() {
             }}
           >
             <CheckCircle className="w-4 h-4 mr-1" />
-            Complete
+            Complete Delivery
           </Button>
         );
       default:
@@ -137,8 +123,8 @@ export default function MyOrders() {
     }
   };
 
-  const activeOrders = orders.filter(o => o.timeline_status !== 'COMPLETED');
-  const completedOrders = orders.filter(o => o.timeline_status === 'COMPLETED');
+  const activeOrders = orders.filter(o => o.timeline_status !== 'DELIVERED' && o.timeline_status !== 'DELIVERY_INCOMPLETE');
+  const completedOrders = orders.filter(o => o.timeline_status === 'DELIVERED' || o.timeline_status === 'DELIVERY_INCOMPLETE');
 
   return (
     <AppLayout title="My Orders" showBackButton>

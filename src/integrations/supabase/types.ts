@@ -128,12 +128,15 @@ export type Database = {
           pending_at: string | null
           pharmacy_name: string | null
           phone_number: string | null
+          picked_up_at: string | null
           postal: string | null
           province: string | null
           province_1: string | null
+          review_requested_at: string | null
           ship_date: string | null
           shipment_id: string | null
           shipment_id_import: string | null
+          shipped_at: string | null
           timeline_status: Database["public"]["Enums"]["timeline_status"] | null
           tracking_id: string | null
           tracking_url: string | null
@@ -173,12 +176,15 @@ export type Database = {
           pending_at?: string | null
           pharmacy_name?: string | null
           phone_number?: string | null
+          picked_up_at?: string | null
           postal?: string | null
           province?: string | null
           province_1?: string | null
+          review_requested_at?: string | null
           ship_date?: string | null
           shipment_id?: string | null
           shipment_id_import?: string | null
+          shipped_at?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
@@ -220,12 +226,15 @@ export type Database = {
           pending_at?: string | null
           pharmacy_name?: string | null
           phone_number?: string | null
+          picked_up_at?: string | null
           postal?: string | null
           province?: string | null
           province_1?: string | null
+          review_requested_at?: string | null
           ship_date?: string | null
           shipment_id?: string | null
           shipment_id_import?: string | null
+          shipped_at?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
@@ -313,9 +322,12 @@ export type Database = {
           nasal_rx: string | null
           order_id: string | null
           pending_at: string | null
+          picked_up_at: string | null
           postal_code: string | null
           province: string | null
+          review_requested_at: string | null
           shipment_id: string | null
+          shipped_at: string | null
           timeline_status: Database["public"]["Enums"]["timeline_status"] | null
           tracking_id: string
           tracking_url: string | null
@@ -342,9 +354,12 @@ export type Database = {
           nasal_rx?: string | null
           order_id?: string | null
           pending_at?: string | null
+          picked_up_at?: string | null
           postal_code?: string | null
           province?: string | null
+          review_requested_at?: string | null
           shipment_id?: string | null
+          shipped_at?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
@@ -373,9 +388,12 @@ export type Database = {
           nasal_rx?: string | null
           order_id?: string | null
           pending_at?: string | null
+          picked_up_at?: string | null
           postal_code?: string | null
           province?: string | null
+          review_requested_at?: string | null
           shipment_id?: string | null
+          shipped_at?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
@@ -450,11 +468,10 @@ export type Database = {
       onboarding_status: "not_started" | "in_progress" | "completed"
       timeline_status:
         | "PENDING"
-        | "CONFIRMED"
-        | "IN_ROUTE"
-        | "ARRIVED"
-        | "REQUEST_ADDRESS_REVIEW"
-        | "COMPLETED"
+        | "PICKED_UP"
+        | "SHIPPED"
+        | "DELIVERED"
+        | "DELIVERY_INCOMPLETE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -597,11 +614,10 @@ export const Constants = {
       onboarding_status: ["not_started", "in_progress", "completed"],
       timeline_status: [
         "PENDING",
-        "CONFIRMED",
-        "IN_ROUTE",
-        "ARRIVED",
-        "REQUEST_ADDRESS_REVIEW",
-        "COMPLETED",
+        "PICKED_UP",
+        "SHIPPED",
+        "DELIVERED",
+        "DELIVERY_INCOMPLETE",
       ],
     },
   },

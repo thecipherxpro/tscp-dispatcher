@@ -331,11 +331,11 @@ export default function OrderAuditTrail() {
         .user-detail { font-size: 12px; color: #6b7280; }
         
         /* Timeline */
-        .timeline { position: relative; padding-left: 24px; }
+        .timeline { position: relative; padding-left: 36px; }
         .timeline::before { 
           content: ''; 
           position: absolute; 
-          left: 11px; 
+          left: 12px; 
           top: 24px; 
           bottom: 24px; 
           width: 2px; 
@@ -356,9 +356,9 @@ export default function OrderAuditTrail() {
           display: flex; 
           align-items: center; 
           justify-content: center;
-          position: relative;
+          position: absolute;
+          left: -36px;
           z-index: 1;
-          margin-left: -12px;
         }
         .timeline-dot svg { width: 14px; height: 14px; }
         .timeline-dot-amber { background: #fef3c7; color: #d97706; }

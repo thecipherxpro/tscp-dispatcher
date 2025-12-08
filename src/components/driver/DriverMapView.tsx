@@ -181,9 +181,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
               'line-cap': 'round'
             },
             paint: {
-              'line-color': '#3b82f6',
+              'line-color': '#f97316',
               'line-width': 5,
-              'line-opacity': 0.75
+              'line-opacity': 0.85
             }
           });
           routeLayerAdded.current = true;
@@ -282,9 +282,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
               const el = document.createElement('div');
               el.className = 'order-marker';
               el.style.cssText = `
-                width: 32px;
-                height: 32px;
-                background-color: ${getStatusColor(order.timeline_status)};
+                width: 36px;
+                height: 36px;
+                background-color: #000000;
                 border: 3px solid white;
                 border-radius: 50%;
                 cursor: pointer;
@@ -293,7 +293,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                 justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
               `;
-              el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
+              el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
 
               const marker = new mapboxgl.Marker(el)
                 .setLngLat(coords)

@@ -117,11 +117,6 @@ export default function AdminTracking() {
           label: 'In Route',
           className: 'bg-purple-100 text-purple-800 border-purple-200'
         };
-      case 'ARRIVED':
-        return {
-          label: 'Arrived',
-          className: 'bg-cyan-100 text-cyan-800 border-cyan-200'
-        };
       case 'COMPLETED_DELIVERED':
         return {
           label: 'Delivered',

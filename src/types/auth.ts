@@ -9,7 +9,6 @@ export type TimelineStatus =
   | 'REVIEW_REQUESTED'
   | 'CONFIRMED'
   | 'IN_ROUTE'
-  | 'ARRIVED'
   | 'COMPLETED_DELIVERED'
   | 'COMPLETED_INCOMPLETE';
 
@@ -20,7 +19,6 @@ export type InternalAuditEvent =
   | 'REVIEW_REQUESTED'
   | 'ORDER_CONFIRMED'
   | 'ORDER_SHIPPED'
-  | 'ORDER_ARRIVED'
   | 'DELIVERY_COMPLETED_SUCCESS'
   | 'DELIVERY_COMPLETED_INCOMPLETE';
 

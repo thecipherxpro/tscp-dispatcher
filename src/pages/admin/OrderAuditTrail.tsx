@@ -138,8 +138,6 @@ export default function OrderAuditTrail() {
         return { label: 'Confirmed', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
       case 'IN_ROUTE':
         return { label: 'In Route', className: 'bg-purple-100 text-purple-800 border-purple-200' };
-      case 'ARRIVED':
-        return { label: 'Arrived', className: 'bg-cyan-100 text-cyan-800 border-cyan-200' };
       case 'COMPLETED_DELIVERED':
         return { label: 'Delivered', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
       case 'COMPLETED_INCOMPLETE':
@@ -159,8 +157,6 @@ export default function OrderAuditTrail() {
         return <CheckCircle2 className="w-4 h-4" />;
       case 'ORDER_SHIPPED':
         return <Truck className="w-4 h-4" />;
-      case 'ORDER_ARRIVED':
-        return <MapPin className="w-4 h-4" />;
       case 'REVIEW_REQUESTED':
         return <AlertTriangle className="w-4 h-4" />;
       case 'DELIVERY_COMPLETED_SUCCESS':
@@ -459,7 +455,6 @@ export default function OrderAuditTrail() {
         case 'REVIEW_REQUESTED': return 'badge-amber';
         case 'CONFIRMED': return 'badge-indigo';
         case 'IN_ROUTE': return 'badge-purple';
-        case 'ARRIVED': return 'badge-cyan';
         case 'COMPLETED_DELIVERED': return 'badge-emerald';
         case 'COMPLETED_INCOMPLETE': return 'badge-red';
         default: return 'badge-outline';

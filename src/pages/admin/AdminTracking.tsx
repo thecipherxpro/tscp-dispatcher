@@ -188,6 +188,9 @@ export default function AdminTracking() {
           <div className="flex-1">
             <h1 className="text-lg font-semibold">Order Details</h1>
           </div>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/audit/${orderId}`)}>
+            Audit Trail
+          </Button>
           <Badge className={statusConfig.className}>
             {statusConfig.label}
           </Badge>

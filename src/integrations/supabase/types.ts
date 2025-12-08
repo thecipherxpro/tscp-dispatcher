@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      order_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          delivery_status: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_status: string | null
+          order_id: string
+          previous_status: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          delivery_status?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_status?: string | null
+          order_id: string
+          previous_status?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          delivery_status?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_status?: string | null
+          order_id?: string
+          previous_status?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_audit_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address_1: string | null

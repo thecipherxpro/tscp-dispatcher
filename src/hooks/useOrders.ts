@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, Profile } from '@/types/auth';
+import { Json } from '@/integrations/supabase/types';
 
 export function useOrders(enableRealtime = true) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -179,6 +180,14 @@ export async function updateOrderStatus(
   deliveryStatus?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // First get the current order status for audit logging
+    const { data: currentOrder } = await supabase
+      .from('orders')
+      .select('timeline_status')
+      .eq('id', orderId)
+      .maybeSingle();
+
+    const previousStatus = currentOrder?.timeline_status;
     const now = new Date().toISOString();
     
     const timestampField: Record<string, string> = {
@@ -214,6 +223,23 @@ export async function updateOrderStatus(
 
       if (trackingError) throw trackingError;
     }
+
+    // Create audit log entry
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+
+    await supabase
+      .from('order_audit_logs')
+      .insert([{
+        order_id: orderId,
+        user_id: userId,
+        action: deliveryStatus ? 'DELIVERY_COMPLETED' : 'STATUS_CHANGE',
+        previous_status: previousStatus,
+        new_status: newStatus,
+        delivery_status: deliveryStatus,
+        user_agent: navigator.userAgent,
+        metadata: { trackingId } as Json
+      }]);
 
     return { success: true };
   } catch (error) {

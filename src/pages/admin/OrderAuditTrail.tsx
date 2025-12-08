@@ -336,8 +336,8 @@ export default function OrderAuditTrail() {
           content: ''; 
           position: absolute; 
           left: 11px; 
-          top: 12px; 
-          bottom: 12px; 
+          top: 24px; 
+          bottom: 24px; 
           width: 2px; 
           background: #e5e7eb;
         }

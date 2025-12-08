@@ -124,10 +124,12 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   // Get status color for markers
   const getStatusColor = (status: string | null) => {
     switch (status) {
-      case 'PICKED_UP': return '#3b82f6'; // blue
-      case 'SHIPPED': return '#f59e0b'; // amber
-      case 'DELIVERED': return '#22c55e'; // green
-      case 'DELIVERY_INCOMPLETE': return '#ef4444'; // red
+      case 'PICKED_UP_AND_ASSIGNED': return '#3b82f6'; // blue
+      case 'CONFIRMED': return '#6366f1'; // indigo
+      case 'IN_ROUTE': return '#f59e0b'; // amber
+      case 'ARRIVED': return '#06b6d4'; // cyan
+      case 'COMPLETED_DELIVERED': return '#22c55e'; // green
+      case 'COMPLETED_INCOMPLETE': return '#ef4444'; // red
       default: return '#6b7280'; // gray
     }
   };
@@ -465,13 +467,15 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                 <Badge 
                   variant="secondary"
                   className={
-                    selectedOrder.timeline_status === 'SHIPPED' ? 'bg-amber-100 text-amber-800' :
-                    selectedOrder.timeline_status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                    selectedOrder.timeline_status === 'DELIVERY_INCOMPLETE' ? 'bg-red-100 text-red-800' :
+                    selectedOrder.timeline_status === 'IN_ROUTE' ? 'bg-amber-100 text-amber-800' :
+                    selectedOrder.timeline_status === 'ARRIVED' ? 'bg-cyan-100 text-cyan-800' :
+                    selectedOrder.timeline_status === 'COMPLETED_DELIVERED' ? 'bg-green-100 text-green-800' :
+                    selectedOrder.timeline_status === 'COMPLETED_INCOMPLETE' ? 'bg-red-100 text-red-800' :
+                    selectedOrder.timeline_status === 'CONFIRMED' ? 'bg-indigo-100 text-indigo-800' :
                     'bg-blue-100 text-blue-800'
                   }
                 >
-                  {selectedOrder.timeline_status?.replace('_', ' ') || 'Pending'}
+                  {selectedOrder.timeline_status?.replace(/_/g, ' ') || 'Pending'}
                 </Badge>
               </div>
               

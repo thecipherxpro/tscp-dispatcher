@@ -71,25 +71,43 @@ export function OrderDetailSheet({
           variant: 'secondary' as const,
           className: 'bg-amber-100 text-amber-800 border-amber-200'
         };
-      case 'PICKED_UP':
+      case 'PICKED_UP_AND_ASSIGNED':
         return {
-          label: 'Picked Up',
+          label: 'Assigned',
           variant: 'secondary' as const,
           className: 'bg-blue-100 text-blue-800 border-blue-200'
         };
-      case 'SHIPPED':
+      case 'REVIEW_REQUESTED':
         return {
-          label: 'Shipped',
+          label: 'Review Requested',
+          variant: 'secondary' as const,
+          className: 'bg-amber-100 text-amber-800 border-amber-200'
+        };
+      case 'CONFIRMED':
+        return {
+          label: 'Confirmed',
+          variant: 'secondary' as const,
+          className: 'bg-indigo-100 text-indigo-800 border-indigo-200'
+        };
+      case 'IN_ROUTE':
+        return {
+          label: 'In Route',
           variant: 'secondary' as const,
           className: 'bg-purple-100 text-purple-800 border-purple-200'
         };
-      case 'DELIVERED':
+      case 'ARRIVED':
+        return {
+          label: 'Arrived',
+          variant: 'secondary' as const,
+          className: 'bg-cyan-100 text-cyan-800 border-cyan-200'
+        };
+      case 'COMPLETED_DELIVERED':
         return {
           label: 'Delivered',
           variant: 'secondary' as const,
           className: 'bg-emerald-100 text-emerald-800 border-emerald-200'
         };
-      case 'DELIVERY_INCOMPLETE':
+      case 'COMPLETED_INCOMPLETE':
         return {
           label: 'Incomplete',
           variant: 'destructive' as const,
@@ -422,32 +440,32 @@ export function OrderDetailSheet({
 
               {order.delivery_status && <section>
                   <div className={`rounded-xl p-4 border ${
-                    order.timeline_status === 'DELIVERED' 
+                    order.timeline_status === 'COMPLETED_DELIVERED' 
                       ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900'
                       : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
                   }`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        order.timeline_status === 'DELIVERED'
+                        order.timeline_status === 'COMPLETED_DELIVERED'
                           ? 'bg-emerald-100 dark:bg-emerald-900'
                           : 'bg-red-100 dark:bg-red-900'
                       }`}>
                         <FileText className={`w-5 h-5 ${
-                          order.timeline_status === 'DELIVERED'
+                          order.timeline_status === 'COMPLETED_DELIVERED'
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-red-600 dark:text-red-400'
                         }`} />
                       </div>
                       <div>
                         <p className={`text-xs font-medium ${
-                          order.timeline_status === 'DELIVERED'
+                          order.timeline_status === 'COMPLETED_DELIVERED'
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-red-600 dark:text-red-400'
                         }`}>
                           Delivery Outcome
                         </p>
                         <p className={`font-semibold ${
-                          order.timeline_status === 'DELIVERED'
+                          order.timeline_status === 'COMPLETED_DELIVERED'
                             ? 'text-emerald-900 dark:text-emerald-100'
                             : 'text-red-900 dark:text-red-100'
                         }`}>

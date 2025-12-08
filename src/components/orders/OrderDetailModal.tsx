@@ -45,10 +45,13 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'PICKED_UP': return 'bg-blue-100 text-blue-800';
-      case 'SHIPPED': return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
-      case 'DELIVERY_INCOMPLETE': return 'bg-red-100 text-red-800';
+      case 'PICKED_UP_AND_ASSIGNED': return 'bg-blue-100 text-blue-800';
+      case 'REVIEW_REQUESTED': return 'bg-amber-100 text-amber-800';
+      case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800';
+      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
+      case 'ARRIVED': return 'bg-cyan-100 text-cyan-800';
+      case 'COMPLETED_DELIVERED': return 'bg-green-100 text-green-800';
+      case 'COMPLETED_INCOMPLETE': return 'bg-red-100 text-red-800';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -240,7 +243,7 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                   {order.completed_at && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {order.timeline_status === 'DELIVERED' ? 'Delivered' : 'Completed'}
+                        {order.timeline_status === 'COMPLETED_DELIVERED' ? 'Delivered' : 'Completed'}
                       </span>
                       <span className="text-foreground">{formatDateTime(order.completed_at)}</span>
                     </div>
@@ -279,18 +282,18 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
             {/* Delivery Status */}
             {order.delivery_status && (
               <Card className={
-                order.timeline_status === 'DELIVERED' 
+                order.timeline_status === 'COMPLETED_DELIVERED' 
                   ? "bg-green-50 border-green-200" 
                   : "bg-red-50 border-red-200"
               }>
                 <CardContent className="p-4">
                   <p className={`text-xs ${
-                    order.timeline_status === 'DELIVERED' ? 'text-green-600' : 'text-red-600'
+                    order.timeline_status === 'COMPLETED_DELIVERED' ? 'text-green-600' : 'text-red-600'
                   }`}>
                     Delivery Outcome
                   </p>
                   <p className={`font-medium ${
-                    order.timeline_status === 'DELIVERED' ? 'text-green-900' : 'text-red-900'
+                    order.timeline_status === 'COMPLETED_DELIVERED' ? 'text-green-900' : 'text-red-900'
                   }`}>
                     {order.delivery_status.replace(/_/g, ' ')}
                   </p>

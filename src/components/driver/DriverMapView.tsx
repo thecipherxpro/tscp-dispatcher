@@ -3,7 +3,7 @@ import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
-import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass } from 'lucide-react';
+import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass, ChevronUp, ChevronDown, ArrowRight, CornerUpLeft, CornerUpRight, MoveUp, RotateCcw, MapPinned } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,11 +13,19 @@ interface DriverMapViewProps {
   onOrderSelect?: (order: Order) => void;
 }
 
+interface DirectionStep {
+  instruction: string;
+  distance: string;
+  duration: string;
+  maneuver?: string;
+}
+
 interface RouteInfo {
   duration: string;
   distance: string;
   durationValue: number;
   distanceValue: number;
+  steps: DirectionStep[];
 }
 
 type GeoZone = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
@@ -70,6 +78,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const [zoneCounts, setZoneCounts] = useState<Record<GeoZone, number>>({ NORTH: 0, SOUTH: 0, EAST: 0, WEST: 0 });
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [activeDestination, setActiveDestination] = useState<OrderWithCoords | null>(null);
+  const [showDirections, setShowDirections] = useState(false);
 
   // Fetch Google Maps API key
   const fetchApiKey = useCallback(async () => {
@@ -260,15 +269,25 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       const route = result.routes[0];
       const leg = route.legs[0];
 
+      // Extract turn-by-turn directions
+      const steps: DirectionStep[] = leg.steps.map(step => ({
+        instruction: step.instructions.replace(/<[^>]*>/g, ''), // Strip HTML tags
+        distance: step.distance?.text || '',
+        duration: step.duration?.text || '',
+        maneuver: step.maneuver || ''
+      }));
+
       setRouteInfo({
         duration: leg.duration_in_traffic?.text || leg.duration?.text || '',
         distance: leg.distance?.text || '',
         durationValue: leg.duration_in_traffic?.value || leg.duration?.value || 0,
-        distanceValue: leg.distance?.value || 0
+        distanceValue: leg.distance?.value || 0,
+        steps
       });
 
       setActiveDestination(destination);
       setSelectedOrder(destination);
+      setShowDirections(true);
 
     } catch (err) {
       console.error('Route error:', err);
@@ -286,7 +305,18 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     setRouteInfo(null);
     setActiveDestination(null);
     setSelectedOrder(null);
+    setShowDirections(false);
   }, []);
+
+  // Get icon for maneuver type
+  const getManeuverIcon = (maneuver: string) => {
+    if (maneuver.includes('left')) return <CornerUpLeft className="w-5 h-5" />;
+    if (maneuver.includes('right')) return <CornerUpRight className="w-5 h-5" />;
+    if (maneuver.includes('uturn') || maneuver.includes('u-turn')) return <RotateCcw className="w-5 h-5" />;
+    if (maneuver.includes('straight') || maneuver.includes('head') || maneuver.includes('continue')) return <MoveUp className="w-5 h-5" />;
+    if (maneuver.includes('destination') || maneuver.includes('arrive')) return <MapPinned className="w-5 h-5" />;
+    return <ArrowRight className="w-5 h-5" />;
+  };
 
   // Update markers on map
   const updateMarkers = useCallback((ordersToShow: OrderWithCoords[]) => {
@@ -561,17 +591,13 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     }
   }, [activeDestination, filteredOrders, updateMarkers, drawRoute, clearRoute]);
 
-  const handleNavigate = (order: OrderWithCoords) => {
-    if (order.latitude && order.longitude) {
-      window.open(
-        `https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}`,
-        '_blank'
-      );
-    } else {
-      const address = [order.address_1, order.city, order.province, order.postal].filter(Boolean).join(', ');
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
+  // Recenter map on driver
+  const recenterOnDriver = useCallback(() => {
+    if (mapRef.current && driverLocation) {
+      mapRef.current.panTo(driverLocation);
+      mapRef.current.setZoom(15);
     }
-  };
+  }, [driverLocation]);
 
   if (error) {
     return (
@@ -637,9 +663,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         )}
       </div>
 
-      {/* Route info card */}
+      {/* Route info + Directions panel */}
       {(routeInfo || isLoadingRoute) && (
-        <div className="absolute top-36 left-4 z-10">
+        <div className="absolute top-36 left-4 right-4 z-10">
           <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
             <CardContent className="p-3">
               {isLoadingRoute ? (
@@ -648,33 +674,104 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   <span className="text-sm text-muted-foreground">Calculating route...</span>
                 </div>
               ) : routeInfo && (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-foreground">
-                      {routeInfo.duration}
-                    </span>
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold text-foreground">
+                          {routeInfo.duration}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Navigation className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {routeInfo.distance}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 px-2"
+                        onClick={() => setShowDirections(!showDirections)}
+                      >
+                        {showDirections ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        <span className="text-xs ml-1">Directions</span>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 px-2 text-xs"
+                        onClick={clearRoute}
+                      >
+                        Clear
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Navigation className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {routeInfo.distance}
-                    </span>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 px-2 text-xs"
-                    onClick={clearRoute}
-                  >
-                    Clear
-                  </Button>
-                </div>
+
+                  {/* Turn-by-turn directions */}
+                  {showDirections && routeInfo.steps.length > 0 && (
+                    <div className="mt-3 border-t pt-3 max-h-48 overflow-y-auto">
+                      <div className="space-y-2">
+                        {routeInfo.steps.map((step, index) => (
+                          <div 
+                            key={index} 
+                            className={`flex items-start gap-3 p-2 rounded-lg ${index === 0 ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'}`}
+                          >
+                            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                              {getManeuverIcon(step.maneuver || '')}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${index === 0 ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+                                {step.instruction}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs text-muted-foreground">{step.distance}</span>
+                                {step.duration && (
+                                  <>
+                                    <span className="text-xs text-muted-foreground">•</span>
+                                    <span className="text-xs text-muted-foreground">{step.duration}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {/* Arrival indicator */}
+                        <div className="flex items-start gap-3 p-2 rounded-lg bg-green-50 border border-green-200">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center">
+                            <MapPinned className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-green-800">Arrive at destination</p>
+                            <p className="text-xs text-green-600">{activeDestination?.city}, {activeDestination?.postal}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
         </div>
       )}
+
+      {/* Recenter button */}
+      <div className="absolute top-36 right-4 z-10" style={{ marginTop: (routeInfo || isLoadingRoute) ? '0' : '0' }}>
+        {!routeInfo && !isLoadingRoute && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-10 w-10 rounded-full shadow-lg bg-background/95 backdrop-blur-sm"
+            onClick={recenterOnDriver}
+          >
+            <Compass className="w-5 h-5" />
+          </Button>
+        )}
+      </div>
 
       {/* Delivery queue list */}
       {selectedZone && filteredOrders.length > 0 && !selectedOrder && (
@@ -744,10 +841,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => handleNavigate(selectedOrder)}
+                  onClick={() => setShowDirections(true)}
                 >
                   <Navigation className="w-4 h-4 mr-1" />
-                  Navigate
+                  Directions
                 </Button>
                 <Button 
                   size="sm" 

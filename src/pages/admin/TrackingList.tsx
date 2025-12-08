@@ -29,11 +29,10 @@ export default function TrackingList() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-muted text-muted-foreground';
-      case 'CONFIRMED': return 'bg-blue-500/10 text-blue-500';
-      case 'IN_ROUTE': return 'bg-orange-500/10 text-orange-500';
-      case 'ARRIVED': return 'bg-purple-500/10 text-purple-500';
-      case 'COMPLETED': return 'bg-green-500/10 text-green-500';
-      case 'REQUEST_ADDRESS_REVIEW': return 'bg-red-500/10 text-red-500';
+      case 'PICKED_UP': return 'bg-blue-500/10 text-blue-500';
+      case 'SHIPPED': return 'bg-purple-500/10 text-purple-500';
+      case 'DELIVERED': return 'bg-green-500/10 text-green-500';
+      case 'DELIVERY_INCOMPLETE': return 'bg-red-500/10 text-red-500';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -92,9 +91,9 @@ export default function TrackingList() {
                       </span>
                     </div>
                     
-                    {order.confirmed_at && (
+                    {order.picked_up_at && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Assigned: {format(new Date(order.confirmed_at), 'MMM d, h:mm a')}
+                        Assigned: {format(new Date(order.picked_up_at), 'MMM d, h:mm a')}
                       </p>
                     )}
                   </div>

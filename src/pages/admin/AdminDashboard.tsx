@@ -60,9 +60,9 @@ export default function AdminDashboard() {
   const statCards = [
     { label: 'Total Orders', value: stats.totalOrders, icon: Package, color: 'text-primary' },
     { label: 'Pending', value: stats.pendingOrders, icon: Clock, color: 'text-yellow-500' },
-    { label: 'In Route', value: stats.inRouteOrders, icon: Truck, color: 'text-blue-500' },
-    { label: 'Completed', value: stats.completedOrders, icon: CheckCircle, color: 'text-green-500' },
-    { label: 'Address Review', value: stats.addressReviewOrders, icon: AlertCircle, color: 'text-destructive' },
+    { label: 'Shipped', value: stats.inRouteOrders, icon: Truck, color: 'text-blue-500' },
+    { label: 'Delivered', value: stats.completedOrders, icon: CheckCircle, color: 'text-green-500' },
+    { label: 'Picked Up', value: stats.addressReviewOrders, icon: AlertCircle, color: 'text-purple-500' },
     { label: 'Active Drivers', value: stats.totalDrivers, icon: Users, color: 'text-accent-foreground' },
   ];
 

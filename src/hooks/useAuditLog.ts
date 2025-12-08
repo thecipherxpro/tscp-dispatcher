@@ -103,16 +103,29 @@ export async function logOrderView(orderId: string): Promise<void> {
   });
 }
 
-// Helper function to create audit log for status change
+// Helper function to create audit log for status change with internal event names
 export async function logStatusChange(
   orderId: string, 
   previousStatus: string, 
   newStatus: string,
   deliveryStatus?: string
 ): Promise<void> {
+  // Map to internal audit event names
+  let action = 'STATUS_CHANGE';
+  
+  if (newStatus === 'PICKED_UP' && !previousStatus) {
+    action = 'ORDER_ASSIGNED';
+  } else if (newStatus === 'SHIPPED') {
+    action = 'ORDER_SHIPPED';
+  } else if (newStatus === 'DELIVERED') {
+    action = 'DELIVERY_COMPLETED_SUCCESS';
+  } else if (newStatus === 'DELIVERY_INCOMPLETE') {
+    action = 'DELIVERY_COMPLETED_INCOMPLETE';
+  }
+  
   await createAuditLog({
     orderId,
-    action: 'STATUS_CHANGE',
+    action,
     previousStatus,
     newStatus,
     deliveryStatus
@@ -126,7 +139,8 @@ export async function logDriverAssignment(
 ): Promise<void> {
   await createAuditLog({
     orderId,
-    action: 'DRIVER_ASSIGNED',
+    action: 'ORDER_ASSIGNED',
+    newStatus: 'PICKED_UP',
     metadata: { assigned_driver: driverName }
   });
 }

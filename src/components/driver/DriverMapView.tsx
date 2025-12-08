@@ -1,54 +1,84 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
-import { Loader2, MapPin, AlertCircle, Navigation, Clock } from 'lucide-react';
+import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { toast } from 'sonner';
 
 interface DriverMapViewProps {
   onOrderSelect?: (order: Order) => void;
 }
 
 interface RouteInfo {
-  duration: number; // in seconds
-  distance: number; // in meters
+  duration: string;
+  distance: string;
+  durationValue: number;
+  distanceValue: number;
+}
+
+type GeoZone = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+
+interface OrderWithCoords extends Order {
+  latitude?: number | null;
+  longitude?: number | null;
+  geo_zone?: string | null;
+  drivingDistance?: number;
+  drivingDuration?: number;
+}
+
+// Toronto city center coordinates
+const CITY_CENTER_LAT = 43.6532;
+const CITY_CENTER_LNG = -79.3832;
+
+// Determine geo zone based on coordinates
+function determineGeoZone(lat: number, lng: number): GeoZone {
+  // Primary direction based on latitude first
+  if (lat > CITY_CENTER_LAT) {
+    return 'NORTH';
+  } else if (lat < CITY_CENTER_LAT) {
+    return 'SOUTH';
+  } else if (lng > CITY_CENTER_LNG) {
+    return 'EAST';
+  } else {
+    return 'WEST';
+  }
 }
 
 export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const routeLayerAdded = useRef(false);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const driverMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const { user } = useAuth();
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [orders, setOrders] = useState<OrderWithCoords[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<OrderWithCoords[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<OrderWithCoords | null>(null);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<GeoZone | null>(null);
+  const [driverZone, setDriverZone] = useState<GeoZone | null>(null);
+  const [zoneCounts, setZoneCounts] = useState<Record<GeoZone, number>>({ NORTH: 0, SOUTH: 0, EAST: 0, WEST: 0 });
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const [activeDestination, setActiveDestination] = useState<OrderWithCoords | null>(null);
 
-  // Fetch Mapbox token
-  const fetchMapboxToken = useCallback(async () => {
+  // Fetch Google Maps API key
+  const fetchApiKey = useCallback(async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      const { data, error } = await supabase.functions.invoke('get-google-maps-key');
       if (error) throw error;
-      return data.token;
+      return data.apiKey;
     } catch (err) {
-      console.error('Error fetching Mapbox token:', err);
+      console.error('Error fetching Google Maps API key:', err);
       throw new Error('Failed to load map configuration');
     }
   }, []);
@@ -66,15 +96,23 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Order[];
+      return (data || []) as OrderWithCoords[];
     } catch (err) {
       console.error('Error fetching orders:', err);
       return [];
     }
   }, [user]);
 
-  // Geocode an address to coordinates
-  const geocodeAddress = async (order: Order, token: string): Promise<[number, number] | null> => {
+  // Geocode address and determine zone
+  const geocodeAndSetZone = useCallback(async (
+    order: OrderWithCoords, 
+    geocoder: google.maps.Geocoder
+  ): Promise<OrderWithCoords> => {
+    // If already geocoded, return as-is
+    if (order.latitude && order.longitude) {
+      return order;
+    }
+
     const address = [
       order.address_1,
       order.city,
@@ -83,160 +121,304 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       order.country || 'Canada'
     ].filter(Boolean).join(', ');
 
-    if (!address) return null;
+    if (!address) return order;
 
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1`
-      );
-      const data = await response.json();
-      
-      if (data.features && data.features.length > 0) {
-        return data.features[0].center as [number, number];
+      const result = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === 'OK' && results) {
+            resolve(results);
+          } else {
+            reject(new Error(`Geocoding failed: ${status}`));
+          }
+        });
+      });
+
+      if (result.length > 0) {
+        const location = result[0].geometry.location;
+        const lat = location.lat();
+        const lng = location.lng();
+        const geoZone = determineGeoZone(lat, lng);
+
+        // Update order in database
+        await supabase
+          .from('orders')
+          .update({ latitude: lat, longitude: lng, geo_zone: geoZone })
+          .eq('id', order.id);
+
+        return {
+          ...order,
+          latitude: lat,
+          longitude: lng,
+          geo_zone: geoZone
+        };
       }
-      return null;
     } catch (err) {
-      console.error('Geocoding error:', err);
-      return null;
+      console.error('Geocoding error for order:', order.id, err);
     }
-  };
 
-  // Get user's current location
-  const getUserLocation = useCallback((): Promise<[number, number] | null> => {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve([position.coords.longitude, position.coords.latitude]);
-        },
-        () => {
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    });
+    return order;
   }, []);
 
-  // Get status color for markers
-  const getStatusColor = (status: string | null) => {
-    switch (status) {
-      case 'PICKED_UP_AND_ASSIGNED': return '#3b82f6'; // blue
-      case 'CONFIRMED': return '#6366f1'; // indigo
-      case 'IN_ROUTE': return '#f59e0b'; // amber
-      case 'COMPLETED_DELIVERED': return '#22c55e'; // green
-      case 'COMPLETED_INCOMPLETE': return '#ef4444'; // red
-      default: return '#6b7280'; // gray
-    }
-  };
+  // Calculate distances using Distance Matrix API
+  const calculateDistances = useCallback(async (
+    origin: { lat: number; lng: number },
+    ordersToCalculate: OrderWithCoords[]
+  ): Promise<OrderWithCoords[]> => {
+    if (!googleMapsLoaded || ordersToCalculate.length === 0) return ordersToCalculate;
 
-  // Fetch and display route
-  const fetchRoute = useCallback(async (origin: [number, number], destination: [number, number]) => {
-    if (!mapboxToken || !map.current) return;
+    const destinations = ordersToCalculate
+      .filter(o => o.latitude && o.longitude)
+      .map(o => new google.maps.LatLng(o.latitude!, o.longitude!));
+
+    if (destinations.length === 0) return ordersToCalculate;
+
+    try {
+      const service = new google.maps.DistanceMatrixService();
+      const result = await new Promise<google.maps.DistanceMatrixResponse>((resolve, reject) => {
+        service.getDistanceMatrix({
+          origins: [new google.maps.LatLng(origin.lat, origin.lng)],
+          destinations,
+          travelMode: google.maps.TravelMode.DRIVING,
+          drivingOptions: {
+            departureTime: new Date(),
+            trafficModel: google.maps.TrafficModel.BEST_GUESS
+          }
+        }, (response, status) => {
+          if (status === 'OK' && response) {
+            resolve(response);
+          } else {
+            reject(new Error(`Distance Matrix failed: ${status}`));
+          }
+        });
+      });
+
+      const elements = result.rows[0]?.elements || [];
+      let elementIndex = 0;
+
+      return ordersToCalculate.map(order => {
+        if (order.latitude && order.longitude) {
+          const element = elements[elementIndex++];
+          if (element?.status === 'OK') {
+            return {
+              ...order,
+              drivingDistance: element.distance?.value || 0,
+              drivingDuration: element.duration_in_traffic?.value || element.duration?.value || 0
+            };
+          }
+        }
+        return order;
+      }).sort((a, b) => (a.drivingDistance || Infinity) - (b.drivingDistance || Infinity));
+    } catch (err) {
+      console.error('Distance calculation error:', err);
+      return ordersToCalculate;
+    }
+  }, [googleMapsLoaded]);
+
+  // Draw route to destination
+  const drawRoute = useCallback(async (destination: OrderWithCoords) => {
+    if (!mapRef.current || !driverLocation || !destination.latitude || !destination.longitude) return;
 
     setIsLoadingRoute(true);
     setRouteInfo(null);
 
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&overview=full&access_token=${mapboxToken}`
-      );
-      const data = await response.json();
-
-      if (data.routes && data.routes.length > 0) {
-        const route = data.routes[0];
-        const routeGeometry = route.geometry;
-
-        // Set route info
-        setRouteInfo({
-          duration: route.duration,
-          distance: route.distance
+      const directionsService = new google.maps.DirectionsService();
+      
+      if (!directionsRendererRef.current) {
+        directionsRendererRef.current = new google.maps.DirectionsRenderer({
+          map: mapRef.current,
+          suppressMarkers: true,
+          polylineOptions: {
+            strokeColor: '#f97316',
+            strokeWeight: 5,
+            strokeOpacity: 0.85
+          }
         });
-
-        // Add or update route layer
-        if (map.current?.getSource('route')) {
-          (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
-            type: 'Feature',
-            properties: {},
-            geometry: routeGeometry
-          });
-        } else {
-          map.current?.addSource('route', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              properties: {},
-              geometry: routeGeometry
-            }
-          });
-
-          map.current?.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#f97316',
-              'line-width': 5,
-              'line-opacity': 0.85
-            }
-          });
-          routeLayerAdded.current = true;
-        }
-
-        // Fit map to show route
-        const coordinates = routeGeometry.coordinates;
-        const bounds = new mapboxgl.LngLatBounds();
-        coordinates.forEach((coord: [number, number]) => bounds.extend(coord));
-        map.current?.fitBounds(bounds, { padding: 80 });
       }
+
+      const result = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
+        directionsService.route({
+          origin: new google.maps.LatLng(driverLocation.lat, driverLocation.lng),
+          destination: new google.maps.LatLng(destination.latitude!, destination.longitude!),
+          travelMode: google.maps.TravelMode.DRIVING,
+          drivingOptions: {
+            departureTime: new Date(),
+            trafficModel: google.maps.TrafficModel.BEST_GUESS
+          }
+        }, (response, status) => {
+          if (status === 'OK' && response) {
+            resolve(response);
+          } else {
+            reject(new Error(`Directions failed: ${status}`));
+          }
+        });
+      });
+
+      directionsRendererRef.current.setDirections(result);
+
+      const route = result.routes[0];
+      const leg = route.legs[0];
+
+      setRouteInfo({
+        duration: leg.duration_in_traffic?.text || leg.duration?.text || '',
+        distance: leg.distance?.text || '',
+        durationValue: leg.duration_in_traffic?.value || leg.duration?.value || 0,
+        distanceValue: leg.distance?.value || 0
+      });
+
+      setActiveDestination(destination);
+      setSelectedOrder(destination);
+
     } catch (err) {
-      console.error('Error fetching route:', err);
+      console.error('Route error:', err);
+      toast.error('Failed to calculate route');
     } finally {
       setIsLoadingRoute(false);
     }
-  }, [mapboxToken]);
-
-  // Handle order selection from dropdown
-  const handleOrderSelection = async (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order || !mapboxToken) return;
-
-    setSelectedOrder(order);
-
-    // Get destination coordinates
-    const destination = await geocodeAddress(order, mapboxToken);
-    if (!destination) return;
-
-    // Get current user location
-    const currentLocation = await getUserLocation();
-    if (currentLocation) {
-      setUserLocation(currentLocation);
-      fetchRoute(currentLocation, destination);
-    }
-  };
+  }, [driverLocation]);
 
   // Clear route
-  const clearRoute = () => {
-    if (map.current?.getLayer('route')) {
-      map.current.removeLayer('route');
+  const clearRoute = useCallback(() => {
+    if (directionsRendererRef.current) {
+      directionsRendererRef.current.setDirections({ routes: [] } as any);
     }
-    if (map.current?.getSource('route')) {
-      map.current.removeSource('route');
-    }
-    routeLayerAdded.current = false;
     setRouteInfo(null);
+    setActiveDestination(null);
     setSelectedOrder(null);
-  };
+  }, []);
+
+  // Update markers on map
+  const updateMarkers = useCallback((ordersToShow: OrderWithCoords[]) => {
+    if (!mapRef.current || !googleMapsLoaded) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.map = null);
+    markersRef.current = [];
+
+    // Add markers for each order
+    ordersToShow.forEach((order, index) => {
+      if (!order.latitude || !order.longitude) return;
+
+      // Create custom marker element
+      const markerEl = document.createElement('div');
+      markerEl.className = 'order-marker';
+      markerEl.style.cssText = `
+        width: 36px;
+        height: 36px;
+        background-color: #000000;
+        border: 3px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        position: relative;
+      `;
+      markerEl.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        ${activeDestination?.id === order.id ? '' : `<span style="position:absolute;top:-8px;right:-8px;background:#f97316;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:bold;">${index + 1}</span>`}
+      `;
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
+        map: mapRef.current!,
+        position: { lat: order.latitude, lng: order.longitude },
+        content: markerEl,
+        title: order.name || 'Delivery'
+      });
+
+      markerEl.addEventListener('click', () => {
+        drawRoute(order);
+      });
+
+      markersRef.current.push(marker);
+    });
+  }, [googleMapsLoaded, activeDestination, drawRoute]);
+
+  // Update driver marker
+  const updateDriverMarker = useCallback((location: { lat: number; lng: number }) => {
+    if (!mapRef.current || !googleMapsLoaded) return;
+
+    if (driverMarkerRef.current) {
+      driverMarkerRef.current.position = location;
+      return;
+    }
+
+    // Create driver marker element
+    const driverEl = document.createElement('div');
+    driverEl.style.cssText = `
+      width: 20px;
+      height: 20px;
+      background-color: #3b82f6;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    `;
+
+    driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
+      map: mapRef.current,
+      position: location,
+      content: driverEl,
+      title: 'Your Location'
+    });
+  }, [googleMapsLoaded]);
+
+  // Watch driver location
+  const startLocationTracking = useCallback(() => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation not supported');
+      return;
+    }
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setDriverLocation(location);
+        setDriverZone(determineGeoZone(location.lat, location.lng));
+        updateDriverMarker(location);
+      },
+      (error) => {
+        console.error('Location error:', error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000
+      }
+    );
+  }, [updateDriverMarker]);
+
+  // Handle zone selection
+  const handleZoneSelect = useCallback(async (zone: GeoZone) => {
+    setSelectedZone(zone);
+    
+    const zoneOrders = orders.filter(o => o.geo_zone === zone);
+    
+    if (driverLocation && zoneOrders.length > 0) {
+      const sortedOrders = await calculateDistances(driverLocation, zoneOrders);
+      setFilteredOrders(sortedOrders);
+      updateMarkers(sortedOrders);
+      
+      // Auto-draw route to closest delivery
+      if (sortedOrders.length > 0 && sortedOrders[0].latitude && sortedOrders[0].longitude) {
+        drawRoute(sortedOrders[0]);
+      }
+    } else {
+      setFilteredOrders(zoneOrders);
+      updateMarkers(zoneOrders);
+    }
+  }, [orders, driverLocation, calculateDistances, updateMarkers, drawRoute]);
 
   // Initialize map
   useEffect(() => {
+    let isMounted = true;
+
     const initMap = async () => {
       if (!mapContainer.current) return;
 
@@ -244,112 +426,151 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         setIsLoading(true);
         setError(null);
 
-        const token = await fetchMapboxToken();
-        setMapboxToken(token);
-        mapboxgl.accessToken = token;
-
-        const fetchedOrders = await fetchOrders();
-        setOrders(fetchedOrders);
-
-        const location = await getUserLocation();
-        setUserLocation(location);
-
-        // Default to Toronto if no location
-        const center = location || [-79.3832, 43.6532];
-
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/towdaddy/cmixhpbr7000b01qi6so2exwj',
-          center: center,
-          zoom: 12,
+        const apiKey = await fetchApiKey();
+        
+        // Set Google Maps API options
+        setOptions({
+          key: apiKey,
+          v: 'weekly',
         });
 
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        map.current.addControl(
-          new mapboxgl.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            showUserHeading: true
-          }),
-          'top-right'
+        // Load required libraries
+        await importLibrary('maps');
+        await importLibrary('marker');
+        await importLibrary('geometry');
+        if (!isMounted) return;
+
+        setGoogleMapsLoaded(true);
+
+        // Get initial location
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000
+          });
+        }).catch(() => null);
+
+        const initialLocation = position 
+          ? { lat: position.coords.latitude, lng: position.coords.longitude }
+          : { lat: CITY_CENTER_LAT, lng: CITY_CENTER_LNG };
+
+        if (!isMounted) return;
+        setDriverLocation(initialLocation);
+        setDriverZone(determineGeoZone(initialLocation.lat, initialLocation.lng));
+
+        // Create map
+        const mapId = 'driver-map';
+        mapRef.current = new google.maps.Map(mapContainer.current, {
+          center: initialLocation,
+          zoom: 12,
+          mapId,
+          disableDefaultUI: false,
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true
+        });
+
+        // Fetch and geocode orders
+        const fetchedOrders = await fetchOrders();
+        if (!isMounted) return;
+
+        const geocoder = new google.maps.Geocoder();
+        const geocodedOrders = await Promise.all(
+          fetchedOrders.map(order => geocodeAndSetZone(order, geocoder))
         );
 
-        // Wait for map to load
-        map.current.on('load', async () => {
-          // Add order markers
-          for (const order of fetchedOrders) {
-            const coords = await geocodeAddress(order, token);
-            if (coords) {
-              const el = document.createElement('div');
-              el.className = 'order-marker';
-              el.style.cssText = `
-                width: 36px;
-                height: 36px;
-                background-color: #000000;
-                border: 3px solid white;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-              `;
-              el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
+        if (!isMounted) return;
+        setOrders(geocodedOrders);
 
-              const marker = new mapboxgl.Marker(el)
-                .setLngLat(coords)
-                .addTo(map.current!);
-
-              el.addEventListener('click', () => {
-                handleOrderSelection(order.id);
-              });
-
-              markersRef.current.push(marker);
-            }
+        // Calculate zone counts
+        const counts: Record<GeoZone, number> = { NORTH: 0, SOUTH: 0, EAST: 0, WEST: 0 };
+        geocodedOrders.forEach(order => {
+          if (order.geo_zone && counts.hasOwnProperty(order.geo_zone)) {
+            counts[order.geo_zone as GeoZone]++;
           }
-
-          setIsLoading(false);
         });
+        setZoneCounts(counts);
+
+        // Auto-select driver's zone
+        const dZone = determineGeoZone(initialLocation.lat, initialLocation.lng);
+        if (counts[dZone] > 0) {
+          handleZoneSelect(dZone);
+        }
+
+        // Start tracking location
+        startLocationTracking();
+
+        setIsLoading(false);
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load map');
-        setIsLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load map');
+          setIsLoading(false);
+        }
       }
     };
 
     initMap();
 
     return () => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-      map.current?.remove();
+      isMounted = false;
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      markersRef.current.forEach(marker => marker.map = null);
+      if (driverMarkerRef.current) {
+        driverMarkerRef.current.map = null;
+      }
     };
-  }, [fetchMapboxToken, fetchOrders, getUserLocation]);
+  }, [fetchApiKey, fetchOrders, geocodeAndSetZone, startLocationTracking]);
 
-  const handleNavigate = (order: Order) => {
-    const address = [
-      order.address_1,
-      order.city,
-      order.province,
-      order.postal
-    ].filter(Boolean).join(', ');
-    
-    // Open in Google Maps for navigation
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
+  // Recalculate route when driver location changes significantly
+  useEffect(() => {
+    if (activeDestination && driverLocation) {
+      // Only recalculate if driver moved more than 100 meters
+      const threshold = 0.001; // roughly 100m
+      const prevPos = directionsRendererRef.current?.getDirections()?.routes[0]?.legs[0]?.start_location;
+      if (prevPos) {
+        const latDiff = Math.abs(prevPos.lat() - driverLocation.lat);
+        const lngDiff = Math.abs(prevPos.lng() - driverLocation.lng);
+        if (latDiff > threshold || lngDiff > threshold) {
+          drawRoute(activeDestination);
+        }
+      }
     }
-    return `${minutes} min`;
-  };
+  }, [driverLocation, activeDestination, drawRoute]);
 
-  const formatDistance = (meters: number) => {
-    const km = meters / 1000;
-    return `${km.toFixed(1)} km`;
+  // Handle delivery completion - advance to next
+  const handleDeliveryComplete = useCallback(async () => {
+    if (!activeDestination) return;
+
+    // Remove completed order from list
+    const remainingOrders = filteredOrders.filter(o => o.id !== activeDestination.id);
+    setFilteredOrders(remainingOrders);
+    updateMarkers(remainingOrders);
+
+    // Auto-advance to next
+    if (remainingOrders.length > 0) {
+      const nextOrder = remainingOrders[0];
+      drawRoute(nextOrder);
+      toast.success('Route updated to next delivery');
+    } else {
+      clearRoute();
+      toast.success('All deliveries in this zone completed!');
+    }
+  }, [activeDestination, filteredOrders, updateMarkers, drawRoute, clearRoute]);
+
+  const handleNavigate = (order: OrderWithCoords) => {
+    if (order.latitude && order.longitude) {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}`,
+        '_blank'
+      );
+    } else {
+      const address = [order.address_1, order.city, order.province, order.postal].filter(Boolean).join(', ');
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
+    }
   };
 
   if (error) {
@@ -376,45 +597,49 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
 
       <div ref={mapContainer} className="absolute inset-0" />
 
-      {/* Top controls */}
-      <div className="absolute top-4 left-4 right-16 z-10 space-y-2">
-        {/* Delivery Selection Dropdown */}
-        <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-2">
-          <Select 
-            value={selectedOrder?.id || ''} 
-            onValueChange={handleOrderSelection}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a delivery to navigate" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border shadow-lg z-50">
-              {orders.map((order) => (
-                <SelectItem key={order.id} value={order.id}>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-2 h-2 rounded-full" 
-                      style={{ backgroundColor: getStatusColor(order.timeline_status) }} 
-                    />
-                    <span className="truncate">
-                      {order.name || 'Unknown'} - {order.address_1?.slice(0, 20)}...
-                    </span>
-                  </div>
-                </SelectItem>
+      {/* Zone Selection */}
+      <div className="absolute top-4 left-4 right-4 z-10 space-y-2">
+        <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Compass className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Delivery Zones</span>
+              {driverZone && (
+                <Badge variant="outline" className="text-xs">
+                  You're in {driverZone}
+                </Badge>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {(['NORTH', 'SOUTH', 'EAST', 'WEST'] as GeoZone[]).map((zone) => (
+                <Button
+                  key={zone}
+                  variant={selectedZone === zone ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex flex-col h-auto py-2"
+                  onClick={() => handleZoneSelect(zone)}
+                  disabled={zoneCounts[zone] === 0}
+                >
+                  <span className="text-xs font-medium">{zone}</span>
+                  <span className="text-lg font-bold">{zoneCounts[zone]}</span>
+                </Button>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Order count badge */}
-        <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-md">
-          <MapPin className="w-3 h-3 mr-1" />
-          {orders.length} {orders.length === 1 ? 'delivery' : 'deliveries'}
-        </Badge>
+        {/* Delivery count */}
+        {selectedZone && (
+          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-md">
+            <MapPin className="w-3 h-3 mr-1" />
+            {filteredOrders.length} {filteredOrders.length === 1 ? 'delivery' : 'deliveries'} in {selectedZone}
+          </Badge>
+        )}
       </div>
 
       {/* Route info card */}
       {(routeInfo || isLoadingRoute) && (
-        <div className="absolute top-28 left-4 z-10">
+        <div className="absolute top-36 left-4 z-10">
           <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
             <CardContent className="p-3">
               {isLoadingRoute ? (
@@ -427,13 +652,13 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   <div className="flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-primary" />
                     <span className="text-sm font-semibold text-foreground">
-                      {formatDuration(routeInfo.duration)}
+                      {routeInfo.duration}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Navigation className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {formatDistance(routeInfo.distance)}
+                      {routeInfo.distance}
                     </span>
                   </div>
                   <Button 
@@ -451,6 +676,43 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         </div>
       )}
 
+      {/* Delivery queue list */}
+      {selectedZone && filteredOrders.length > 0 && !selectedOrder && (
+        <div className="absolute bottom-4 left-4 right-4 z-10 max-h-48 overflow-y-auto">
+          <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
+            <CardContent className="p-2 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground px-2 py-1">
+                Sorted by closest (with traffic)
+              </p>
+              {filteredOrders.slice(0, 5).map((order, index) => (
+                <button
+                  key={order.id}
+                  className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                  onClick={() => drawRoute(order)}
+                >
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {order.city}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {order.address_1}
+                    </p>
+                  </div>
+                  {order.drivingDuration && (
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(order.drivingDuration / 60)} min
+                    </span>
+                  )}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Selected order card */}
       {selectedOrder && (
         <div className="absolute bottom-4 left-4 right-4 z-10">
@@ -458,17 +720,17 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h4 className="font-semibold text-foreground">{selectedOrder.name || 'Unknown Client'}</h4>
                   <p className="text-sm text-muted-foreground">
-                    {selectedOrder.address_1}, {selectedOrder.city}
+                    {selectedOrder.city}, {selectedOrder.province}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedOrder.postal}
                   </p>
                 </div>
                 <Badge 
                   variant="secondary"
                   className={
                     selectedOrder.timeline_status === 'IN_ROUTE' ? 'bg-amber-100 text-amber-800' :
-                    selectedOrder.timeline_status === 'COMPLETED_DELIVERED' ? 'bg-green-100 text-green-800' :
-                    selectedOrder.timeline_status === 'COMPLETED_INCOMPLETE' ? 'bg-red-100 text-red-800' :
                     selectedOrder.timeline_status === 'CONFIRMED' ? 'bg-indigo-100 text-indigo-800' :
                     'bg-blue-100 text-blue-800'
                   }
@@ -494,7 +756,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                     onOrderSelect?.(selectedOrder);
                   }}
                 >
-                  View Details
+                  Update Status
                 </Button>
               </div>
             </CardContent>

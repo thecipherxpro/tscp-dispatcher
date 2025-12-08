@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap } from 'lucide-react';
+import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap, AlertCircle } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,21 @@ import { Separator } from '@/components/ui/separator';
 import { Order } from '@/types/auth';
 import { DriverAssignmentModal } from './DriverAssignmentModal';
 import { useToast } from '@/hooks/use-toast';
+
+// Empty state component for missing data
+const EmptyField = ({ label }: { label?: string }) => (
+  <span className="text-muted-foreground/60 italic text-sm">
+    {label || 'Not provided'}
+  </span>
+);
+
+// Helper to render field value or empty state
+const FieldValue = ({ value, label }: { value: string | null | undefined; label?: string }) => {
+  if (!value || value.trim() === '') {
+    return <EmptyField label={label} />;
+  }
+  return <span className="text-sm font-medium text-foreground">{value}</span>;
+};
 interface OrderDetailSheetProps {
   order: Order | null;
   isOpen: boolean;
@@ -135,7 +150,8 @@ export function OrderDetailSheet({
             <div className="py-4 space-y-5">
               
               {/* Tracking Info Card */}
-              {order.tracking_id && <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+              {order.tracking_id ? (
+                <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -146,7 +162,8 @@ export function OrderDetailSheet({
                         <p className="font-mono font-semibold text-primary">{order.tracking_id}</p>
                       </div>
                     </div>
-                    {order.tracking_url && <div className="flex gap-1">
+                    {order.tracking_url && (
+                      <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-9 w-9" onClick={copyTrackingUrl}>
                           <Copy className="w-4 h-4" />
                         </Button>
@@ -155,9 +172,23 @@ export function OrderDetailSheet({
                             <ExternalLink className="w-4 h-4" />
                           </a>
                         </Button>
-                      </div>}
+                      </div>
+                    )}
                   </div>
-                </div>}
+                </div>
+              ) : (
+                <div className="bg-muted/30 rounded-xl p-4 border border-dashed border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <Hash className="w-5 h-5 text-muted-foreground/50" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Tracking Number</p>
+                      <p className="text-sm text-muted-foreground/60 italic">Not yet assigned</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Client Information Section */}
               <section>
@@ -173,22 +204,34 @@ export function OrderDetailSheet({
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-foreground truncate font-bold">{order.name || 'N/A'}</p>
-                      <p className="text-xs text-muted-foreground">DOB: {formatDate(order.dob)}</p>
+                      <p className="text-foreground truncate font-bold">
+                        {order.name || <EmptyField label="No name" />}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        DOB: {order.dob ? formatDate(order.dob) : <span className="italic text-muted-foreground/60">Not provided</span>}
+                      </p>
                     </div>
                   </div>
                   
                   <Separator className="bg-border/50" />
                   
                   <div className="grid grid-cols-1 gap-2">
-                    {order.phone_number && <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                      {order.phone_number ? (
                         <span className="text-foreground">{order.phone_number}</span>
-                      </div>}
-                    {order.email && <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                      ) : (
+                        <EmptyField label="No phone" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                      {order.email ? (
                         <span className="text-foreground truncate">{order.email}</span>
-                      </div>}
+                      ) : (
+                        <EmptyField label="No email" />
+                      )}
+                    </div>
                   </div>
                 </div>
               </section>
@@ -203,7 +246,7 @@ export function OrderDetailSheet({
                   {/* Street Address */}
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Street</p>
-                    <p className="text-sm font-medium text-foreground">{order.address_1}</p>
+                    <FieldValue value={order.address_1} label="No address" />
                     {order.address_2 && (
                       <p className="text-sm text-muted-foreground mt-0.5">{order.address_2}</p>
                     )}
@@ -213,22 +256,22 @@ export function OrderDetailSheet({
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">City</p>
-                      <p className="text-sm font-medium text-foreground">{order.city}</p>
+                      <FieldValue value={order.city} label="—" />
                     </div>
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Province</p>
-                      <p className="text-sm font-medium text-foreground">{order.province}</p>
+                      <FieldValue value={order.province} label="—" />
                     </div>
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Postal</p>
-                      <p className="text-sm font-medium text-foreground">{order.postal}</p>
+                      <FieldValue value={order.postal} label="—" />
                     </div>
                   </div>
                   
                   {/* Country */}
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Country</p>
-                    <p className="text-sm font-medium text-foreground">{order.country || 'Canada'}</p>
+                    <FieldValue value={order.country} label="Canada" />
                   </div>
                 </div>
               </section>
@@ -293,20 +336,20 @@ export function OrderDetailSheet({
                   {/* Pharmacy Name */}
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Pharmacy</p>
-                    <p className="text-sm font-medium text-foreground">{order.pharmacy_name || 'N/A'}</p>
+                    <FieldValue value={order.pharmacy_name} label="Not assigned" />
                   </div>
                   
                   {/* Authorizing Pharmacist & Training Status */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Authorizing Pharmacist</p>
-                      <p className="text-sm font-medium text-foreground">{order.authorizing_pharmacist || 'N/A'}</p>
+                      <FieldValue value={order.authorizing_pharmacist} label="Not assigned" />
                     </div>
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Training Status</p>
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
-                        <p className="text-sm font-medium text-foreground">{order.training_status || 'N/A'}</p>
+                        <FieldValue value={order.training_status} label="Unknown" />
                       </div>
                     </div>
                   </div>

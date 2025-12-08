@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderImportModal } from '@/components/orders/OrderImportModal';
-import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
+import { OrderDetailSheet } from '@/components/orders/OrderDetailSheet';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -174,7 +174,7 @@ export default function Orders() {
         }}
       />
 
-      <OrderDetailModal
+      <OrderDetailSheet
         order={selectedOrder}
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}

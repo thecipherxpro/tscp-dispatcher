@@ -356,11 +356,11 @@ export default function OrderAuditTrail() {
           display: flex; 
           align-items: center; 
           justify-content: center;
-          font-size: 12px;
           position: relative;
           z-index: 1;
           margin-left: -12px;
         }
+        .timeline-dot svg { width: 14px; height: 14px; }
         .timeline-dot-amber { background: #fef3c7; color: #d97706; }
         .timeline-dot-blue { background: #dbeafe; color: #2563eb; }
         .timeline-dot-indigo { background: #e0e7ff; color: #4f46e5; }
@@ -391,6 +391,7 @@ export default function OrderAuditTrail() {
           justify-content: center;
           flex-shrink: 0;
         }
+        .audit-icon svg { width: 14px; height: 14px; }
         .audit-content { flex: 1; }
         .audit-action { font-size: 13px; font-weight: 500; color: #111827; }
         .audit-time { font-size: 11px; color: #6b7280; margin-top: 2px; }
@@ -422,7 +423,9 @@ export default function OrderAuditTrail() {
         }
         
         /* SVG Icons */
-        .svg-icon { width: 14px; height: 14px; }
+        .svg-icon { width: 12px; height: 12px; }
+        .timeline-icon { width: 14px; height: 14px; }
+        .audit-icon svg { width: 14px; height: 14px; }
         
         @media print { 
           body { padding: 16px; background: white; }
@@ -719,7 +722,7 @@ export default function OrderAuditTrail() {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
                       <div>
                         <div class="field-label" style="display: flex; align-items: center; gap: 4px;">
-                          ${icons.truck}
+                          <span style="width: 12px; height: 12px;">${icons.truck}</span>
                           Driver
                         </div>
                         <div class="field-value">${log.driver_id || driver?.driver_id || '—'}</div>

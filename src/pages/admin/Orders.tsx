@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Package, Search, Upload } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, Square, X, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderImportModal } from '@/components/orders/OrderImportModal';
 import { OrderDetailSheet } from '@/components/orders/OrderDetailSheet';
 import { OrderCard } from '@/components/orders/OrderCard';
+import { BulkAssignmentModal } from '@/components/orders/BulkAssignmentModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { Order } from '@/types/auth';
@@ -20,6 +22,9 @@ export default function Orders() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
   const haptic = useHapticFeedback();
 
   const handleRefresh = async () => {
@@ -57,7 +62,40 @@ export default function Orders() {
   };
 
   const filteredOrders = filterOrders(orders);
+  const pendingOrders = filteredOrders.filter(o => o.timeline_status === 'PENDING');
 
+  const toggleOrderSelection = (orderId: string) => {
+    haptic.light();
+    const newSelected = new Set(selectedOrderIds);
+    if (newSelected.has(orderId)) {
+      newSelected.delete(orderId);
+    } else {
+      newSelected.add(orderId);
+    }
+    setSelectedOrderIds(newSelected);
+  };
+
+  const selectAllPending = () => {
+    haptic.medium();
+    const pendingIds = pendingOrders.map(o => o.id);
+    setSelectedOrderIds(new Set(pendingIds));
+  };
+
+  const clearSelection = () => {
+    haptic.light();
+    setSelectedOrderIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const getSelectedOrders = () => {
+    return orders.filter(o => selectedOrderIds.has(o.id));
+  };
+
+  const handleBulkAssignSuccess = () => {
+    setShowBulkAssignModal(false);
+    clearSelection();
+    refetch();
+  };
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -73,16 +111,65 @@ export default function Orders() {
       <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
         <div className="p-4 space-y-4">
           {/* Actions */}
-          <Button
-            className="w-full"
-            onClick={() => {
-              haptic.light();
-              setShowImportModal(true);
-            }}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import Orders
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={() => {
+                haptic.light();
+                setShowImportModal(true);
+              }}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Import Orders
+            </Button>
+            <Button
+              variant={isSelectionMode ? "secondary" : "outline"}
+              onClick={() => {
+                haptic.light();
+                if (isSelectionMode) {
+                  clearSelection();
+                } else {
+                  setIsSelectionMode(true);
+                }
+              }}
+            >
+              {isSelectionMode ? <X className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+            </Button>
+          </div>
+
+          {/* Selection Mode Actions */}
+          {isSelectionMode && (
+            <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  {selectedOrderIds.size} selected
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Select pending orders to bulk assign
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectAllPending}
+                disabled={pendingOrders.length === 0}
+              >
+                Select All Pending
+              </Button>
+              {selectedOrderIds.size > 0 && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    haptic.medium();
+                    setShowBulkAssignModal(true);
+                  }}
+                >
+                  <Users className="w-4 h-4 mr-1" />
+                  Assign
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Search */}
           <div className="flex gap-2">
@@ -146,11 +233,34 @@ export default function Orders() {
         ) : (
           <div className="space-y-3">
             {filteredOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onClick={() => setSelectedOrder(order)}
-              />
+              <div key={order.id} className="relative">
+                {isSelectionMode && order.timeline_status === 'PENDING' && (
+                  <div 
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOrderSelection(order.id);
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedOrderIds.has(order.id)}
+                      className="h-5 w-5"
+                    />
+                  </div>
+                )}
+                <div className={isSelectionMode && order.timeline_status === 'PENDING' ? 'pl-10' : ''}>
+                  <OrderCard
+                    order={order}
+                    onClick={() => {
+                      if (isSelectionMode && order.timeline_status === 'PENDING') {
+                        toggleOrderSelection(order.id);
+                      } else {
+                        setSelectedOrder(order);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -180,6 +290,13 @@ export default function Orders() {
         onClose={() => setSelectedOrder(null)}
         onUpdate={refetch}
         isAdmin={true}
+      />
+
+      <BulkAssignmentModal
+        orders={getSelectedOrders()}
+        isOpen={showBulkAssignModal}
+        onClose={() => setShowBulkAssignModal(false)}
+        onSuccess={handleBulkAssignSuccess}
       />
     </AppLayout>
   );

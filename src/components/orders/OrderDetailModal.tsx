@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, MapPin, Package, Truck, Clock, Copy, ExternalLink, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Order } from '@/types/auth';
+import { Order, Profile } from '@/types/auth';
 import { DriverAssignmentModal } from './DriverAssignmentModal';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -20,6 +21,24 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [driver, setDriver] = useState<Profile | null>(null);
+
+  // Fetch driver info when order changes
+  useEffect(() => {
+    const fetchDriver = async () => {
+      if (order?.assigned_driver_id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', order.assigned_driver_id)
+          .maybeSingle();
+        setDriver(data as Profile | null);
+      } else {
+        setDriver(null);
+      }
+    };
+    fetchDriver();
+  }, [order?.assigned_driver_id]);
 
   if (!order) return null;
 
@@ -229,6 +248,33 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                 </div>
               </CardContent>
             </Card>
+
+            {/* Assigned Driver */}
+            {order.assigned_driver_id && driver && (
+              <Card className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+                <CardContent className="p-4 space-y-2">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    Assigned Driver
+                  </h4>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                        {driver.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'DR'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{driver.full_name || 'Unknown Driver'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {driver.driver_id && <span className="font-mono text-primary font-semibold">{driver.driver_id}</span>}
+                        {driver.driver_id && driver.phone && ' • '}
+                        {driver.phone || 'No phone'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Delivery Status */}
             {order.delivery_status && (

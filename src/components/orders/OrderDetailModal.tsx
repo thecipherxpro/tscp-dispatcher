@@ -255,7 +255,7 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                   className="w-full" 
                   onClick={() => {
                     onClose();
-                    navigate(`/admin/tracking/${order.id}`);
+                    navigate(`/tracking/${order.id}`);
                   }}
                 >
                   <Eye className="w-4 h-4 mr-2" />

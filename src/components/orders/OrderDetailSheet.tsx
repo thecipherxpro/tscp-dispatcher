@@ -119,7 +119,7 @@ export function OrderDetailSheet({
   const statusConfig = getStatusConfig(order.timeline_status);
   const handleViewDetails = () => {
     onClose();
-    navigate(`/admin/tracking/${order.id}`);
+    navigate(`/tracking/${order.id}`);
   };
   return <>
       <Drawer open={isOpen} onOpenChange={onClose}>

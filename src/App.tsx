@@ -133,9 +133,9 @@ function AppRoutes() {
         }
       />
 
-      {/* Admin routes */}
+      {/* Admin routes (pharmacy_admin only) */}
       <Route
-        path="/admin/tracking/:orderId"
+        path="/tracking/:orderId"
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <AdminTracking />
@@ -143,7 +143,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/admin/audit/:orderId"
+        path="/audit/:orderId"
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <OrderAuditTrail />

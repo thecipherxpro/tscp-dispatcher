@@ -78,13 +78,23 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
 
           <div className="space-y-4">
             {/* Shipment Info */}
-            {order.shipment_id && (
+            {(order.shipment_id || order.tracking_id) && (
               <Card className="bg-primary/5 border-primary/20">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Shipment ID</p>
-                      <p className="font-mono font-medium text-foreground">{order.shipment_id}</p>
+                    <div className="space-y-2">
+                      {order.shipment_id && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Shipment ID</p>
+                          <p className="font-mono font-medium text-foreground">{order.shipment_id}</p>
+                        </div>
+                      )}
+                      {order.tracking_id && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Tracking Number</p>
+                          <p className="font-mono font-medium text-primary">{order.tracking_id}</p>
+                        </div>
+                      )}
                     </div>
                     {order.tracking_url && (
                       <div className="flex gap-1">

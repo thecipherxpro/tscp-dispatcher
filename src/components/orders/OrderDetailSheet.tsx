@@ -191,8 +191,8 @@ export function OrderDetailSheet({
                 <div className="bg-muted/30 rounded-xl p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Ship Date</p>
-                      <FieldValue value={order.ship_date ? formatDate(order.ship_date) : null} label="Not scheduled" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Shipped Date</p>
+                      <FieldValue value={order.shipped_at ? formatDateTime(order.shipped_at) : null} label="Not shipped" />
                     </div>
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Billing Date</p>

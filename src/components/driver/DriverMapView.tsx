@@ -258,7 +258,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
+          style: 'mapbox://styles/towdaddy/cmixhpbr7000b01qi6so2exwj',
           center: center,
           zoom: 12,
         });

@@ -710,11 +710,11 @@ export default function OrderAuditTrail() {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
                       <div>
                         <div class="field-label" style="display: flex; align-items: center; gap: 4px;">
-                          ${icons.user}
-                          Accessed By
+                          ${icons.truck}
+                          Driver
                         </div>
-                        <div class="field-value">${log.user_full_name || 'Unknown User'}${log.driver_id ? ` (${log.driver_id})` : ''}</div>
-                        <div style="font-size: 10px; color: #9ca3af; text-transform: capitalize;">${log.user_role?.replace('_', ' ') || 'Unknown Role'}</div>
+                        <div class="field-value">${log.driver_id || driver?.driver_id || '—'}</div>
+                        <div style="font-size: 10px; color: #9ca3af;">${log.user_full_name || driver?.full_name || 'Not assigned'}</div>
                       </div>
                       <div>
                         <div class="field-label">IP Address</div>
@@ -1191,17 +1191,18 @@ export default function OrderAuditTrail() {
 
                         {/* Audit Details */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
-                          {/* Accessed By with Driver ID */}
+                          {/* Driver Info */}
                           <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
-                              <UserCheck className="w-3 h-3" />
-                              Accessed By
+                              <Truck className="w-3 h-3" />
+                              Driver
                             </p>
                             <p className="text-xs font-medium">
-                              {log.user_full_name || 'Unknown User'}
-                              {log.driver_id && <span className="text-primary ml-1">({log.driver_id})</span>}
+                              {log.driver_id || driver?.driver_id || '—'}
                             </p>
-                            <p className="text-[10px] text-muted-foreground capitalize">{log.user_role?.replace('_', ' ') || 'Unknown Role'}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {log.user_full_name || driver?.full_name || 'Not assigned'}
+                            </p>
                           </div>
 
                           {/* IP Address */}

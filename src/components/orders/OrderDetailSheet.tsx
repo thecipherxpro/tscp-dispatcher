@@ -186,32 +186,67 @@ export function OrderDetailSheet({ order, isOpen, onClose, onUpdate, isAdmin = f
               </section>
 
               {/* Medication Section */}
-              {(order.doses_nasal || order.doses_injectable || order.nasal_rx || order.injection_rx) && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Package className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold text-foreground">Medication</h3>
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Medication</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4 space-y-4">
+                  {/* Medication Type Header */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Package className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Type</p>
+                      <p className="font-semibold text-foreground">Naloxone Kit</p>
+                    </div>
                   </div>
-                  <div className="bg-muted/30 rounded-xl p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      {(order.doses_nasal || order.nasal_rx) && (
-                        <div className="bg-background rounded-lg p-3 border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Nasal</p>
-                          <p className="font-semibold text-foreground">{order.doses_nasal || 0} doses</p>
-                          {order.nasal_rx && <p className="text-xs text-muted-foreground mt-0.5">{order.nasal_rx}</p>}
+
+                  {/* Dose Types */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Nasal Dose */}
+                    <div className="bg-background rounded-xl p-3 border border-border/50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nasal</span>
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 border-blue-200">
+                          Spray
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-foreground">{order.doses_nasal || 0}</span>
+                        <span className="text-sm text-muted-foreground">doses</span>
+                      </div>
+                      {order.nasal_rx && (
+                        <div className="pt-2 border-t border-border/50">
+                          <p className="text-xs text-muted-foreground">RX Number</p>
+                          <p className="text-sm font-mono font-medium text-foreground">{order.nasal_rx}</p>
                         </div>
                       )}
-                      {(order.doses_injectable || order.injection_rx) && (
-                        <div className="bg-background rounded-lg p-3 border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Injectable</p>
-                          <p className="font-semibold text-foreground">{order.doses_injectable || 0} doses</p>
-                          {order.injection_rx && <p className="text-xs text-muted-foreground mt-0.5">{order.injection_rx}</p>}
+                    </div>
+
+                    {/* Injectable Dose */}
+                    <div className="bg-background rounded-xl p-3 border border-border/50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Injectable</span>
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200">
+                          Injection
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-foreground">{order.doses_injectable || 0}</span>
+                        <span className="text-sm text-muted-foreground">doses</span>
+                      </div>
+                      {order.injection_rx && (
+                        <div className="pt-2 border-t border-border/50">
+                          <p className="text-xs text-muted-foreground">RX Number</p>
+                          <p className="text-sm font-mono font-medium text-foreground">{order.injection_rx}</p>
                         </div>
                       )}
                     </div>
                   </div>
-                </section>
-              )}
+                </div>
+              </section>
 
               {/* Timeline Section */}
               <section>

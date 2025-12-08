@@ -495,8 +495,8 @@ export default function OrderAuditTrail() {
                   <div class="field-value mono">${order?.tracking_id || 'Not assigned'}</div>
                 </div>
                 <div>
-                  <div class="field-label">Ship Date</div>
-                  <div class="field-value">${formatDate(order?.ship_date || null)}</div>
+                  <div class="field-label">Shipped Date</div>
+                  <div class="field-value">${order?.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</div>
                 </div>
                 <div>
                   <div class="field-label">Billing Date</div>
@@ -839,8 +839,8 @@ export default function OrderAuditTrail() {
                   <p className="text-sm font-mono font-semibold">{order.tracking_id || <EmptyField label="Not assigned" />}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Ship Date</p>
-                  <p className="text-sm font-medium">{formatDate(order.ship_date)}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipped Date</p>
+                  <p className="text-sm font-medium">{order.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Billing Date</p>

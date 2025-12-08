@@ -53,7 +53,7 @@ const getStatusConfig = (status: string) => {
 export function OrderCard({ order, onClick }: OrderCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
   const hasLocation = order.city || order.province;
-  const shipDate = order.ship_date ? new Date(order.ship_date) : null;
+  const shippedDate = order.shipped_at ? new Date(order.shipped_at) : null;
 
   return (
     <Card 
@@ -95,12 +95,12 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
             </div>
           )}
 
-          {/* Ship Date */}
-          {shipDate && (
+          {/* Shipped Date */}
+          {shippedDate && (
             <div className="flex items-center gap-2 text-sm">
               <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">
-                Ship: {format(shipDate, 'MMM d, yyyy')}
+                Shipped: {format(shippedDate, 'MMM d, yyyy')}
               </span>
             </div>
           )}

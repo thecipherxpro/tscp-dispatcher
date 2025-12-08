@@ -363,8 +363,10 @@ export default function OrderAuditTrail() {
         }
         .timeline-dot-amber { background: #fef3c7; color: #d97706; }
         .timeline-dot-blue { background: #dbeafe; color: #2563eb; }
+        .timeline-dot-indigo { background: #e0e7ff; color: #4f46e5; }
         .timeline-dot-purple { background: #f3e8ff; color: #7c3aed; }
         .timeline-dot-emerald { background: #d1fae5; color: #059669; }
+        .timeline-dot-red { background: #fee2e2; color: #dc2626; }
         .timeline-dot-muted { background: #f3f4f6; color: #9ca3af; }
         .timeline-content { flex: 1; padding-top: 2px; }
         .timeline-title { font-size: 13px; font-weight: 500; color: #111827; }
@@ -634,24 +636,36 @@ export default function OrderAuditTrail() {
                   </div>
                 </div>
                 <div class="timeline-item">
-                  <div class="timeline-dot ${order?.confirmed_at ? 'timeline-dot-blue' : 'timeline-dot-muted'}">${icons.check}</div>
+                  <div class="timeline-dot ${order?.picked_up_at ? 'timeline-dot-blue' : 'timeline-dot-muted'}">${icons.package}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Picked Up</div>
+                    <div class="timeline-time">${order?.picked_up_at ? formatDateTime(order.picked_up_at) : 'Not yet picked up'}</div>
+                    ${order?.picked_up_at && driver ? `<div style="font-size: 10px; color: #2563eb; margin-top: 2px;">Assigned to: ${driver.full_name} (${driver.driver_id})</div>` : ''}
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order?.confirmed_at ? 'timeline-dot-indigo' : 'timeline-dot-muted'}">${icons.check}</div>
                   <div class="timeline-content">
                     <div class="timeline-title">Confirmed</div>
-                    <div class="timeline-time">${order?.confirmed_at ? formatDateTime(order.confirmed_at) : 'Not yet assigned'}</div>
+                    <div class="timeline-time">${order?.confirmed_at ? formatDateTime(order.confirmed_at) : 'Awaiting driver confirmation'}</div>
+                    ${order?.confirmed_at && driver ? `<div style="font-size: 10px; color: #2563eb; margin-top: 2px;">Confirmed by: ${driver.driver_id}</div>` : ''}
                   </div>
                 </div>
                 <div class="timeline-item">
-                  <div class="timeline-dot ${order?.in_route_at ? 'timeline-dot-purple' : 'timeline-dot-muted'}">${icons.navigation}</div>
+                  <div class="timeline-dot ${order?.shipped_at ? 'timeline-dot-purple' : 'timeline-dot-muted'}">${icons.navigation}</div>
                   <div class="timeline-content">
-                    <div class="timeline-title">In Route</div>
-                    <div class="timeline-time">${order?.in_route_at ? formatDateTime(order.in_route_at) : 'Driver not started'}</div>
+                    <div class="timeline-title">Shipped</div>
+                    <div class="timeline-time">${order?.shipped_at ? formatDateTime(order.shipped_at) : 'Driver not in route'}</div>
+                    ${order?.shipped_at && driver ? `<div style="font-size: 10px; color: #2563eb; margin-top: 2px;">In route by: ${driver.driver_id}</div>` : ''}
                   </div>
                 </div>
                 <div class="timeline-item">
-                  <div class="timeline-dot ${order?.completed_at ? 'timeline-dot-emerald' : 'timeline-dot-muted'}">${icons.truck}</div>
+                  <div class="timeline-dot ${order?.completed_at ? (order?.timeline_status === 'COMPLETED_DELIVERED' ? 'timeline-dot-emerald' : 'timeline-dot-red') : 'timeline-dot-muted'}">${order?.timeline_status === 'COMPLETED_INCOMPLETE' ? icons.circle : icons.truck}</div>
                   <div class="timeline-content">
-                    <div class="timeline-title">Delivered</div>
+                    <div class="timeline-title">${order?.timeline_status === 'COMPLETED_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}</div>
                     <div class="timeline-time">${order?.completed_at ? formatDateTime(order.completed_at) : 'Awaiting delivery'}</div>
+                    ${order?.delivery_status ? `<span class="badge ${order?.timeline_status === 'COMPLETED_DELIVERED' ? 'badge-emerald' : 'badge-red'}" style="margin-top: 4px; display: inline-block;">${order.delivery_status.replace(/_/g, ' ')}</span>` : ''}
+                    ${order?.completed_at && driver ? `<div style="font-size: 10px; color: #2563eb; margin-top: 2px;">Completed by: ${driver.driver_id}</div>` : ''}
                   </div>
                 </div>
               </div>

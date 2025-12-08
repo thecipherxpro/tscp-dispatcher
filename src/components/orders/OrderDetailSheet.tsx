@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap, AlertCircle, Calendar } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Order } from '@/types/auth';
+import { Order, Profile } from '@/types/auth';
 import { DriverAssignmentModal } from './DriverAssignmentModal';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Empty state component for missing data
 const EmptyField = ({ label }: { label?: string }) => (
@@ -42,6 +43,25 @@ export function OrderDetailSheet({
   } = useToast();
   const navigate = useNavigate();
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [driver, setDriver] = useState<Profile | null>(null);
+
+  // Fetch driver info when order changes
+  useEffect(() => {
+    const fetchDriver = async () => {
+      if (order?.assigned_driver_id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', order.assigned_driver_id)
+          .maybeSingle();
+        setDriver(data as Profile | null);
+      } else {
+        setDriver(null);
+      }
+    };
+    fetchDriver();
+  }, [order?.assigned_driver_id]);
+
   if (!order) return null;
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -369,7 +389,37 @@ export function OrderDetailSheet({
                 </div>
               </section>
 
-              {/* Delivery Status */}
+              {/* Driver Assignment Section */}
+              {order.assigned_driver_id && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Truck className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold text-foreground">Assigned Driver</h3>
+                  </div>
+                  <div className="bg-muted/30 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center shrink-0">
+                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                          {driver?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'DR'}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-foreground truncate font-bold">
+                          {driver?.full_name || 'Loading...'}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {driver?.driver_id && (
+                            <span className="font-mono text-primary font-semibold">{driver.driver_id}</span>
+                          )}
+                          {driver?.driver_id && driver?.phone && <span>•</span>}
+                          {driver?.phone && <span>{driver.phone}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
               {order.delivery_status && <section>
                   <div className={`rounded-xl p-4 border ${
                     order.timeline_status === 'DELIVERED' 

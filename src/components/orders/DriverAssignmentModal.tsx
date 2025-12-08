@@ -122,6 +122,8 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
                           {driver.full_name || 'Unknown Driver'}
                         </p>
                         <p className="text-xs text-muted-foreground">
+                          {driver.driver_id && <span className="text-primary font-mono">{driver.driver_id}</span>}
+                          {driver.driver_id && driver.phone && ' • '}
                           {driver.phone || 'No phone'}
                         </p>
                       </div>

@@ -62,7 +62,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         .from('orders')
         .select('*')
         .eq('assigned_driver_id', user.id)
-        .not('timeline_status', 'in', '("DELIVERED","DELIVERY_INCOMPLETE")')
+        .not('timeline_status', 'in', '("COMPLETED_DELIVERED","COMPLETED_INCOMPLETE")')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

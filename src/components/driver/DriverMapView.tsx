@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
-import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass } from 'lucide-react';
+import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { NavigationSheet } from './NavigationSheet';
 
 interface DriverMapViewProps {
   onOrderSelect?: (order: Order) => void;
@@ -24,9 +24,6 @@ interface RouteInfo {
 type GeoZone = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 
 interface OrderWithCoords extends Order {
-  latitude?: number | null;
-  longitude?: number | null;
-  geo_zone?: string | null;
   drivingDistance?: number;
   drivingDuration?: number;
 }
@@ -49,6 +46,7 @@ function determineGeoZone(lat: number, lng: number): GeoZone {
 }
 
 export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
+  const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
@@ -70,7 +68,6 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const [zoneCounts, setZoneCounts] = useState<Record<GeoZone, number>>({ NORTH: 0, SOUTH: 0, EAST: 0, WEST: 0 });
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [activeDestination, setActiveDestination] = useState<OrderWithCoords | null>(null);
-  const [showNavigationSheet, setShowNavigationSheet] = useState(false);
 
   // Fetch Google Maps API key
   const fetchApiKey = useCallback(async () => {
@@ -754,43 +751,27 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
               
               <div className="flex gap-2">
                 <Button 
-                  variant="outline" 
                   size="sm" 
-                  className="flex-1"
-                  onClick={() => setShowNavigationSheet(true)}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => navigate(`/driver-navigation?orderId=${selectedOrder.id}`)}
                 >
-                  <Navigation className="w-4 h-4 mr-1" />
-                  Directions
+                  <Play className="w-4 h-4 mr-1" />
+                  Start Navigation
                 </Button>
                 <Button 
+                  variant="outline"
                   size="sm" 
-                  className="flex-1"
                   onClick={() => {
                     onOrderSelect?.(selectedOrder);
                   }}
                 >
-                  Update Status
+                  Details
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
-
-      {/* Navigation Sheet */}
-      <NavigationSheet
-        isOpen={showNavigationSheet}
-        onClose={() => setShowNavigationSheet(false)}
-        destination={selectedOrder && selectedOrder.latitude && selectedOrder.longitude ? {
-          lat: selectedOrder.latitude,
-          lng: selectedOrder.longitude,
-          city: selectedOrder.city,
-          postal: selectedOrder.postal,
-          province: selectedOrder.province,
-          address_1: selectedOrder.address_1
-        } : null}
-        driverLocation={driverLocation}
-      />
     </div>
   );
 }

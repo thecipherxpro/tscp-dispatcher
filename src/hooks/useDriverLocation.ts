@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LocationData {
   ip_address: string | null;
@@ -9,7 +10,9 @@ interface LocationData {
 // Fetch IP address using public API
 async function fetchIPAddress(): Promise<string | null> {
   try {
-    const response = await fetch('https://api.ipify.org?format=json');
+    const response = await fetch('https://api.ipify.org?format=json', { 
+      signal: AbortSignal.timeout(3000) 
+    });
     if (response.ok) {
       const data = await response.json();
       return data.ip || null;
@@ -18,6 +21,18 @@ async function fetchIPAddress(): Promise<string | null> {
     console.error('Failed to fetch IP address:', error);
   }
   return null;
+}
+
+// Get Mapbox token from edge function
+async function getMapboxToken(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+    if (error) throw error;
+    return data?.token || null;
+  } catch (error) {
+    console.error('Failed to get Mapbox token:', error);
+    return null;
+  }
 }
 
 // Get browser geolocation
@@ -49,22 +64,39 @@ function getBrowserGeolocation(): Promise<{ lat: number; lng: number } | null> {
   });
 }
 
-// Reverse geocode coordinates to get location name
-async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+// Reverse geocode coordinates using Mapbox API
+async function reverseGeocodeWithMapbox(lat: number, lng: number, token: string): Promise<string | null> {
   try {
-    // Using Nominatim (OpenStreetMap) for reverse geocoding - free and no API key required
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&types=place,locality,neighborhood`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        return data.features[0].place_name || null;
+      }
+    }
+  } catch (error) {
+    console.error('Mapbox reverse geocoding failed:', error);
+  }
+  return null;
+}
+
+// Fallback to Nominatim if Mapbox fails
+async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string | null> {
+  try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`,
       {
-        headers: {
-          'User-Agent': 'TSCP-Delivery-App',
-        },
+        headers: { 'User-Agent': 'TSCP-Delivery-App' },
+        signal: AbortSignal.timeout(5000)
       }
     );
     
     if (response.ok) {
       const data = await response.json();
-      // Build a readable location string
       const parts = [];
       if (data.address?.city || data.address?.town || data.address?.village) {
         parts.push(data.address.city || data.address.town || data.address.village);
@@ -78,16 +110,20 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
       return parts.length > 0 ? parts.join(', ') : null;
     }
   } catch (error) {
-    console.error('Reverse geocoding failed:', error);
+    console.error('Nominatim reverse geocoding failed:', error);
   }
   return null;
 }
 
 // Main function to fetch all location data
 export async function fetchDriverLocationData(): Promise<LocationData> {
-  const [ipAddress, coords] = await Promise.all([
-    fetchIPAddress(),
+  // Fetch IP address immediately - this is fast and reliable
+  const ipAddress = await fetchIPAddress();
+  
+  // Get coords in parallel with mapbox token
+  const [coords, mapboxToken] = await Promise.all([
     getBrowserGeolocation(),
+    getMapboxToken(),
   ]);
 
   let geolocation: string | null = null;
@@ -95,7 +131,14 @@ export async function fetchDriverLocationData(): Promise<LocationData> {
 
   if (coords) {
     geolocation = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
-    accessLocation = await reverseGeocode(coords.lat, coords.lng);
+    
+    // Try Mapbox first, fallback to Nominatim
+    if (mapboxToken) {
+      accessLocation = await reverseGeocodeWithMapbox(coords.lat, coords.lng, mapboxToken);
+    }
+    if (!accessLocation) {
+      accessLocation = await reverseGeocodeNominatim(coords.lat, coords.lng);
+    }
   }
 
   return {

@@ -1,25 +1,31 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, 
-  User, Phone, Mail, Calendar, Copy, Building, 
-  FileText, Pill
+  Package, Truck, MapPin, User, Phone, Mail, Calendar, Copy, Building, 
+  FileText, Hash, ExternalLink, CheckCircle2, Clock, Navigation, CircleDot, ArrowLeft
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, Profile } from '@/types/auth';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/hooks/use-toast';
 
-const timelineSteps = [
-  { status: 'PENDING', label: 'Pending', icon: Clock },
-  { status: 'CONFIRMED', label: 'Confirmed', icon: Package },
-  { status: 'IN_ROUTE', label: 'In Route', icon: Truck },
-  { status: 'ARRIVED', label: 'Arrived', icon: MapPin },
-  { status: 'COMPLETED', label: 'Completed', icon: CheckCircle },
-];
+// Empty state component for missing data
+const EmptyField = ({ label }: { label?: string }) => (
+  <span className="text-muted-foreground/60 italic text-sm">
+    {label || 'Not provided'}
+  </span>
+);
+
+// Helper to render field value or empty state
+const FieldValue = ({ value, label }: { value: string | null | undefined; label?: string }) => {
+  if (!value || value.trim() === '') {
+    return <EmptyField label={label} />;
+  }
+  return <span className="text-sm font-medium text-foreground">{value}</span>;
+};
 
 export default function AdminTracking() {
   const { orderId } = useParams();
@@ -49,7 +55,6 @@ export default function AdminTracking() {
       if (data) {
         setOrder(data as Order);
         
-        // Fetch driver info if assigned
         if (data.assigned_driver_id) {
           const { data: driverProfile } = await supabase
             .from('profiles')
@@ -76,7 +81,6 @@ export default function AdminTracking() {
     fetchOrder();
   }, [fetchOrder]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!orderId) return;
 
@@ -101,6 +105,25 @@ export default function AdminTracking() {
     };
   }, [orderId]);
 
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200' };
+      case 'CONFIRMED':
+        return { label: 'Confirmed', className: 'bg-blue-100 text-blue-800 border-blue-200' };
+      case 'IN_ROUTE':
+        return { label: 'In Route', className: 'bg-purple-100 text-purple-800 border-purple-200' };
+      case 'ARRIVED':
+        return { label: 'Arrived', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
+      case 'COMPLETED':
+        return { label: 'Completed', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      case 'REQUEST_ADDRESS_REVIEW':
+        return { label: 'Address Review', className: 'bg-red-100 text-red-800 border-red-200' };
+      default:
+        return { label: status, className: '' };
+    }
+  };
+
   const formatDate = (date: string | null) => {
     if (!date) return 'Not set';
     return new Date(date).toLocaleDateString('en-CA', {
@@ -114,7 +137,6 @@ export default function AdminTracking() {
     if (!date) return null;
     return new Date(date).toLocaleString('en-CA', {
       timeZone: 'America/Toronto',
-      year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -129,329 +151,445 @@ export default function AdminTracking() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800';
-      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
-      case 'ARRIVED': return 'bg-indigo-100 text-indigo-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'REQUEST_ADDRESS_REVIEW': return 'bg-red-100 text-red-800';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+          <p className="text-muted-foreground mt-3">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const getStatusIndex = (status: string) => {
-    return timelineSteps.findIndex(s => s.status === status);
-  };
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6 text-center">
+          <p className="text-destructive">{error || 'Order not found'}</p>
+          <Button variant="outline" className="mt-4" onClick={() => navigate('/orders')}>
+            Back to Orders
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-  const currentStatusIndex = order ? getStatusIndex(order.timeline_status) : -1;
+  const statusConfig = getStatusConfig(order.timeline_status);
 
   return (
-    <AppLayout title="Order Tracking" showBackButton>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold">Order Details</h1>
+          </div>
+          <Badge className={statusConfig.className}>
+            {statusConfig.label}
+          </Badge>
+        </div>
+        {order.shipment_id && (
+          <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 mt-3">
+            <Package className="w-4 h-4 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipment ID</p>
+              <p className="text-sm font-mono font-semibold text-foreground">{order.shipment_id}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <PullToRefresh onRefresh={fetchOrder}>
-        <div className="p-4 space-y-4 pb-24">
-          {isLoading && (
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-                <p className="text-muted-foreground mt-3">Loading order details...</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {error && (
-            <Card className="bg-destructive/10 border-destructive/20">
-              <CardContent className="p-4 text-center">
-                <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
-                <p className="text-destructive">{error}</p>
-                <Button variant="outline" className="mt-4" onClick={() => navigate('/orders')}>
-                  Back to Orders
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {order && !isLoading && (
-            <>
-              {/* Status Header */}
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Shipment ID</p>
-                      <p className="font-mono font-bold text-lg text-foreground">
-                        {order.shipment_id || 'Not Assigned'}
-                      </p>
+        <div className="px-4 pb-24">
+          <div className="py-4 space-y-5">
+            
+            {/* Tracking Info Card */}
+            {order.tracking_id ? (
+              <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Hash className="w-5 h-5 text-primary" />
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
-                      {order.timeline_status.replace('_', ' ')}
-                    </span>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Tracking Number</p>
+                      <p className="font-mono font-semibold text-primary">{order.tracking_id}</p>
+                    </div>
                   </div>
                   {order.tracking_url && (
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 text-xs bg-background/50 p-2 rounded truncate">
-                        {order.tracking_url}
-                      </code>
-                      <Button variant="outline" size="sm" onClick={copyTrackingUrl}>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={copyTrackingUrl}>
                         <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                        <a href={order.tracking_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
                       </Button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-muted/30 rounded-xl p-4 border border-dashed border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <Hash className="w-5 h-5 text-muted-foreground/50" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Tracking Number</p>
+                    <p className="text-sm text-muted-foreground/60 italic">Not yet assigned</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-              {/* Full Client Information */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-4 space-y-4">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <User className="w-4 h-4 text-primary" />
-                    Client Information
-                  </h4>
+            {/* Ship & Billing Dates Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Dates</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Ship Date</p>
+                    <FieldValue value={order.ship_date ? formatDate(order.ship_date) : null} label="Not scheduled" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Billing Date</p>
+                    <FieldValue value={order.billing_date ? formatDate(order.billing_date) : null} label="Not set" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Timeline Status Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Delivery Timeline</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-4">
+                <div className="relative">
+                  {/* Timeline Line */}
+                  <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-border" />
                   
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <User className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Full Name</p>
-                        <p className="font-medium text-foreground">{order.name || 'N/A'}</p>
-                      </div>
+                  {/* Pending */}
+                  <div className="relative flex items-start gap-3 pb-4">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                      order.pending_at ? 'bg-amber-100 text-amber-600' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <CircleDot className="w-3.5 h-3.5" />
                     </div>
-                    
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <Calendar className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Date of Birth</p>
-                        <p className="font-medium text-foreground">{formatDate(order.dob)}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Health Card</p>
-                        <p className="font-medium text-foreground">{order.health_card || 'N/A'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Phone</p>
-                        <p className="font-medium text-foreground">
-                          {order.phone_number ? (
-                            <a href={`tel:${order.phone_number}`} className="text-primary underline">
-                              {order.phone_number}
-                            </a>
-                          ) : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <Mail className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Email</p>
-                        <p className="font-medium text-foreground break-all">
-                          {order.email ? (
-                            <a href={`mailto:${order.email}`} className="text-primary underline">
-                              {order.email}
-                            </a>
-                          ) : 'N/A'}
-                        </p>
-                      </div>
+                    <div className="flex-1 pt-0.5">
+                      <p className="text-sm font-medium text-foreground">Pending</p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.pending_at ? formatDateTime(order.pending_at) : 'Awaiting processing'}
+                      </p>
                     </div>
                   </div>
                   
-                  {order.call_notes && (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-xs text-yellow-600 font-medium">Call Notes</p>
-                      <p className="text-sm text-yellow-900 mt-1">{order.call_notes}</p>
+                  {/* Confirmed */}
+                  <div className="relative flex items-start gap-3 pb-4">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                      order.confirmed_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Full Address */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-4 space-y-3">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    Complete Delivery Address
-                  </h4>
-                  <div className="p-4 bg-muted/50 rounded-lg space-y-1">
-                    <p className="font-medium text-foreground">{order.address_1 || 'N/A'}</p>
-                    {order.address_2 && (
-                      <p className="text-foreground">{order.address_2}</p>
-                    )}
-                    <p className="text-foreground">
-                      {order.city}, {order.province} {order.postal}
-                    </p>
-                    <p className="text-muted-foreground">{order.country || 'Canada'}</p>
+                    <div className="flex-1 pt-0.5">
+                      <p className="text-sm font-medium text-foreground">Confirmed</p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.confirmed_at ? `Assigned ${formatDateTime(order.confirmed_at)}` : 'Not yet assigned'}
+                      </p>
+                    </div>
                   </div>
                   
-                  {order.address_1 && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => {
-                        const address = `${order.address_1}, ${order.city}, ${order.province} ${order.postal}`;
-                        window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
-                      }}
-                    >
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Open in Google Maps
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Medication Details */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-4 space-y-3">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <Pill className="w-4 h-4 text-primary" />
-                    Medication Information
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Nasal Doses</p>
-                      <p className="text-2xl font-bold text-foreground">{order.doses_nasal || 0}</p>
-                      {order.nasal_rx && (
-                        <p className="text-xs text-muted-foreground mt-1">Rx: {order.nasal_rx}</p>
-                      )}
+                  {/* In Route */}
+                  <div className="relative flex items-start gap-3 pb-4">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                      order.in_route_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <Navigation className="w-3.5 h-3.5" />
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Injectable Doses</p>
-                      <p className="text-2xl font-bold text-foreground">{order.doses_injectable || 0}</p>
-                      {order.injection_rx && (
-                        <p className="text-xs text-muted-foreground mt-1">Rx: {order.injection_rx}</p>
-                      )}
+                    <div className="flex-1 pt-0.5">
+                      <p className="text-sm font-medium text-foreground">In Route</p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.in_route_at ? formatDateTime(order.in_route_at) : 'Driver not started'}
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Pharmacy & Authorization */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-4 space-y-3">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <Building className="w-4 h-4 text-primary" />
-                    Pharmacy Details
-                  </h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Pharmacy Name</p>
-                      <p className="font-medium text-foreground">{order.pharmacy_name || 'N/A'}</p>
+                  
+                  {/* Delivered */}
+                  <div className="relative flex items-start gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                      order.completed_at ? 'bg-emerald-100 text-emerald-600' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <Truck className="w-3.5 h-3.5" />
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Authorizing Pharmacist</p>
-                      <p className="font-medium text-foreground">{order.authorizing_pharmacist || 'N/A'}</p>
-                    </div>
-                    {order.training_status && (
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-xs text-muted-foreground">Training Status</p>
-                        <p className="font-medium text-foreground">{order.training_status}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Assigned Driver */}
-              {driver && (
-                <Card className="bg-card border-border">
-                  <CardContent className="p-4 space-y-3">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-primary" />
-                      Assigned Driver
-                    </h4>
-                    <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{driver.full_name || 'Unknown'}</p>
-                        {driver.phone && (
-                          <a href={`tel:${driver.phone}`} className="text-sm text-primary underline">
-                            {driver.phone}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Timeline */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-4">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-                    <Clock className="w-4 h-4 text-primary" />
-                    Delivery Timeline
-                  </h4>
-                  <div className="space-y-4">
-                    {timelineSteps.map((step, index) => {
-                      const isCompleted = index <= currentStatusIndex;
-                      const isCurrent = index === currentStatusIndex;
-                      const Icon = step.icon;
-                      
-                      const timestamps: Record<string, string | null> = {
-                        'PENDING': order.pending_at,
-                        'CONFIRMED': order.confirmed_at,
-                        'IN_ROUTE': order.in_route_at,
-                        'ARRIVED': order.arrived_at,
-                        'COMPLETED': order.completed_at,
-                      };
-
-                      return (
-                        <div key={step.status} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              isCompleted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                            } ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            {index < timelineSteps.length - 1 && (
-                              <div className={`w-0.5 h-8 mt-1 ${
-                                isCompleted ? 'bg-primary' : 'bg-muted'
-                              }`} />
-                            )}
-                          </div>
-                          <div className="flex-1 pt-2">
-                            <p className={`font-medium ${
-                              isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                            }`}>
-                              {step.label}
-                            </p>
-                            {timestamps[step.status] && (
-                              <p className="text-xs text-muted-foreground">
-                                {formatDateTime(timestamps[step.status])}
-                              </p>
-                            )}
-                          </div>
+                    <div className="flex-1 pt-0.5">
+                      <p className="text-sm font-medium text-foreground">Delivered</p>
+                      {order.completed_at ? (
+                        <div>
+                          <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
+                          {order.delivery_status && (
+                            <Badge variant="secondary" className="mt-1 text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                              {order.delivery_status.replace(/_/g, ' ')}
+                            </Badge>
+                          )}
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Awaiting delivery</p>
+                      )}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </section>
 
-              {/* Delivery Status */}
-              {order.delivery_status && (
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-green-600 font-medium">Delivery Outcome</p>
-                    <p className="font-semibold text-green-900 text-lg">
-                      {order.delivery_status.replace(/_/g, ' ')}
+            {/* Client Information Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Client Information</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-semibold text-primary">
+                      {order.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground truncate font-bold">
+                      {order.name || <EmptyField label="No name" />}
                     </p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
+                    <p className="text-xs text-muted-foreground">
+                      DOB: {order.dob ? formatDate(order.dob) : <span className="italic text-muted-foreground/60">Not provided</span>}
+                    </p>
+                  </div>
+                </div>
+                
+                <Separator className="bg-border/50" />
+                
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Health Card</p>
+                    <FieldValue value={order.health_card} label="Not provided" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                    {order.phone_number ? (
+                      <a href={`tel:${order.phone_number}`} className="text-primary underline">{order.phone_number}</a>
+                    ) : (
+                      <EmptyField label="No phone" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                    {order.email ? (
+                      <a href={`mailto:${order.email}`} className="text-primary underline truncate">{order.email}</a>
+                    ) : (
+                      <EmptyField label="No email" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Delivery Address Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Delivery Address</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Street</p>
+                  <FieldValue value={order.address_1} label="No address" />
+                  {order.address_2 && (
+                    <p className="text-sm text-muted-foreground mt-0.5">{order.address_2}</p>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">City</p>
+                    <FieldValue value={order.city} label="—" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Province</p>
+                    <FieldValue value={order.province} label="—" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Postal</p>
+                    <FieldValue value={order.postal} label="—" />
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Country</p>
+                  <FieldValue value={order.country} label="Canada" />
+                </div>
+                
+                {order.address_1 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-2"
+                    onClick={() => {
+                      const address = `${order.address_1}, ${order.city}, ${order.province} ${order.postal}`;
+                      window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
+                    }}
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Open in Google Maps
+                  </Button>
+                )}
+              </div>
+            </section>
+
+            {/* Medication Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Package className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Medication</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-3 space-y-3">
+                <div className="text-center pb-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Naloxone Kit</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-background rounded-lg p-3 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-xs font-bold text-blue-700">N</span>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">Nasal</span>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">{order.doses_nasal || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">doses</p>
+                    {order.nasal_rx && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
+                        <p className="text-xs font-mono text-foreground">{order.nasal_rx}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-background rounded-lg p-3 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <span className="text-xs font-bold text-emerald-700">I</span>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">Injectable</span>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">{order.doses_injectable || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">doses</p>
+                    {order.injection_rx && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
+                        <p className="text-xs font-mono text-foreground">{order.injection_rx}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Pharmacy Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Building className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Pharmacy Details</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Pharmacy</p>
+                  <FieldValue value={order.pharmacy_name} label="Not specified" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Authorizing Pharmacist</p>
+                  <FieldValue value={order.authorizing_pharmacist} label="Not specified" />
+                </div>
+                {order.training_status && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Training Status</p>
+                    <FieldValue value={order.training_status} />
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Assigned Driver Section */}
+            {driver && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Truck className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Assigned Driver</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-semibold text-primary">
+                        {driver.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'DR'}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground truncate font-bold">{driver.full_name || 'Unknown'}</p>
+                      {driver.phone && (
+                        <a href={`tel:${driver.phone}`} className="text-xs text-primary underline">{driver.phone}</a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Delivery Outcome */}
+            {order.delivery_status && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Delivery Outcome</h3>
+                </div>
+                <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                      <Truck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Delivery Outcome</p>
+                      <p className="font-semibold text-emerald-900 dark:text-emerald-100">
+                        {order.delivery_status.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Notes Section */}
+            {order.call_notes && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Notes</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  <p className="text-sm text-foreground">{order.call_notes}</p>
+                </div>
+              </section>
+            )}
+          </div>
         </div>
       </PullToRefresh>
-    </AppLayout>
+    </div>
   );
 }

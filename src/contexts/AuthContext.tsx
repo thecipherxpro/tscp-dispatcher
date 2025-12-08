@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           dob: profileData.dob,
           phone: profileData.phone,
           avatar_url: profileData.avatar_url,
+          driver_id: profileData.driver_id,
           onboarding_status: profileData.onboarding_status as 'not_started' | 'in_progress' | 'completed',
           agreement_terms: profileData.agreement_terms ?? false,
           agreement_privacy: profileData.agreement_privacy ?? false,

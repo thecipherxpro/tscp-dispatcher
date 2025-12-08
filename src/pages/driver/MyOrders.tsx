@@ -118,19 +118,6 @@ export default function MyOrders() {
           </Button>
         );
       case 'IN_ROUTE':
-        return (
-          <Button
-            size="sm"
-            className="w-full mt-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedOrder(order);
-            }}
-          >
-            <MapPin className="w-4 h-4 mr-1" />
-            Mark Arrived
-          </Button>
-        );
       case 'ARRIVED':
         return (
           <Button
@@ -142,7 +129,7 @@ export default function MyOrders() {
             }}
           >
             <CheckCircle className="w-4 h-4 mr-1" />
-            Complete Delivery
+            Mark Delivery Outcome
           </Button>
         );
       case 'REVIEW_REQUESTED':

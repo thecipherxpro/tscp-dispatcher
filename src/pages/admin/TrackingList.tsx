@@ -68,7 +68,7 @@ export default function TrackingList() {
               <Card
                 key={order.id}
                 className="p-4 cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => navigate(`/admin/tracking/${order.id}`)}
+                onClick={() => navigate(`/tracking/${order.id}`)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

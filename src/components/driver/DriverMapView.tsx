@@ -4,19 +4,32 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
-import { Loader2, MapPin, AlertCircle } from 'lucide-react';
+import { Loader2, MapPin, AlertCircle, Navigation, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DriverMapViewProps {
   onOrderSelect?: (order: Order) => void;
+}
+
+interface RouteInfo {
+  duration: number; // in seconds
+  distance: number; // in meters
 }
 
 export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const routeLayerAdded = useRef(false);
   const { user } = useAuth();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +37,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
 
   // Fetch Mapbox token
   const fetchMapboxToken = useCallback(async () => {
@@ -115,6 +131,108 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     }
   };
 
+  // Fetch and display route
+  const fetchRoute = useCallback(async (origin: [number, number], destination: [number, number]) => {
+    if (!mapboxToken || !map.current) return;
+
+    setIsLoadingRoute(true);
+    setRouteInfo(null);
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&overview=full&access_token=${mapboxToken}`
+      );
+      const data = await response.json();
+
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const routeGeometry = route.geometry;
+
+        // Set route info
+        setRouteInfo({
+          duration: route.duration,
+          distance: route.distance
+        });
+
+        // Add or update route layer
+        if (map.current?.getSource('route')) {
+          (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
+            type: 'Feature',
+            properties: {},
+            geometry: routeGeometry
+          });
+        } else {
+          map.current?.addSource('route', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: routeGeometry
+            }
+          });
+
+          map.current?.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': '#3b82f6',
+              'line-width': 5,
+              'line-opacity': 0.75
+            }
+          });
+          routeLayerAdded.current = true;
+        }
+
+        // Fit map to show route
+        const coordinates = routeGeometry.coordinates;
+        const bounds = new mapboxgl.LngLatBounds();
+        coordinates.forEach((coord: [number, number]) => bounds.extend(coord));
+        map.current?.fitBounds(bounds, { padding: 80 });
+      }
+    } catch (err) {
+      console.error('Error fetching route:', err);
+    } finally {
+      setIsLoadingRoute(false);
+    }
+  }, [mapboxToken]);
+
+  // Handle order selection from dropdown
+  const handleOrderSelection = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order || !mapboxToken) return;
+
+    setSelectedOrder(order);
+
+    // Get destination coordinates
+    const destination = await geocodeAddress(order, mapboxToken);
+    if (!destination) return;
+
+    // Get current user location
+    const currentLocation = await getUserLocation();
+    if (currentLocation) {
+      setUserLocation(currentLocation);
+      fetchRoute(currentLocation, destination);
+    }
+  };
+
+  // Clear route
+  const clearRoute = () => {
+    if (map.current?.getLayer('route')) {
+      map.current.removeLayer('route');
+    }
+    if (map.current?.getSource('route')) {
+      map.current.removeSource('route');
+    }
+    routeLayerAdded.current = false;
+    setRouteInfo(null);
+    setSelectedOrder(null);
+  };
+
   // Initialize map
   useEffect(() => {
     const initMap = async () => {
@@ -125,6 +243,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         setError(null);
 
         const token = await fetchMapboxToken();
+        setMapboxToken(token);
         mapboxgl.accessToken = token;
 
         const fetchedOrders = await fetchOrders();
@@ -180,7 +299,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                 .addTo(map.current!);
 
               el.addEventListener('click', () => {
-                setSelectedOrder(order);
+                handleOrderSelection(order.id);
               });
 
               markersRef.current.push(marker);
@@ -217,6 +336,20 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
   };
 
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}min`;
+    }
+    return `${minutes} min`;
+  };
+
+  const formatDistance = (meters: number) => {
+    const km = meters / 1000;
+    return `${km.toFixed(1)} km`;
+  };
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -241,13 +374,80 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
 
       <div ref={mapContainer} className="absolute inset-0" />
 
-      {/* Order count badge */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Top controls */}
+      <div className="absolute top-4 left-4 right-16 z-10 space-y-2">
+        {/* Delivery Selection Dropdown */}
+        <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-2">
+          <Select 
+            value={selectedOrder?.id || ''} 
+            onValueChange={handleOrderSelection}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a delivery to navigate" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border shadow-lg z-50">
+              {orders.map((order) => (
+                <SelectItem key={order.id} value={order.id}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: getStatusColor(order.timeline_status) }} 
+                    />
+                    <span className="truncate">
+                      {order.name || 'Unknown'} - {order.address_1?.slice(0, 20)}...
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Order count badge */}
         <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-md">
           <MapPin className="w-3 h-3 mr-1" />
           {orders.length} {orders.length === 1 ? 'delivery' : 'deliveries'}
         </Badge>
       </div>
+
+      {/* Route info card */}
+      {(routeInfo || isLoadingRoute) && (
+        <div className="absolute top-28 left-4 z-10">
+          <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
+            <CardContent className="p-3">
+              {isLoadingRoute ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Calculating route...</span>
+                </div>
+              ) : routeInfo && (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatDuration(routeInfo.duration)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Navigation className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {formatDistance(routeInfo.distance)}
+                    </span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2 text-xs"
+                    onClick={clearRoute}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Selected order card */}
       {selectedOrder && (
@@ -280,6 +480,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   className="flex-1"
                   onClick={() => handleNavigate(selectedOrder)}
                 >
+                  <Navigation className="w-4 h-4 mr-1" />
                   Navigate
                 </Button>
                 <Button 
@@ -287,7 +488,6 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   className="flex-1"
                   onClick={() => {
                     onOrderSelect?.(selectedOrder);
-                    setSelectedOrder(null);
                   }}
                 >
                   View Details

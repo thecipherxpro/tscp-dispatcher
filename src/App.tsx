@@ -14,6 +14,7 @@ import DriverDashboard from "./pages/driver/DriverDashboard";
 import DriverOnboarding from "./pages/driver/DriverOnboarding";
 import Orders from "./pages/admin/Orders";
 import AdminTracking from "./pages/admin/AdminTracking";
+import OrderAuditTrail from "./pages/admin/OrderAuditTrail";
 import TrackingList from "./pages/admin/TrackingList";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
@@ -138,6 +139,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <AdminTracking />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/audit/:orderId"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <OrderAuditTrail />
           </ProtectedRoute>
         }
       />

@@ -118,7 +118,6 @@ export default function MyOrders() {
           </Button>
         );
       case 'IN_ROUTE':
-      case 'ARRIVED':
         return (
           <Button
             size="sm"

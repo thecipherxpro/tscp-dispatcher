@@ -41,12 +41,6 @@ const getStatusConfig = (status: string) => {
         variant: 'outline' as const,
         className: 'border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-400'
       };
-    case 'ARRIVED':
-      return { 
-        label: 'Arrived', 
-        variant: 'outline' as const,
-        className: 'border-cyan-500/50 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
-      };
     case 'COMPLETED_DELIVERED':
       return { 
         label: 'Delivered', 

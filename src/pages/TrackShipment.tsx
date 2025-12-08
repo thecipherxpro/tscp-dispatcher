@@ -9,12 +9,11 @@ import { PublicTracking } from '@/types/auth';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
-// Public timeline - simplified 5-step view for customers
+// Public timeline - simplified 4-step view for customers
 const timelineSteps = [
   { status: 'PENDING', label: 'Pending', icon: Clock },
   { status: 'PICKED_UP_AND_ASSIGNED', label: 'Picked Up', icon: Package },
   { status: 'IN_ROUTE', label: 'Shipped', icon: Truck },
-  { status: 'ARRIVED', label: 'Arrived', icon: MapPin },
   { status: 'COMPLETED', label: 'Delivered', icon: CheckCircle },
 ];
 
@@ -29,11 +28,9 @@ const getPublicStatusIndex = (status: string) => {
       return 1;
     case 'IN_ROUTE':
       return 2;
-    case 'ARRIVED':
-      return 3;
     case 'COMPLETED_DELIVERED':
     case 'COMPLETED_INCOMPLETE':
-      return 4;
+      return 3;
     default:
       return -1;
   }
@@ -164,8 +161,6 @@ export default function TrackShipment() {
         return tracking.picked_up_at || tracking.assigned_at;
       case 'IN_ROUTE':
         return tracking.shipped_at;
-      case 'ARRIVED':
-        return tracking.arrived_at;
       case 'COMPLETED':
         return tracking.completed_at;
       default:

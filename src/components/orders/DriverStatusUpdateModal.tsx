@@ -401,8 +401,8 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
           </Button>
         )}
 
-        {/* IN_ROUTE or ARRIVED - Show Mark Delivery Outcome */}
-        {(order.timeline_status === 'IN_ROUTE' || order.timeline_status === 'ARRIVED') && (
+        {/* IN_ROUTE - Show Mark Delivery Outcome */}
+        {order.timeline_status === 'IN_ROUTE' && (
           <Button
             className="w-full h-14"
             onClick={() => setShowDeliveryOutcome(true)}

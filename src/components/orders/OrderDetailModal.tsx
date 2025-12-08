@@ -49,7 +49,6 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
       case 'REVIEW_REQUESTED': return 'bg-amber-100 text-amber-800';
       case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800';
       case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
-      case 'ARRIVED': return 'bg-cyan-100 text-cyan-800';
       case 'COMPLETED_DELIVERED': return 'bg-green-100 text-green-800';
       case 'COMPLETED_INCOMPLETE': return 'bg-red-100 text-red-800';
       default: return 'bg-muted text-muted-foreground';

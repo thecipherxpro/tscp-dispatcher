@@ -33,7 +33,6 @@ export default function TrackingList() {
       case 'REVIEW_REQUESTED': return 'bg-amber-500/10 text-amber-500';
       case 'CONFIRMED': return 'bg-indigo-500/10 text-indigo-500';
       case 'IN_ROUTE': return 'bg-purple-500/10 text-purple-500';
-      case 'ARRIVED': return 'bg-cyan-500/10 text-cyan-500';
       case 'COMPLETED_DELIVERED': return 'bg-green-500/10 text-green-500';
       case 'COMPLETED_INCOMPLETE': return 'bg-red-500/10 text-red-500';
       default: return 'bg-muted text-muted-foreground';

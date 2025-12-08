@@ -205,7 +205,6 @@ export async function updateOrderStatus(
     const timestampField: Record<string, string> = {
       'CONFIRMED': 'confirmed_at',
       'IN_ROUTE': 'shipped_at',
-      'ARRIVED': 'arrived_at',
       'COMPLETED_DELIVERED': 'completed_at',
       'COMPLETED_INCOMPLETE': 'completed_at',
       'REVIEW_REQUESTED': 'review_requested_at',
@@ -260,8 +259,6 @@ export async function updateOrderStatus(
       auditAction = 'ORDER_SHIPPED';
     } else if (newStatus === 'CONFIRMED') {
       auditAction = 'ORDER_CONFIRMED';
-    } else if (newStatus === 'ARRIVED') {
-      auditAction = 'ORDER_ARRIVED';
     } else if (newStatus === 'REVIEW_REQUESTED') {
       auditAction = 'REVIEW_REQUESTED';
     }

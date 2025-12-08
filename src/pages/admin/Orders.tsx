@@ -14,7 +14,7 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { Order } from '@/types/auth';
 
-type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'arrived' | 'delivered' | 'incomplete' | 'review';
+type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'delivered' | 'incomplete' | 'review';
 
 export default function Orders() {
   const { orders, isLoading, refetch } = useOrders(true); // Enable realtime
@@ -42,7 +42,6 @@ export default function Orders() {
         assigned: 'PICKED_UP_AND_ASSIGNED',
         confirmed: 'CONFIRMED',
         in_route: 'IN_ROUTE',
-        arrived: 'ARRIVED',
         delivered: 'COMPLETED_DELIVERED',
         incomplete: 'COMPLETED_INCOMPLETE',
         review: 'REVIEW_REQUESTED',
@@ -106,7 +105,6 @@ export default function Orders() {
     { key: 'assigned', label: 'Assigned' },
     { key: 'confirmed', label: 'Confirmed' },
     { key: 'in_route', label: 'In Route' },
-    { key: 'arrived', label: 'Arrived' },
     { key: 'delivered', label: 'Delivered' },
     { key: 'incomplete', label: 'Incomplete' },
     { key: 'review', label: 'Review' },

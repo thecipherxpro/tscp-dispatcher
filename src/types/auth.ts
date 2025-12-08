@@ -27,6 +27,7 @@ export interface Profile {
   dob: string | null;
   phone: string | null;
   avatar_url: string | null;
+  driver_id: string | null;
   onboarding_status: OnboardingStatus;
   agreement_terms: boolean;
   agreement_privacy: boolean;

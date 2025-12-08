@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Mail, Phone, Calendar, LogOut, Shield, Edit2, Save, X } from 'lucide-react';
+import { User, Mail, Phone, Calendar, LogOut, Shield, Edit2, Save, X, IdCard } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,6 +108,14 @@ export default function Profile() {
               {role?.replace('_', ' ') || 'Unknown Role'}
             </span>
           </div>
+          {role === 'driver' && profile?.driver_id && (
+            <div className="flex items-center mt-2 px-3 py-1.5 bg-primary/10 rounded-full">
+              <IdCard className="w-4 h-4 mr-1.5 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                {profile.driver_id}
+              </span>
+            </div>
+          )}
         </div>
 
         {isEditing ? (

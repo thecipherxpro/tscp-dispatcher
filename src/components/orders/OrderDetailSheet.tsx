@@ -231,7 +231,7 @@ export function OrderDetailSheet({
                         <span className="text-lg font-bold text-foreground">{order.doses_nasal || 0}</span>
                       </div>
                       {order.nasal_rx && <div className="border-t border-border/50 pt-1.5 mt-1 mx-0 py-[4px] rounded-xl bg-[#ebf4ff] px-[8px]">
-                          <p className="text-[10px] text-muted-foreground leading-none">RX</p>
+                          <p className="text-[10px] text-muted-foreground leading-none font-semibold">RX</p>
                           <p className="text-xs font-mono font-medium text-foreground truncate">{order.nasal_rx}</p>
                         </div>}
                     </div>

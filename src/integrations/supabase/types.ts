@@ -120,10 +120,13 @@ export type Database = {
           doses_nasal: number | null
           driver_id_import: string | null
           email: string | null
+          geo_zone: string | null
           health_card: string | null
           id: string
           in_route_at: string | null
           injection_rx: string | null
+          latitude: number | null
+          longitude: number | null
           name: string | null
           nasal_rx: string | null
           pending_at: string | null
@@ -171,10 +174,13 @@ export type Database = {
           doses_nasal?: number | null
           driver_id_import?: string | null
           email?: string | null
+          geo_zone?: string | null
           health_card?: string | null
           id?: string
           in_route_at?: string | null
           injection_rx?: string | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string | null
           nasal_rx?: string | null
           pending_at?: string | null
@@ -224,10 +230,13 @@ export type Database = {
           doses_nasal?: number | null
           driver_id_import?: string | null
           email?: string | null
+          geo_zone?: string | null
           health_card?: string | null
           id?: string
           in_route_at?: string | null
           injection_rx?: string | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string | null
           nasal_rx?: string | null
           pending_at?: string | null
@@ -326,9 +335,12 @@ export type Database = {
           doses_injectable: number | null
           doses_nasal: number | null
           driver_id: string | null
+          geo_zone: string | null
           id: string
           in_route_at: string | null
           injection_rx: string | null
+          latitude: number | null
+          longitude: number | null
           nasal_rx: string | null
           order_id: string | null
           pending_at: string | null
@@ -361,9 +373,12 @@ export type Database = {
           doses_injectable?: number | null
           doses_nasal?: number | null
           driver_id?: string | null
+          geo_zone?: string | null
           id?: string
           in_route_at?: string | null
           injection_rx?: string | null
+          latitude?: number | null
+          longitude?: number | null
           nasal_rx?: string | null
           order_id?: string | null
           pending_at?: string | null
@@ -398,9 +413,12 @@ export type Database = {
           doses_injectable?: number | null
           doses_nasal?: number | null
           driver_id?: string | null
+          geo_zone?: string | null
           id?: string
           in_route_at?: string | null
           injection_rx?: string | null
+          latitude?: number | null
+          longitude?: number | null
           nasal_rx?: string | null
           order_id?: string | null
           pending_at?: string | null

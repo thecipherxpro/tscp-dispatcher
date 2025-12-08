@@ -113,14 +113,22 @@ export function OrderDetailSheet({
         <DrawerContent className="max-h-[90vh]">
           {/* Header */}
           <DrawerHeader className="border-b border-border pb-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <DrawerTitle className="text-lg font-semibold">Order Details</DrawerTitle>
-                {order.shipment_id && <p className="text-sm font-mono text-muted-foreground">{order.shipment_id}</p>}
+                <Badge className={statusConfig.className}>
+                  {statusConfig.label}
+                </Badge>
               </div>
-              <Badge className={statusConfig.className}>
-                {statusConfig.label}
-              </Badge>
+              {order.shipment_id && (
+                <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipment ID</p>
+                    <p className="text-sm font-mono font-semibold text-foreground">{order.shipment_id}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </DrawerHeader>
 

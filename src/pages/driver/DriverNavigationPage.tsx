@@ -232,13 +232,29 @@ export default function DriverNavigationPage() {
     });
   }, [googleMapsLoaded]);
 
-  // Set order to SHIPPED status
-  const setShippedStatus = useCallback(async (orderData: Order) => {
+  // Set order to CONFIRMED and SHIPPED status
+  const setConfirmedAndShippedStatus = useCallback(async (orderData: Order) => {
     if (orderData.timeline_status === 'IN_ROUTE') return; // Already shipped
 
     try {
       const locationData = await fetchDriverLocationData();
       
+      // First set to CONFIRMED if not already
+      if (!['CONFIRMED', 'IN_ROUTE'].includes(orderData.timeline_status || '')) {
+        await updateOrderStatus(
+          orderData.id,
+          orderData.tracking_id || null,
+          'CONFIRMED' as TimelineStatus,
+          undefined,
+          {
+            ip_address: locationData.ip_address,
+            geolocation: locationData.geolocation,
+            access_location: locationData.access_location
+          }
+        );
+      }
+
+      // Then set to SHIPPED (IN_ROUTE)
       await updateOrderStatus(
         orderData.id,
         orderData.tracking_id || null,
@@ -252,7 +268,7 @@ export default function DriverNavigationPage() {
       );
 
       setOrder(prev => prev ? { ...prev, timeline_status: 'IN_ROUTE' as TimelineStatus } : null);
-      toast.success('Order status updated to Shipped');
+      toast.success('Order confirmed and shipped');
     } catch (err) {
       console.error('Failed to update status:', err);
     }
@@ -379,8 +395,8 @@ export default function DriverNavigationPage() {
         // Draw route
         await drawRoute(driverLoc, { lat: orderData.latitude, lng: orderData.longitude });
 
-        // Auto-set SHIPPED status
-        await setShippedStatus(orderData);
+        // Auto-set CONFIRMED and SHIPPED status
+        await setConfirmedAndShippedStatus(orderData);
 
         // Start watching position
         watchIdRef.current = navigator.geolocation.watchPosition(
@@ -414,7 +430,7 @@ export default function DriverNavigationPage() {
         driverMarkerRef.current.map = null;
       }
     };
-  }, [orderId, fetchOrder, fetchApiKey, drawRoute, updateDriverMarker, createDestinationMarker, setShippedStatus, navigate]);
+  }, [orderId, fetchOrder, fetchApiKey, drawRoute, updateDriverMarker, createDestinationMarker, setConfirmedAndShippedStatus, navigate]);
 
   // Auto-recalculate route when driver moves significantly
   useEffect(() => {

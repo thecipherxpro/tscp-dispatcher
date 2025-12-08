@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Package, MapPin, Phone, Clock, Navigation, CheckCircle } from 'lucide-react';
+import { Package, Navigation, MapPin, CheckCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { DriverStatusUpdateModal } from '@/components/orders/DriverStatusUpdateM
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { toast } from '@/hooks/use-toast';
+import { OrderCard } from '@/components/orders/OrderCard';
 
 export default function MyOrders() {
   const { user } = useAuth();
@@ -86,22 +87,6 @@ export default function MyOrders() {
     await fetchOrders();
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800';
-      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
-      case 'ARRIVED': return 'bg-indigo-100 text-indigo-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'REQUEST_ADDRESS_REVIEW': return 'bg-red-100 text-red-800';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
-  const formatDOB = (dob: string | null) => {
-    if (!dob) return 'N/A';
-    return new Date(dob).getFullYear().toString();
-  };
 
   const getActionButton = (order: Order) => {
     switch (order.timeline_status) {
@@ -192,57 +177,13 @@ export default function MyOrders() {
           ) : (
             <div className="space-y-3">
               {activeOrders.map((order) => (
-                <Card
-                  key={order.id}
-                  className="bg-card border-border"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {order.name || 'Unknown Client'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          DOB Year: {formatDOB(order.dob)}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
-                        {order.timeline_status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-start text-muted-foreground">
-                        <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                        <span>
-                          {order.address_1}
-                          {order.address_2 && `, ${order.address_2}`}
-                          <br />
-                          {order.city}, {order.province} {order.postal}
-                        </span>
-                      </div>
-                      {order.phone_number && (
-                        <a
-                          href={`tel:${order.phone_number}`}
-                          className="flex items-center text-primary"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Phone className="w-4 h-4 mr-2" />
-                          <span>{order.phone_number}</span>
-                        </a>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {order.shipment_id || 'No shipment ID'}
-                      </div>
-                    </div>
-
-                    {getActionButton(order)}
-                  </CardContent>
-                </Card>
+                <div key={order.id} className="space-y-0">
+                  <OrderCard 
+                    order={order} 
+                    onClick={() => setSelectedOrder(order)} 
+                  />
+                  {getActionButton(order)}
+                </div>
               ))}
             </div>
           )}
@@ -253,30 +194,13 @@ export default function MyOrders() {
             <h3 className="text-lg font-semibold text-foreground">
               Completed Today
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 opacity-75">
               {completedOrders.slice(0, 5).map((order) => (
-                <Card key={order.id} className="bg-card border-border opacity-75">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {order.name || 'Unknown Client'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.city}, {order.province}
-                        </p>
-                        {order.delivery_status && (
-                          <p className="text-xs text-green-600 mt-1">
-                            {order.delivery_status.replace(/_/g, ' ')}
-                          </p>
-                        )}
-                      </div>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Completed
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <OrderCard 
+                  key={order.id} 
+                  order={order} 
+                  onClick={() => {}} 
+                />
               ))}
             </div>
           </div>

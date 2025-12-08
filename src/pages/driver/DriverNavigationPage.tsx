@@ -115,17 +115,20 @@ export default function DriverNavigationPage() {
     try {
       const directionsService = new google.maps.DirectionsService();
       
-      if (!directionsRendererRef.current) {
-        directionsRendererRef.current = new google.maps.DirectionsRenderer({
-          map: mapRef.current,
-          suppressMarkers: true,
-          polylineOptions: {
-            strokeColor: '#f97316',
-            strokeWeight: 6,
-            strokeOpacity: 0.9
-          }
-        });
+      // Always create a fresh DirectionsRenderer to avoid stale state
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setMap(null);
       }
+      
+      directionsRendererRef.current = new google.maps.DirectionsRenderer({
+        map: mapRef.current,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#f97316',
+          strokeWeight: 6,
+          strokeOpacity: 0.9
+        }
+      });
 
       const result = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
         directionsService.route({
@@ -425,10 +428,17 @@ export default function DriverNavigationPage() {
       isMounted = false;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
       if (driverMarkerRef.current) {
         driverMarkerRef.current.map = null;
+        driverMarkerRef.current = null;
       }
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setMap(null);
+        directionsRendererRef.current = null;
+      }
+      mapRef.current = null;
     };
   }, [orderId, fetchOrder, fetchApiKey, drawRoute, updateDriverMarker, createDestinationMarker, setConfirmedAndShippedStatus, navigate]);
 

@@ -14,7 +14,7 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { Order } from '@/types/auth';
 
-type FilterType = 'all' | 'pending' | 'picked_up' | 'shipped' | 'delivered' | 'incomplete';
+type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'arrived' | 'delivered' | 'incomplete' | 'review';
 
 export default function Orders() {
   const { orders, isLoading, refetch } = useOrders(true); // Enable realtime
@@ -39,10 +39,13 @@ export default function Orders() {
       const statusMap: Record<FilterType, string> = {
         all: '',
         pending: 'PENDING',
-        picked_up: 'PICKED_UP',
-        shipped: 'SHIPPED',
-        delivered: 'DELIVERED',
-        incomplete: 'DELIVERY_INCOMPLETE',
+        assigned: 'PICKED_UP_AND_ASSIGNED',
+        confirmed: 'CONFIRMED',
+        in_route: 'IN_ROUTE',
+        arrived: 'ARRIVED',
+        delivered: 'COMPLETED_DELIVERED',
+        incomplete: 'COMPLETED_INCOMPLETE',
+        review: 'REVIEW_REQUESTED',
       };
       filtered = filtered.filter(o => o.timeline_status === statusMap[activeFilter]);
     }
@@ -100,10 +103,13 @@ export default function Orders() {
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'pending', label: 'Pending' },
-    { key: 'picked_up', label: 'Picked Up' },
-    { key: 'shipped', label: 'Shipped' },
+    { key: 'assigned', label: 'Assigned' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'in_route', label: 'In Route' },
+    { key: 'arrived', label: 'Arrived' },
     { key: 'delivered', label: 'Delivered' },
     { key: 'incomplete', label: 'Incomplete' },
+    { key: 'review', label: 'Review' },
   ];
 
   return (

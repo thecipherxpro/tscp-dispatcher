@@ -9,13 +9,35 @@ import { PublicTracking } from '@/types/auth';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
-// Public timeline - only 4 steps visible to the public
+// Public timeline - simplified 5-step view for customers
 const timelineSteps = [
   { status: 'PENDING', label: 'Pending', icon: Clock },
-  { status: 'PICKED_UP', label: 'Picked Up', icon: Package },
-  { status: 'SHIPPED', label: 'Shipped', icon: Truck },
-  { status: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
+  { status: 'PICKED_UP_AND_ASSIGNED', label: 'Picked Up', icon: Package },
+  { status: 'IN_ROUTE', label: 'Shipped', icon: Truck },
+  { status: 'ARRIVED', label: 'Arrived', icon: MapPin },
+  { status: 'COMPLETED', label: 'Delivered', icon: CheckCircle },
 ];
+
+// Map internal statuses to public timeline positions
+const getPublicStatusIndex = (status: string) => {
+  switch (status) {
+    case 'PENDING':
+      return 0;
+    case 'PICKED_UP_AND_ASSIGNED':
+    case 'REVIEW_REQUESTED':
+    case 'CONFIRMED':
+      return 1;
+    case 'IN_ROUTE':
+      return 2;
+    case 'ARRIVED':
+      return 3;
+    case 'COMPLETED_DELIVERED':
+    case 'COMPLETED_INCOMPLETE':
+      return 4;
+    default:
+      return -1;
+  }
+};
 
 export default function TrackShipment() {
   const [searchParams] = useSearchParams();
@@ -116,12 +138,6 @@ export default function TrackShipment() {
     }
   };
 
-  const getStatusIndex = (status: string) => {
-    // Map DELIVERY_INCOMPLETE to show same position as DELIVERED
-    const mappedStatus = status === 'DELIVERY_INCOMPLETE' ? 'DELIVERED' : status;
-    return timelineSteps.findIndex(s => s.status === mappedStatus);
-  };
-
   const formatTimestamp = (timestamp: string | null) => {
     if (!timestamp) return null;
     return new Date(timestamp).toLocaleString('en-CA', {
@@ -134,7 +150,28 @@ export default function TrackShipment() {
     });
   };
 
-  const currentStatusIndex = tracking ? getStatusIndex(tracking.timeline_status) : -1;
+  const currentStatusIndex = tracking ? getPublicStatusIndex(tracking.timeline_status) : -1;
+  const isIncomplete = tracking?.timeline_status === 'COMPLETED_INCOMPLETE';
+  const isDelivered = tracking?.timeline_status === 'COMPLETED_DELIVERED';
+
+  // Get appropriate timestamp for each step
+  const getTimestamp = (stepStatus: string) => {
+    if (!tracking) return null;
+    switch (stepStatus) {
+      case 'PENDING':
+        return tracking.pending_at;
+      case 'PICKED_UP_AND_ASSIGNED':
+        return tracking.picked_up_at || tracking.assigned_at;
+      case 'IN_ROUTE':
+        return tracking.shipped_at;
+      case 'ARRIVED':
+        return tracking.arrived_at;
+      case 'COMPLETED':
+        return tracking.completed_at;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background safe-area-inset flex flex-col">
@@ -203,8 +240,14 @@ export default function TrackShipment() {
                       {tracking.shipment_id || 'Pending'}
                     </p>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                    {tracking.timeline_status.replace('_', ' ')}
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    isDelivered 
+                      ? 'bg-green-100 text-green-800' 
+                      : isIncomplete 
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-primary/10 text-primary'
+                  }`}>
+                    {isDelivered ? 'Delivered' : isIncomplete ? 'Incomplete' : 'In Progress'}
                   </span>
                 </div>
                 
@@ -239,17 +282,11 @@ export default function TrackShipment() {
                     const isCompleted = index <= currentStatusIndex;
                     const isCurrent = index === currentStatusIndex;
                     const Icon = step.icon;
+                    const timestamp = getTimestamp(step.status);
                     
-                    const timestamps: Record<string, string | null> = {
-                      'PENDING': tracking.pending_at,
-                      'PICKED_UP': tracking.picked_up_at,
-                      'SHIPPED': tracking.shipped_at,
-                      'DELIVERED': tracking.completed_at,
-                    };
-
-                    // For DELIVERY_INCOMPLETE, show special styling on the last step
-                    const isIncomplete = tracking.timeline_status === 'DELIVERY_INCOMPLETE';
-                    const showAsIncomplete = step.status === 'DELIVERED' && isIncomplete;
+                    // For the final step, show special styling based on outcome
+                    const isFinalStep = step.status === 'COMPLETED';
+                    const showAsIncomplete = isFinalStep && isIncomplete;
 
                     return (
                       <div key={step.status} className="flex gap-3">
@@ -277,9 +314,9 @@ export default function TrackShipment() {
                           }`}>
                             {showAsIncomplete ? 'Delivery Incomplete' : step.label}
                           </p>
-                          {timestamps[step.status] && (
+                          {timestamp && (
                             <p className="text-xs text-muted-foreground">
-                              {formatTimestamp(timestamps[step.status])}
+                              {formatTimestamp(timestamp)}
                             </p>
                           )}
                         </div>
@@ -291,24 +328,24 @@ export default function TrackShipment() {
             </Card>
 
             {tracking.delivery_status && (
-              <Card className={tracking.timeline_status === 'DELIVERED' 
+              <Card className={isDelivered 
                 ? "bg-green-50 border-green-200" 
                 : "bg-red-50 border-red-200"
               }>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2">
-                    {tracking.timeline_status === 'DELIVERED' 
+                    {isDelivered 
                       ? <CheckCircle className="w-5 h-5 text-green-600" />
                       : <AlertCircle className="w-5 h-5 text-red-600" />
                     }
                     <div>
                       <p className={`font-medium ${
-                        tracking.timeline_status === 'DELIVERED' ? 'text-green-900' : 'text-red-900'
+                        isDelivered ? 'text-green-900' : 'text-red-900'
                       }`}>
                         Delivery Outcome
                       </p>
                       <p className={`text-sm ${
-                        tracking.timeline_status === 'DELIVERED' ? 'text-green-700' : 'text-red-700'
+                        isDelivered ? 'text-green-700' : 'text-red-700'
                       }`}>
                         {tracking.delivery_status.replace(/_/g, ' ')}
                       </p>

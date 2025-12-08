@@ -42,10 +42,13 @@ export default function DriverDashboard() {
           
           const today = new Date().toISOString().split('T')[0];
           setStats({
-            assignedOrders: orders.filter(o => o.timeline_status !== 'DELIVERED' && o.timeline_status !== 'DELIVERY_INCOMPLETE').length,
-            inRouteOrders: orders.filter(o => o.timeline_status === 'SHIPPED').length,
+            assignedOrders: orders.filter(o => 
+              o.timeline_status !== 'COMPLETED_DELIVERED' && 
+              o.timeline_status !== 'COMPLETED_INCOMPLETE'
+            ).length,
+            inRouteOrders: orders.filter(o => o.timeline_status === 'IN_ROUTE').length,
             completedToday: orders.filter(o => 
-              (o.timeline_status === 'DELIVERED' || o.timeline_status === 'DELIVERY_INCOMPLETE') && 
+              (o.timeline_status === 'COMPLETED_DELIVERED' || o.timeline_status === 'COMPLETED_INCOMPLETE') && 
               o.completed_at?.startsWith(today)
             ).length,
           });
@@ -63,11 +66,25 @@ export default function DriverDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'PICKED_UP': return 'bg-blue-100 text-blue-800';
-      case 'SHIPPED': return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
-      case 'DELIVERY_INCOMPLETE': return 'bg-red-100 text-red-800';
+      case 'PICKED_UP_AND_ASSIGNED': return 'bg-blue-100 text-blue-800';
+      case 'REVIEW_REQUESTED': return 'bg-amber-100 text-amber-800';
+      case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800';
+      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
+      case 'ARRIVED': return 'bg-cyan-100 text-cyan-800';
+      case 'COMPLETED_DELIVERED': return 'bg-green-100 text-green-800';
+      case 'COMPLETED_INCOMPLETE': return 'bg-red-100 text-red-800';
       default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PICKED_UP_AND_ASSIGNED': return 'Assigned';
+      case 'REVIEW_REQUESTED': return 'Review';
+      case 'IN_ROUTE': return 'In Route';
+      case 'COMPLETED_DELIVERED': return 'Delivered';
+      case 'COMPLETED_INCOMPLETE': return 'Incomplete';
+      default: return status.replace(/_/g, ' ');
     }
   };
 
@@ -161,7 +178,7 @@ export default function DriverDashboard() {
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
-                        {order.timeline_status.replace('_', ' ')}
+                        {getStatusLabel(order.timeline_status)}
                       </span>
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">

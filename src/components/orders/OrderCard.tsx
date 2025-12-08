@@ -17,25 +17,43 @@ const getStatusConfig = (status: string) => {
         variant: 'outline' as const,
         className: 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
       };
-    case 'PICKED_UP':
+    case 'PICKED_UP_AND_ASSIGNED':
       return { 
-        label: 'Picked Up', 
+        label: 'Assigned', 
         variant: 'outline' as const,
         className: 'border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400'
       };
-    case 'SHIPPED':
+    case 'REVIEW_REQUESTED':
       return { 
-        label: 'Shipped', 
+        label: 'Review Requested', 
+        variant: 'outline' as const,
+        className: 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+      };
+    case 'CONFIRMED':
+      return { 
+        label: 'Confirmed', 
+        variant: 'outline' as const,
+        className: 'border-indigo-500/50 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+      };
+    case 'IN_ROUTE':
+      return { 
+        label: 'In Route', 
         variant: 'outline' as const,
         className: 'border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-400'
       };
-    case 'DELIVERED':
+    case 'ARRIVED':
+      return { 
+        label: 'Arrived', 
+        variant: 'outline' as const,
+        className: 'border-cyan-500/50 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
+      };
+    case 'COMPLETED_DELIVERED':
       return { 
         label: 'Delivered', 
         variant: 'outline' as const,
         className: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
       };
-    case 'DELIVERY_INCOMPLETE':
+    case 'COMPLETED_INCOMPLETE':
       return { 
         label: 'Incomplete', 
         variant: 'outline' as const,

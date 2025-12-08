@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Package, Navigation, MapPin, CheckCircle } from 'lucide-react';
+import { Package, Navigation, MapPin, CheckCircle, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -87,10 +87,23 @@ export default function MyOrders() {
     await fetchOrders();
   };
 
-
   const getActionButton = (order: Order) => {
     switch (order.timeline_status) {
-      case 'PICKED_UP':
+      case 'PICKED_UP_AND_ASSIGNED':
+        return (
+          <Button
+            size="sm"
+            className="w-full mt-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedOrder(order);
+            }}
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Confirm Order
+          </Button>
+        );
+      case 'CONFIRMED':
         return (
           <Button
             size="sm"
@@ -101,10 +114,24 @@ export default function MyOrders() {
             }}
           >
             <Navigation className="w-4 h-4 mr-1" />
-            Confirm & Start Route
+            Start Route
           </Button>
         );
-      case 'SHIPPED':
+      case 'IN_ROUTE':
+        return (
+          <Button
+            size="sm"
+            className="w-full mt-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedOrder(order);
+            }}
+          >
+            <MapPin className="w-4 h-4 mr-1" />
+            Mark Arrived
+          </Button>
+        );
+      case 'ARRIVED':
         return (
           <Button
             size="sm"
@@ -118,13 +145,26 @@ export default function MyOrders() {
             Complete Delivery
           </Button>
         );
+      case 'REVIEW_REQUESTED':
+        return (
+          <div className="flex items-center gap-2 mt-3 p-2 bg-amber-50 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <span className="text-xs text-amber-700">Waiting for admin review</span>
+          </div>
+        );
       default:
         return null;
     }
   };
 
-  const activeOrders = orders.filter(o => o.timeline_status !== 'DELIVERED' && o.timeline_status !== 'DELIVERY_INCOMPLETE');
-  const completedOrders = orders.filter(o => o.timeline_status === 'DELIVERED' || o.timeline_status === 'DELIVERY_INCOMPLETE');
+  const activeOrders = orders.filter(o => 
+    o.timeline_status !== 'COMPLETED_DELIVERED' && 
+    o.timeline_status !== 'COMPLETED_INCOMPLETE'
+  );
+  const completedOrders = orders.filter(o => 
+    o.timeline_status === 'COMPLETED_DELIVERED' || 
+    o.timeline_status === 'COMPLETED_INCOMPLETE'
+  );
 
   return (
     <AppLayout title="My Orders" showBackButton>

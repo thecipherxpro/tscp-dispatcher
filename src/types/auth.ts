@@ -2,12 +2,16 @@ export type AppRole = 'pharmacy_admin' | 'driver';
 
 export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
 
+// New timeline status enum - matches database
 export type TimelineStatus = 
   | 'PENDING'
-  | 'PICKED_UP'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'DELIVERY_INCOMPLETE';
+  | 'PICKED_UP_AND_ASSIGNED'
+  | 'REVIEW_REQUESTED'
+  | 'CONFIRMED'
+  | 'IN_ROUTE'
+  | 'ARRIVED'
+  | 'COMPLETED_DELIVERED'
+  | 'COMPLETED_INCOMPLETE';
 
 // Internal audit events for detailed tracking
 export type InternalAuditEvent = 
@@ -87,12 +91,15 @@ export interface Order {
   delivery_status: DeliveryStatus | null;
   pending_at: string | null;
   picked_up_at: string | null;
+  assigned_at: string | null;
   confirmed_at: string | null;
   shipped_at: string | null;
   in_route_at: string | null;
   arrived_at: string | null;
   completed_at: string | null;
   review_requested_at: string | null;
+  review_reason: string | null;
+  review_notes: string | null;
   address_review_requested_at: string | null;
   created_at: string;
   updated_at: string;
@@ -118,12 +125,15 @@ export interface PublicTracking {
   delivery_status: DeliveryStatus | null;
   pending_at: string | null;
   picked_up_at: string | null;
+  assigned_at: string | null;
   confirmed_at: string | null;
   shipped_at: string | null;
   in_route_at: string | null;
   arrived_at: string | null;
   completed_at: string | null;
   review_requested_at: string | null;
+  review_reason: string | null;
+  review_notes: string | null;
   address_review_requested_at: string | null;
   created_at: string;
   updated_at: string;

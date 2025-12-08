@@ -103,6 +103,7 @@ export type Database = {
           address_2: string | null
           address_review_requested_at: string | null
           arrived_at: string | null
+          assigned_at: string | null
           assigned_driver_id: string | null
           authorizing_pharmacist: string | null
           billing_date: string | null
@@ -132,6 +133,8 @@ export type Database = {
           postal: string | null
           province: string | null
           province_1: string | null
+          review_notes: string | null
+          review_reason: string | null
           review_requested_at: string | null
           ship_date: string | null
           shipment_id: string | null
@@ -149,6 +152,7 @@ export type Database = {
           address_2?: string | null
           address_review_requested_at?: string | null
           arrived_at?: string | null
+          assigned_at?: string | null
           assigned_driver_id?: string | null
           authorizing_pharmacist?: string | null
           billing_date?: string | null
@@ -180,6 +184,8 @@ export type Database = {
           postal?: string | null
           province?: string | null
           province_1?: string | null
+          review_notes?: string | null
+          review_reason?: string | null
           review_requested_at?: string | null
           ship_date?: string | null
           shipment_id?: string | null
@@ -199,6 +205,7 @@ export type Database = {
           address_2?: string | null
           address_review_requested_at?: string | null
           arrived_at?: string | null
+          assigned_at?: string | null
           assigned_driver_id?: string | null
           authorizing_pharmacist?: string | null
           billing_date?: string | null
@@ -230,6 +237,8 @@ export type Database = {
           postal?: string | null
           province?: string | null
           province_1?: string | null
+          review_notes?: string | null
+          review_reason?: string | null
           review_requested_at?: string | null
           ship_date?: string | null
           shipment_id?: string | null
@@ -306,6 +315,7 @@ export type Database = {
         Row: {
           address_review_requested_at: string | null
           arrived_at: string | null
+          assigned_at: string | null
           city: string | null
           client_initials: string | null
           completed_at: string | null
@@ -325,6 +335,8 @@ export type Database = {
           picked_up_at: string | null
           postal_code: string | null
           province: string | null
+          review_notes: string | null
+          review_reason: string | null
           review_requested_at: string | null
           shipment_id: string | null
           shipped_at: string | null
@@ -336,6 +348,7 @@ export type Database = {
         Insert: {
           address_review_requested_at?: string | null
           arrived_at?: string | null
+          assigned_at?: string | null
           city?: string | null
           client_initials?: string | null
           completed_at?: string | null
@@ -357,6 +370,8 @@ export type Database = {
           picked_up_at?: string | null
           postal_code?: string | null
           province?: string | null
+          review_notes?: string | null
+          review_reason?: string | null
           review_requested_at?: string | null
           shipment_id?: string | null
           shipped_at?: string | null
@@ -370,6 +385,7 @@ export type Database = {
         Update: {
           address_review_requested_at?: string | null
           arrived_at?: string | null
+          assigned_at?: string | null
           city?: string | null
           client_initials?: string | null
           completed_at?: string | null
@@ -391,6 +407,8 @@ export type Database = {
           picked_up_at?: string | null
           postal_code?: string | null
           province?: string | null
+          review_notes?: string | null
+          review_reason?: string | null
           review_requested_at?: string | null
           shipment_id?: string | null
           shipped_at?: string | null
@@ -468,10 +486,13 @@ export type Database = {
       onboarding_status: "not_started" | "in_progress" | "completed"
       timeline_status:
         | "PENDING"
-        | "PICKED_UP"
-        | "SHIPPED"
-        | "DELIVERED"
-        | "DELIVERY_INCOMPLETE"
+        | "PICKED_UP_AND_ASSIGNED"
+        | "REVIEW_REQUESTED"
+        | "CONFIRMED"
+        | "IN_ROUTE"
+        | "ARRIVED"
+        | "COMPLETED_DELIVERED"
+        | "COMPLETED_INCOMPLETE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -614,10 +635,13 @@ export const Constants = {
       onboarding_status: ["not_started", "in_progress", "completed"],
       timeline_status: [
         "PENDING",
-        "PICKED_UP",
-        "SHIPPED",
-        "DELIVERED",
-        "DELIVERY_INCOMPLETE",
+        "PICKED_UP_AND_ASSIGNED",
+        "REVIEW_REQUESTED",
+        "CONFIRMED",
+        "IN_ROUTE",
+        "ARRIVED",
+        "COMPLETED_DELIVERED",
+        "COMPLETED_INCOMPLETE",
       ],
     },
   },

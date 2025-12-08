@@ -11,7 +11,7 @@ interface DashboardStats {
   pendingOrders: number;
   inRouteOrders: number;
   completedOrders: number;
-  addressReviewOrders: number;
+  assignedOrders: number;
   totalDrivers: number;
 }
 
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     pendingOrders: 0,
     inRouteOrders: 0,
     completedOrders: 0,
-    addressReviewOrders: 0,
+    assignedOrders: 0,
     totalDrivers: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -41,9 +41,9 @@ export default function AdminDashboard() {
           setStats({
             totalOrders: orders.length,
             pendingOrders: orders.filter(o => o.timeline_status === 'PENDING').length,
-            inRouteOrders: orders.filter(o => o.timeline_status === 'SHIPPED').length,
-            completedOrders: orders.filter(o => o.timeline_status === 'DELIVERED' || o.timeline_status === 'DELIVERY_INCOMPLETE').length,
-            addressReviewOrders: orders.filter(o => o.timeline_status === 'PICKED_UP').length,
+            inRouteOrders: orders.filter(o => o.timeline_status === 'IN_ROUTE' || o.timeline_status === 'CONFIRMED').length,
+            completedOrders: orders.filter(o => o.timeline_status === 'COMPLETED_DELIVERED' || o.timeline_status === 'COMPLETED_INCOMPLETE').length,
+            assignedOrders: orders.filter(o => o.timeline_status === 'PICKED_UP_AND_ASSIGNED' || o.timeline_status === 'REVIEW_REQUESTED').length,
             totalDrivers: driversResult.data?.length || 0,
           });
         }
@@ -60,9 +60,9 @@ export default function AdminDashboard() {
   const statCards = [
     { label: 'Total Orders', value: stats.totalOrders, icon: Package, color: 'text-primary' },
     { label: 'Pending', value: stats.pendingOrders, icon: Clock, color: 'text-yellow-500' },
-    { label: 'Shipped', value: stats.inRouteOrders, icon: Truck, color: 'text-blue-500' },
-    { label: 'Delivered', value: stats.completedOrders, icon: CheckCircle, color: 'text-green-500' },
-    { label: 'Picked Up', value: stats.addressReviewOrders, icon: AlertCircle, color: 'text-purple-500' },
+    { label: 'In Route', value: stats.inRouteOrders, icon: Truck, color: 'text-blue-500' },
+    { label: 'Completed', value: stats.completedOrders, icon: CheckCircle, color: 'text-green-500' },
+    { label: 'Assigned', value: stats.assignedOrders, icon: AlertCircle, color: 'text-purple-500' },
     { label: 'Active Drivers', value: stats.totalDrivers, icon: Users, color: 'text-accent-foreground' },
   ];
 

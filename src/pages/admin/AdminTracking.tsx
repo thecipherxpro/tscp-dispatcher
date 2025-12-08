@@ -1,9 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Package, Truck, MapPin, User, Phone, Mail, Calendar, Copy, Building, 
-  FileText, Hash, ExternalLink, CheckCircle2, Clock, Navigation, CircleDot, ArrowLeft
-} from 'lucide-react';
+import { Package, Truck, MapPin, User, Phone, Mail, Calendar, Copy, Building, FileText, Hash, ExternalLink, CheckCircle2, Clock, Navigation, CircleDot, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,55 +10,55 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/hooks/use-toast';
 
 // Empty state component for missing data
-const EmptyField = ({ label }: { label?: string }) => (
-  <span className="text-muted-foreground/60 italic text-sm">
+const EmptyField = ({
+  label
+}: {
+  label?: string;
+}) => <span className="text-muted-foreground/60 italic text-sm">
     {label || 'Not provided'}
-  </span>
-);
+  </span>;
 
 // Helper to render field value or empty state
-const FieldValue = ({ value, label }: { value: string | null | undefined; label?: string }) => {
+const FieldValue = ({
+  value,
+  label
+}: {
+  value: string | null | undefined;
+  label?: string;
+}) => {
   if (!value || value.trim() === '') {
     return <EmptyField label={label} />;
   }
   return <span className="text-sm font-medium text-foreground">{value}</span>;
 };
-
 export default function AdminTracking() {
-  const { orderId } = useParams();
+  const {
+    orderId
+  } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [driver, setDriver] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const fetchOrder = useCallback(async () => {
     if (!orderId) return;
-    
     setIsLoading(true);
     setError(null);
-    
     try {
-      const { data, error: orderError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .maybeSingle();
-
+      const {
+        data,
+        error: orderError
+      } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle();
       if (orderError) throw orderError;
-
       if (data) {
         setOrder(data as Order);
-        
         if (data.assigned_driver_id) {
-          const { data: driverProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.assigned_driver_id)
-            .maybeSingle();
-          
+          const {
+            data: driverProfile
+          } = await supabase.from('profiles').select('*').eq('id', data.assigned_driver_id).maybeSingle();
           if (driverProfile) {
             setDriver(driverProfile as Profile);
           }
@@ -76,61 +73,65 @@ export default function AdminTracking() {
       setIsLoading(false);
     }
   }, [orderId]);
-
   useEffect(() => {
     fetchOrder();
   }, [fetchOrder]);
-
   useEffect(() => {
     if (!orderId) return;
-
-    const channel = supabase
-      .channel(`admin-order-${orderId}`)
-      .on(
-        'postgres_changes',
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'orders',
-          filter: `id=eq.${orderId}`
-        },
-        (payload) => {
-          setOrder(payload.new as Order);
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel(`admin-order-${orderId}`).on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'orders',
+      filter: `id=eq.${orderId}`
+    }, payload => {
+      setOrder(payload.new as Order);
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [orderId]);
-
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200' };
+        return {
+          label: 'Pending',
+          className: 'bg-amber-100 text-amber-800 border-amber-200'
+        };
       case 'PICKED_UP':
-        return { label: 'Picked Up', className: 'bg-blue-100 text-blue-800 border-blue-200' };
+        return {
+          label: 'Picked Up',
+          className: 'bg-blue-100 text-blue-800 border-blue-200'
+        };
       case 'SHIPPED':
-        return { label: 'Shipped', className: 'bg-purple-100 text-purple-800 border-purple-200' };
+        return {
+          label: 'Shipped',
+          className: 'bg-purple-100 text-purple-800 border-purple-200'
+        };
       case 'DELIVERED':
-        return { label: 'Delivered', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+        return {
+          label: 'Delivered',
+          className: 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        };
       case 'DELIVERY_INCOMPLETE':
-        return { label: 'Incomplete', className: 'bg-red-100 text-red-800 border-red-200' };
+        return {
+          label: 'Incomplete',
+          className: 'bg-red-100 text-red-800 border-red-200'
+        };
       default:
-        return { label: status, className: '' };
+        return {
+          label: status,
+          className: ''
+        };
     }
   };
-
   const formatDate = (date: string | null) => {
     if (!date) return 'Not set';
     return new Date(date).toLocaleDateString('en-CA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
+      day: 'numeric'
     });
   };
-
   const formatDateTime = (date: string | null) => {
     if (!date) return null;
     return new Date(date).toLocaleString('en-CA', {
@@ -138,45 +139,38 @@ export default function AdminTracking() {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     });
   };
-
   const copyTrackingUrl = () => {
     if (order?.tracking_url) {
       navigator.clipboard.writeText(order.tracking_url);
-      toast({ title: "Copied", description: "Tracking URL copied to clipboard" });
+      toast({
+        title: "Copied",
+        description: "Tracking URL copied to clipboard"
+      });
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
           <p className="text-muted-foreground mt-3">Loading order details...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error || !order) {
-    return (
-      <div className="min-h-screen bg-background p-4">
+    return <div className="min-h-screen bg-background p-4">
         <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6 text-center">
           <p className="text-destructive">{error || 'Order not found'}</p>
           <Button variant="outline" className="mt-4" onClick={() => navigate('/orders')}>
             Back to Orders
           </Button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const statusConfig = getStatusConfig(order.timeline_status);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
@@ -184,24 +178,22 @@ export default function AdminTracking() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold">Order Details</h1>
+            <h1 className="font-semibold text-base">Order Details</h1>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/audit/${orderId}`)}>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/audit/${orderId}`)} className="text-sm bg-[sidebar-primary-foreground] bg-red-50 px-[8px]">
             Audit Trail
           </Button>
           <Badge className={statusConfig.className}>
             {statusConfig.label}
           </Badge>
         </div>
-        {order.shipment_id && (
-          <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 mt-3">
+        {order.shipment_id && <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 mt-3">
             <Package className="w-4 h-4 text-muted-foreground" />
             <div className="flex-1">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipment ID</p>
               <p className="text-sm font-mono font-semibold text-foreground">{order.shipment_id}</p>
             </div>
-          </div>
-        )}
+          </div>}
       </div>
 
       <PullToRefresh onRefresh={fetchOrder}>
@@ -209,8 +201,7 @@ export default function AdminTracking() {
           <div className="py-4 space-y-5">
             
             {/* Tracking Info Card */}
-            {order.tracking_id ? (
-              <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+            {order.tracking_id ? <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -221,8 +212,7 @@ export default function AdminTracking() {
                       <p className="font-mono font-semibold text-primary">{order.tracking_id}</p>
                     </div>
                   </div>
-                  {order.tracking_url && (
-                    <div className="flex gap-1">
+                  {order.tracking_url && <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-9 w-9" onClick={copyTrackingUrl}>
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -231,12 +221,9 @@ export default function AdminTracking() {
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       </Button>
-                    </div>
-                  )}
+                    </div>}
                 </div>
-              </div>
-            ) : (
-              <div className="bg-muted/30 rounded-xl p-4 border border-dashed border-border">
+              </div> : <div className="bg-muted/30 rounded-xl p-4 border border-dashed border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                     <Hash className="w-5 h-5 text-muted-foreground/50" />
@@ -246,8 +233,7 @@ export default function AdminTracking() {
                     <p className="text-sm text-muted-foreground/60 italic">Not yet assigned</p>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Ship & Billing Dates Section */}
             <section>
@@ -282,9 +268,7 @@ export default function AdminTracking() {
                   
                   {/* Pending */}
                   <div className="relative flex items-start gap-3 pb-4">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.pending_at ? 'bg-amber-100 text-amber-600' : 'bg-muted text-muted-foreground'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.pending_at ? 'bg-amber-100 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
                       <CircleDot className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
@@ -297,9 +281,7 @@ export default function AdminTracking() {
                   
                   {/* Picked Up */}
                   <div className="relative flex items-start gap-3 pb-4">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.picked_up_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.picked_up_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'}`}>
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
@@ -312,9 +294,7 @@ export default function AdminTracking() {
                   
                   {/* Shipped */}
                   <div className="relative flex items-start gap-3 pb-4">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.shipped_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.shipped_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'}`}>
                       <Navigation className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
@@ -327,35 +307,19 @@ export default function AdminTracking() {
                   
                   {/* Delivered */}
                   <div className="relative flex items-start gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                      order.completed_at 
-                        ? order.timeline_status === 'DELIVERED' 
-                          ? 'bg-emerald-100 text-emerald-600' 
-                          : 'bg-red-100 text-red-600'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.completed_at ? order.timeline_status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600' : 'bg-muted text-muted-foreground'}`}>
                       <Truck className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 pt-0.5">
                       <p className="text-sm font-medium text-foreground">
                         {order.timeline_status === 'DELIVERY_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}
                       </p>
-                      {order.completed_at ? (
-                        <div>
+                      {order.completed_at ? <div>
                           <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
-                          {order.delivery_status && (
-                            <Badge variant="secondary" className={`mt-1 text-[10px] ${
-                              order.timeline_status === 'DELIVERED' 
-                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                : 'bg-red-100 text-red-700 border-red-200'
-                            }`}>
+                          {order.delivery_status && <Badge variant="secondary" className={`mt-1 text-[10px] ${order.timeline_status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
                               {order.delivery_status.replace(/_/g, ' ')}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Awaiting delivery</p>
-                      )}
+                            </Badge>}
+                        </div> : <p className="text-xs text-muted-foreground">Awaiting delivery</p>}
                     </div>
                   </div>
                 </div>
@@ -397,19 +361,11 @@ export default function AdminTracking() {
                 <div className="grid grid-cols-1 gap-2">
                   <div className="flex items-center gap-2 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                    {order.phone_number ? (
-                      <a href={`tel:${order.phone_number}`} className="text-primary underline">{order.phone_number}</a>
-                    ) : (
-                      <EmptyField label="No phone" />
-                    )}
+                    {order.phone_number ? <a href={`tel:${order.phone_number}`} className="text-primary underline">{order.phone_number}</a> : <EmptyField label="No phone" />}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                    {order.email ? (
-                      <a href={`mailto:${order.email}`} className="text-primary underline truncate">{order.email}</a>
-                    ) : (
-                      <EmptyField label="No email" />
-                    )}
+                    {order.email ? <a href={`mailto:${order.email}`} className="text-primary underline truncate">{order.email}</a> : <EmptyField label="No email" />}
                   </div>
                 </div>
               </div>
@@ -425,9 +381,7 @@ export default function AdminTracking() {
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Street</p>
                   <FieldValue value={order.address_1} label="No address" />
-                  {order.address_2 && (
-                    <p className="text-sm text-muted-foreground mt-0.5">{order.address_2}</p>
-                  )}
+                  {order.address_2 && <p className="text-sm text-muted-foreground mt-0.5">{order.address_2}</p>}
                 </div>
                 
                 <div className="grid grid-cols-3 gap-2">
@@ -450,19 +404,13 @@ export default function AdminTracking() {
                   <FieldValue value={order.country} label="Canada" />
                 </div>
                 
-                {order.address_1 && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-2"
-                    onClick={() => {
-                      const address = `${order.address_1}, ${order.city}, ${order.province} ${order.postal}`;
-                      window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
-                    }}
-                  >
+                {order.address_1 && <Button variant="outline" className="w-full mt-2" onClick={() => {
+                const address = `${order.address_1}, ${order.city}, ${order.province} ${order.postal}`;
+                window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
+              }}>
                     <MapPin className="w-4 h-4 mr-2" />
                     Open in Google Maps
-                  </Button>
-                )}
+                  </Button>}
               </div>
             </section>
 
@@ -486,12 +434,10 @@ export default function AdminTracking() {
                     </div>
                     <p className="text-2xl font-bold text-foreground">{order.doses_nasal || 0}</p>
                     <p className="text-[10px] text-muted-foreground">doses</p>
-                    {order.nasal_rx && (
-                      <div className="mt-2 pt-2 border-t border-border">
+                    {order.nasal_rx && <div className="mt-2 pt-2 border-t border-border">
                         <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
                         <p className="text-xs font-mono text-foreground">{order.nasal_rx}</p>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   
                   <div className="bg-background rounded-lg p-3 border border-border">
@@ -503,12 +449,10 @@ export default function AdminTracking() {
                     </div>
                     <p className="text-2xl font-bold text-foreground">{order.doses_injectable || 0}</p>
                     <p className="text-[10px] text-muted-foreground">doses</p>
-                    {order.injection_rx && (
-                      <div className="mt-2 pt-2 border-t border-border">
+                    {order.injection_rx && <div className="mt-2 pt-2 border-t border-border">
                         <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
                         <p className="text-xs font-mono text-foreground">{order.injection_rx}</p>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </div>
               </div>
@@ -529,18 +473,15 @@ export default function AdminTracking() {
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Authorizing Pharmacist</p>
                   <FieldValue value={order.authorizing_pharmacist} label="Not specified" />
                 </div>
-                {order.training_status && (
-                  <div>
+                {order.training_status && <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Training Status</p>
                     <FieldValue value={order.training_status} />
-                  </div>
-                )}
+                  </div>}
               </div>
             </section>
 
             {/* Assigned Driver Section */}
-            {driver && (
-              <section>
+            {driver && <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Truck className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Assigned Driver</h3>
@@ -554,18 +495,14 @@ export default function AdminTracking() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-foreground truncate font-bold">{driver.full_name || 'Unknown'}</p>
-                      {driver.phone && (
-                        <a href={`tel:${driver.phone}`} className="text-xs text-primary underline">{driver.phone}</a>
-                      )}
+                      {driver.phone && <a href={`tel:${driver.phone}`} className="text-xs text-primary underline">{driver.phone}</a>}
                     </div>
                   </div>
                 </div>
-              </section>
-            )}
+              </section>}
 
             {/* Delivery Outcome */}
-            {order.delivery_status && (
-              <section>
+            {order.delivery_status && <section>
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Delivery Outcome</h3>
@@ -583,12 +520,10 @@ export default function AdminTracking() {
                     </div>
                   </div>
                 </div>
-              </section>
-            )}
+              </section>}
 
             {/* Notes Section */}
-            {order.call_notes && (
-              <section>
+            {order.call_notes && <section>
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Notes</h3>
@@ -596,11 +531,9 @@ export default function AdminTracking() {
                 <div className="bg-muted/30 rounded-xl p-4">
                   <p className="text-sm text-foreground">{order.call_notes}</p>
                 </div>
-              </section>
-            )}
+              </section>}
           </div>
         </div>
       </PullToRefresh>
-    </div>
-  );
+    </div>;
 }

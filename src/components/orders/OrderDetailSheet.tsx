@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap, AlertCircle } from 'lucide-react';
+import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap, AlertCircle, Calendar, CheckCircle2, Clock, Navigation, CircleDot } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -189,6 +189,109 @@ export function OrderDetailSheet({
                   </div>
                 </div>
               )}
+
+              {/* Ship & Billing Dates Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Dates</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Ship Date</p>
+                      <FieldValue value={order.ship_date ? formatDate(order.ship_date) : null} label="Not scheduled" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Billing Date</p>
+                      <FieldValue value={order.billing_date ? formatDate(order.billing_date) : null} label="Not set" />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Timeline Status Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Delivery Timeline</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  <div className="relative">
+                    {/* Timeline Line */}
+                    <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-border" />
+                    
+                    {/* Pending */}
+                    <div className="relative flex items-start gap-3 pb-4">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                        order.pending_at ? 'bg-amber-100 text-amber-600' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <CircleDot className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 pt-0.5">
+                        <p className="text-sm font-medium text-foreground">Pending</p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.pending_at ? formatDateTime(order.pending_at) : 'Awaiting processing'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Confirmed (Assigned to Driver) */}
+                    <div className="relative flex items-start gap-3 pb-4">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                        order.confirmed_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 pt-0.5">
+                        <p className="text-sm font-medium text-foreground">Confirmed</p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.confirmed_at ? `Assigned ${formatDateTime(order.confirmed_at)}` : 'Not yet assigned'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* In Route */}
+                    <div className="relative flex items-start gap-3 pb-4">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                        order.in_route_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <Navigation className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 pt-0.5">
+                        <p className="text-sm font-medium text-foreground">In Route</p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.in_route_at ? formatDateTime(order.in_route_at) : 'Driver not started'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Delivered */}
+                    <div className="relative flex items-start gap-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                        order.completed_at ? 'bg-emerald-100 text-emerald-600' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <Truck className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 pt-0.5">
+                        <p className="text-sm font-medium text-foreground">Delivered</p>
+                        {order.completed_at ? (
+                          <div>
+                            <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
+                            {order.delivery_status && (
+                              <Badge variant="secondary" className="mt-1 text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                                {order.delivery_status.replace(/_/g, ' ')}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Awaiting delivery</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
               {/* Client Information Section */}
               <section>

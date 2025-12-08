@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Order, Profile } from '@/types/auth';
+import { Order, Profile, TimelineStatus } from '@/types/auth';
 import { Json } from '@/integrations/supabase/types';
 
 export function useOrders(enableRealtime = true) {
@@ -124,7 +124,7 @@ export async function assignDriverToOrder(
 
     const now = new Date().toISOString();
 
-    // Update order - assignment sets status to PICKED_UP
+    // Update order - assignment sets status to PICKED_UP_AND_ASSIGNED
     const { error: orderError } = await supabase
       .from('orders')
       .update({
@@ -132,8 +132,9 @@ export async function assignDriverToOrder(
         shipment_id: shipmentId,
         tracking_id: trackingId,
         tracking_url: trackingUrl,
-        timeline_status: 'PICKED_UP',
+        timeline_status: 'PICKED_UP_AND_ASSIGNED' as TimelineStatus,
         picked_up_at: now,
+        assigned_at: now,
       })
       .eq('id', orderId);
 
@@ -157,9 +158,10 @@ export async function assignDriverToOrder(
         province: orderData.province,
         postal_code: orderData.postal,
         country: orderData.country || 'Canada',
-        timeline_status: 'PICKED_UP',
+        timeline_status: 'PICKED_UP_AND_ASSIGNED' as TimelineStatus,
         pending_at: orderData.pending_at,
         picked_up_at: now,
+        assigned_at: now,
       }, {
         onConflict: 'tracking_id'
       });
@@ -176,12 +178,16 @@ export async function assignDriverToOrder(
 export async function updateOrderStatus(
   orderId: string,
   trackingId: string | null,
-  newStatus: string,
+  newStatus: TimelineStatus,
   deliveryStatus?: string,
   locationData?: {
     ip_address: string | null;
     geolocation: string | null;
     access_location: string | null;
+  },
+  reviewData?: {
+    review_reason?: string;
+    review_notes?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -195,13 +201,13 @@ export async function updateOrderStatus(
     const previousStatus = currentOrder?.timeline_status;
     const now = new Date().toISOString();
     
-    // Map internal status updates to timeline fields
+    // Map new status to timestamp fields
     const timestampField: Record<string, string> = {
-      'ORDER_CONFIRMED': 'confirmed_at',
-      'ORDER_SHIPPED': 'shipped_at',
-      'ORDER_ARRIVED': 'arrived_at',
-      'DELIVERED': 'completed_at',
-      'DELIVERY_INCOMPLETE': 'completed_at',
+      'CONFIRMED': 'confirmed_at',
+      'IN_ROUTE': 'shipped_at',
+      'ARRIVED': 'arrived_at',
+      'COMPLETED_DELIVERED': 'completed_at',
+      'COMPLETED_INCOMPLETE': 'completed_at',
       'REVIEW_REQUESTED': 'review_requested_at',
     };
 
@@ -212,6 +218,14 @@ export async function updateOrderStatus(
 
     if (deliveryStatus) {
       updateData.delivery_status = deliveryStatus;
+    }
+
+    // Add review data if provided
+    if (reviewData?.review_reason) {
+      updateData.review_reason = reviewData.review_reason;
+    }
+    if (reviewData?.review_notes) {
+      updateData.review_notes = reviewData.review_notes;
     }
 
     // Update order
@@ -238,18 +252,18 @@ export async function updateOrderStatus(
 
     // Determine the internal audit action based on status
     let auditAction = 'STATUS_CHANGE';
-    if (newStatus === 'DELIVERED') {
+    if (newStatus === 'COMPLETED_DELIVERED') {
       auditAction = 'DELIVERY_COMPLETED_SUCCESS';
-    } else if (newStatus === 'DELIVERY_INCOMPLETE') {
+    } else if (newStatus === 'COMPLETED_INCOMPLETE') {
       auditAction = 'DELIVERY_COMPLETED_INCOMPLETE';
-    } else if (newStatus === 'SHIPPED') {
+    } else if (newStatus === 'IN_ROUTE') {
       auditAction = 'ORDER_SHIPPED';
-    } else if (newStatus === 'PICKED_UP' && previousStatus === 'PICKED_UP') {
+    } else if (newStatus === 'CONFIRMED') {
       auditAction = 'ORDER_CONFIRMED';
-    } else if (deliveryStatus) {
-      auditAction = deliveryStatus.includes('SUCCESSFULLY') || deliveryStatus.includes('PACKAGE_DELIVERED') 
-        ? 'DELIVERY_COMPLETED_SUCCESS' 
-        : 'DELIVERY_COMPLETED_INCOMPLETE';
+    } else if (newStatus === 'ARRIVED') {
+      auditAction = 'ORDER_ARRIVED';
+    } else if (newStatus === 'REVIEW_REQUESTED') {
+      auditAction = 'REVIEW_REQUESTED';
     }
 
     await supabase
@@ -265,7 +279,11 @@ export async function updateOrderStatus(
         ip_address: locationData?.ip_address || null,
         geolocation: locationData?.geolocation || null,
         access_location: locationData?.access_location || null,
-        metadata: { trackingId } as Json
+        metadata: { 
+          trackingId,
+          review_reason: reviewData?.review_reason,
+          review_notes: reviewData?.review_notes
+        } as Json
       }]);
 
     return { success: true };

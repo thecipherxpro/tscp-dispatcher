@@ -16,43 +16,73 @@ export type Database = {
     Tables: {
       order_audit_logs: {
         Row: {
+          access_location: string | null
+          access_purpose: string | null
           action: string
+          client_identifier: string | null
+          consent_verified: boolean | null
           created_at: string
           delivery_status: string | null
+          geolocation: string | null
           id: string
           ip_address: string | null
           metadata: Json | null
           new_status: string | null
           order_id: string
+          phi_fields_accessed: string[] | null
+          phi_type: string | null
           previous_status: string | null
+          session_id: string | null
           user_agent: string | null
+          user_full_name: string | null
           user_id: string | null
+          user_role: string | null
         }
         Insert: {
+          access_location?: string | null
+          access_purpose?: string | null
           action: string
+          client_identifier?: string | null
+          consent_verified?: boolean | null
           created_at?: string
           delivery_status?: string | null
+          geolocation?: string | null
           id?: string
           ip_address?: string | null
           metadata?: Json | null
           new_status?: string | null
           order_id: string
+          phi_fields_accessed?: string[] | null
+          phi_type?: string | null
           previous_status?: string | null
+          session_id?: string | null
           user_agent?: string | null
+          user_full_name?: string | null
           user_id?: string | null
+          user_role?: string | null
         }
         Update: {
+          access_location?: string | null
+          access_purpose?: string | null
           action?: string
+          client_identifier?: string | null
+          consent_verified?: boolean | null
           created_at?: string
           delivery_status?: string | null
+          geolocation?: string | null
           id?: string
           ip_address?: string | null
           metadata?: Json | null
           new_status?: string | null
           order_id?: string
+          phi_fields_accessed?: string[] | null
+          phi_type?: string | null
           previous_status?: string | null
+          session_id?: string | null
           user_agent?: string | null
+          user_full_name?: string | null
           user_id?: string | null
+          user_role?: string | null
         }
         Relationships: [
           {

@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, FileDown, Package, User, Calendar, Clock, MapPin, 
   Phone, Mail, Truck, CheckCircle2, CircleDot, Navigation, 
-  Building, AlertTriangle, Shield, Globe, Smartphone
+  Building, AlertTriangle, Shield, Globe, Smartphone, FileText,
+  Eye, UserCheck, Database, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,17 @@ interface AuditLog {
   user_agent: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
+  // PHIPA-compliant fields
+  phi_type: string | null;
+  phi_fields_accessed: string[] | null;
+  access_purpose: string | null;
+  user_role: string | null;
+  user_full_name: string | null;
+  client_identifier: string | null;
+  session_id: string | null;
+  geolocation: string | null;
+  consent_verified: boolean | null;
+  access_location: string | null;
 }
 
 // Empty state component
@@ -633,11 +645,26 @@ export default function OrderAuditTrail() {
             </div>
           </div>
 
+          <!-- PHIPA Compliance Notice -->
+          <div class="card" style="border-color: #3b82f6; background: #eff6ff;">
+            <div class="card-header">
+              <span class="card-icon">${icons.shield}</span>
+              <span class="card-title">PHIPA Compliance</span>
+            </div>
+            <div class="card-content">
+              <p style="font-size: 11px; color: #6b7280; margin: 0;">
+                This audit log complies with Ontario's Personal Health Information Protection Act (PHIPA) s. 10.1 
+                requirements for electronic audit logs. All access to personal health information (PHI) is logged 
+                with the type of PHI accessed, identity of accessor, date/time, and purpose of access.
+              </p>
+            </div>
+          </div>
+
           <!-- Audit Log Card -->
           <div class="card">
             <div class="card-header">
               <span class="card-icon">${icons.shield}</span>
-              <span class="card-title">Audit Log</span>
+              <span class="card-title">PHIPA Audit Log</span>
             </div>
             <div class="card-content">
               ${auditLogs.length === 0 ? `
@@ -649,7 +676,7 @@ export default function OrderAuditTrail() {
               ` : auditLogs.map(log => {
                 const deviceInfo = parseUserAgent(log.user_agent);
                 return `
-                  <div class="audit-item">
+                  <div class="audit-item" style="margin-bottom: 16px; padding: 16px;">
                     <div class="audit-header">
                       <div class="audit-icon">${icons.navigation}</div>
                       <div class="audit-content">
@@ -658,23 +685,69 @@ export default function OrderAuditTrail() {
                           ${log.previous_status && log.new_status ? `<span class="badge badge-outline" style="margin-left: 8px; font-size: 10px;">${log.previous_status} → ${log.new_status}</span>` : ''}
                         </div>
                         <div class="audit-time">${formatDateTime(log.created_at)}</div>
-                        <div class="audit-meta">
-                          <span class="audit-meta-item">
-                            <span class="svg-icon">${icons.smartphone}</span>
-                            ${deviceInfo.device}
-                          </span>
-                          <span class="audit-meta-item">
-                            <span class="svg-icon">${icons.globe}</span>
-                            ${deviceInfo.browser} / ${deviceInfo.os}
-                          </span>
-                          ${log.ip_address ? `
-                            <span class="audit-meta-item">
-                              <span class="svg-icon">${icons.ip}</span>
-                              ${log.ip_address}
-                            </span>
-                          ` : ''}
+                      </div>
+                    </div>
+                    
+                    <!-- PHIPA Required Fields -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                      <div>
+                        <div class="field-label" style="display: flex; align-items: center; gap: 4px;">
+                          ${icons.user}
+                          Accessed By
+                        </div>
+                        <div class="field-value">${log.user_full_name || 'Unknown User'}</div>
+                        <div style="font-size: 10px; color: #9ca3af; text-transform: capitalize;">${log.user_role?.replace('_', ' ') || 'Unknown Role'}</div>
+                      </div>
+                      <div>
+                        <div class="field-label">Client (PHI Subject)</div>
+                        <div class="field-value">${log.client_identifier || 'Not recorded'}</div>
+                      </div>
+                      <div>
+                        <div class="field-label">PHI Type</div>
+                        <span class="badge badge-outline" style="text-transform: capitalize;">${log.phi_type?.replace('_', ' ') || 'Not specified'}</span>
+                      </div>
+                      <div>
+                        <div class="field-label">Access Purpose</div>
+                        <div class="field-value" style="text-transform: capitalize;">${log.access_purpose?.replace(/_/g, ' ') || 'Not specified'}</div>
+                      </div>
+                    </div>
+
+                    ${log.phi_fields_accessed && log.phi_fields_accessed.length > 0 ? `
+                      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                        <div class="field-label">PHI Fields Accessed</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                          ${log.phi_fields_accessed.map(field => `<span class="badge badge-outline" style="font-size: 9px;">${field.replace(/_/g, ' ')}</span>`).join('')}
                         </div>
                       </div>
+                    ` : ''}
+
+                    <div class="audit-meta" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                      <span class="audit-meta-item">
+                        <span class="svg-icon">${icons.smartphone}</span>
+                        ${log.access_location || deviceInfo.device}
+                      </span>
+                      <span class="audit-meta-item">
+                        <span class="svg-icon">${icons.globe}</span>
+                        ${deviceInfo.browser} / ${deviceInfo.os}
+                      </span>
+                      ${log.session_id ? `
+                        <span class="audit-meta-item">
+                          <span class="svg-icon">${icons.shield}</span>
+                          Session: ${log.session_id.slice(0, 12)}...
+                        </span>
+                      ` : ''}
+                      ${log.ip_address ? `
+                        <span class="audit-meta-item">
+                          <span class="svg-icon">${icons.ip}</span>
+                          IP: ${log.ip_address}
+                        </span>
+                      ` : ''}
+                      ${log.consent_verified ? `
+                        <span class="audit-meta-item" style="color: #059669;">
+                          <span class="svg-icon">${icons.check}</span>
+                          Consent Verified
+                        </span>
+                      ` : ''}
                     </div>
                   </div>
                 `;
@@ -685,7 +758,8 @@ export default function OrderAuditTrail() {
           <!-- Footer -->
           <div class="footer">
             <p>Generated: ${new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto' })} EST</p>
-            <p>TSCP Delivery Dispatch System • All timestamps in Eastern Time</p>
+            <p>TSCP Delivery Dispatch System • PHIPA Compliant Audit Report • All timestamps in Eastern Time</p>
+          </div>
           </div>
         </div>
       </body>
@@ -991,12 +1065,29 @@ export default function OrderAuditTrail() {
             </CardContent>
           </Card>
 
+          {/* PHIPA Compliance Notice */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Lock className="w-4 h-4 text-primary" />
+                PHIPA Compliance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                This audit log complies with Ontario's Personal Health Information Protection Act (PHIPA) s. 10.1 
+                requirements for electronic audit logs. All access to personal health information (PHI) is logged 
+                with the type of PHI accessed, identity of accessor, date/time, and purpose of access.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Audit Log Table */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Shield className="w-4 h-4" />
-                Audit Log
+                PHIPA Audit Log
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1009,11 +1100,12 @@ export default function OrderAuditTrail() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {auditLogs.map((log) => {
                     const deviceInfo = parseUserAgent(log.user_agent);
                     return (
-                      <div key={log.id} className="bg-muted/30 rounded-lg p-3">
+                      <div key={log.id} className="bg-muted/30 rounded-lg p-4 space-y-3">
+                        {/* Header Row */}
                         <div className="flex items-start gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             {getActionIcon(log.action)}
@@ -1032,22 +1124,97 @@ export default function OrderAuditTrail() {
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {formatDateTime(log.created_at)}
                             </p>
-                            <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Smartphone className="w-3 h-3" />
-                                {deviceInfo.device}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Globe className="w-3 h-3" />
-                                {deviceInfo.browser} / {deviceInfo.os}
-                              </div>
-                              {log.ip_address && (
-                                <div className="flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" />
-                                  {log.ip_address}
-                                </div>
-                              )}
+                          </div>
+                        </div>
+
+                        {/* PHIPA Required Fields */}
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
+                          {/* Person Accessing PHI */}
+                          <div>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
+                              <UserCheck className="w-3 h-3" />
+                              Accessed By
+                            </p>
+                            <p className="text-xs font-medium">{log.user_full_name || 'Unknown User'}</p>
+                            <p className="text-[10px] text-muted-foreground capitalize">{log.user_role?.replace('_', ' ') || 'Unknown Role'}</p>
+                          </div>
+
+                          {/* Client Identifier */}
+                          <div>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              Client (PHI Subject)
+                            </p>
+                            <p className="text-xs font-medium">{log.client_identifier || 'Not recorded'}</p>
+                          </div>
+
+                          {/* PHI Type */}
+                          <div>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
+                              <Database className="w-3 h-3" />
+                              PHI Type
+                            </p>
+                            <Badge variant="secondary" className="text-[9px] capitalize">
+                              {log.phi_type?.replace('_', ' ') || 'Not specified'}
+                            </Badge>
+                          </div>
+
+                          {/* Access Purpose */}
+                          <div>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              Access Purpose
+                            </p>
+                            <p className="text-xs capitalize">{log.access_purpose?.replace(/_/g, ' ') || 'Not specified'}</p>
+                          </div>
+                        </div>
+
+                        {/* PHI Fields Accessed */}
+                        {log.phi_fields_accessed && log.phi_fields_accessed.length > 0 && (
+                          <div className="pt-2 border-t border-border/50">
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1 mb-1">
+                              <Eye className="w-3 h-3" />
+                              PHI Fields Accessed
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {log.phi_fields_accessed.map((field, idx) => (
+                                <Badge key={idx} variant="outline" className="text-[9px]">
+                                  {field.replace(/_/g, ' ')}
+                                </Badge>
+                              ))}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Technical Details */}
+                        <div className="pt-2 border-t border-border/50">
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
+                            <div className="flex items-center gap-1">
+                              <Smartphone className="w-3 h-3" />
+                              {log.access_location || deviceInfo.device}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Globe className="w-3 h-3" />
+                              {deviceInfo.browser} / {deviceInfo.os}
+                            </div>
+                            {log.session_id && (
+                              <div className="flex items-center gap-1">
+                                <Shield className="w-3 h-3" />
+                                Session: {log.session_id.slice(0, 12)}...
+                              </div>
+                            )}
+                            {log.ip_address && (
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                IP: {log.ip_address}
+                              </div>
+                            )}
+                            {log.consent_verified && (
+                              <div className="flex items-center gap-1 text-emerald-600">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Consent Verified
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

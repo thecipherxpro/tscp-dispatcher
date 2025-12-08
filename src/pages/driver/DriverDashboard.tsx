@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Package, Clock, Truck, CheckCircle, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Package, Clock, Truck, CheckCircle, MapPin, Map } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
@@ -13,6 +15,7 @@ interface DriverStats {
 }
 
 export default function DriverDashboard() {
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [stats, setStats] = useState<DriverStats>({
     assignedOrders: 0,
@@ -84,6 +87,14 @@ export default function DriverDashboard() {
           <p className="text-sm text-primary-foreground/70 mt-1">
             Ready for deliveries today?
           </p>
+          <Button 
+            onClick={() => navigate('/driver-map')} 
+            variant="secondary"
+            className="mt-3 w-full"
+          >
+            <Map className="w-4 h-4 mr-2" />
+            Open Map View
+          </Button>
         </div>
 
         <div className="grid grid-cols-3 gap-3">

@@ -17,6 +17,7 @@ import AdminTracking from "./pages/admin/AdminTracking";
 import TrackingList from "./pages/admin/TrackingList";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
+import DriverMapPage from "./pages/driver/DriverMapPage";
 import TrackShipment from "./pages/TrackShipment";
 import NotFound from "./pages/NotFound";
 
@@ -179,6 +180,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['driver']}>
             <MyOrders />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/driver-map"
+        element={
+          <ProtectedRoute allowedRoles={['driver']}>
+            <DriverMapPage />
           </ProtectedRoute>
         }
       />

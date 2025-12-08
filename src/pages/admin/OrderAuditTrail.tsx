@@ -4,7 +4,7 @@ import {
   ArrowLeft, FileDown, Package, User, Calendar, Clock, MapPin, 
   Phone, Mail, Truck, CheckCircle2, CircleDot, Navigation, 
   Building, AlertTriangle, Shield, Globe, Smartphone,
-  UserCheck, Lock
+  UserCheck, Lock, XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1009,47 +1009,106 @@ export default function OrderAuditTrail() {
                   </div>
                 </div>
                 
+                {/* Picked Up */}
+                <div className="relative flex items-start gap-3 pb-4">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                    order.picked_up_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Package className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 pt-0.5">
+                    <p className="text-sm font-medium text-foreground">Picked Up</p>
+                    <p className="text-xs text-muted-foreground">
+                      {order.picked_up_at ? formatDateTime(order.picked_up_at) : 'Not yet picked up'}
+                    </p>
+                    {order.picked_up_at && driver && (
+                      <p className="text-xs text-primary mt-0.5">
+                        Assigned to: {driver.full_name} ({driver.driver_id})
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
                 {/* Confirmed */}
                 <div className="relative flex items-start gap-3 pb-4">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                    order.confirmed_at ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
+                    order.confirmed_at ? 'bg-indigo-100 text-indigo-600' : 'bg-muted text-muted-foreground'
                   }`}>
                     <CheckCircle2 className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 pt-0.5">
                     <p className="text-sm font-medium text-foreground">Confirmed</p>
                     <p className="text-xs text-muted-foreground">
-                      {order.confirmed_at ? formatDateTime(order.confirmed_at) : 'Not yet assigned'}
+                      {order.confirmed_at ? formatDateTime(order.confirmed_at) : 'Awaiting driver confirmation'}
                     </p>
+                    {order.confirmed_at && driver && (
+                      <p className="text-xs text-primary mt-0.5">
+                        Confirmed by: {driver.driver_id}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
-                {/* In Route */}
+                {/* Shipped (In Route) */}
                 <div className="relative flex items-start gap-3 pb-4">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                    order.in_route_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
+                    order.shipped_at ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'
                   }`}>
                     <Navigation className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 pt-0.5">
-                    <p className="text-sm font-medium text-foreground">In Route</p>
+                    <p className="text-sm font-medium text-foreground">Shipped</p>
                     <p className="text-xs text-muted-foreground">
-                      {order.in_route_at ? formatDateTime(order.in_route_at) : 'Driver not started'}
+                      {order.shipped_at ? formatDateTime(order.shipped_at) : 'Driver not in route'}
                     </p>
+                    {order.shipped_at && driver && (
+                      <p className="text-xs text-primary mt-0.5">
+                        In route by: {driver.driver_id}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
                 {/* Delivered */}
                 <div className="relative flex items-start gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-                    order.completed_at ? 'bg-emerald-100 text-emerald-600' : 'bg-muted text-muted-foreground'
+                    order.completed_at 
+                      ? order.timeline_status === 'DELIVERED' 
+                        ? 'bg-emerald-100 text-emerald-600' 
+                        : 'bg-red-100 text-red-600'
+                      : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Truck className="w-3.5 h-3.5" />
+                    {order.timeline_status === 'DELIVERY_INCOMPLETE' ? (
+                      <XCircle className="w-3.5 h-3.5" />
+                    ) : (
+                      <Truck className="w-3.5 h-3.5" />
+                    )}
                   </div>
                   <div className="flex-1 pt-0.5">
-                    <p className="text-sm font-medium text-foreground">Delivered</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {order.timeline_status === 'DELIVERY_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}
+                    </p>
                     {order.completed_at ? (
-                      <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
+                      <>
+                        <p className="text-xs text-muted-foreground">{formatDateTime(order.completed_at)}</p>
+                        {order.delivery_status && (
+                          <Badge 
+                            variant="secondary" 
+                            className={`mt-1 text-[10px] ${
+                              order.timeline_status === 'DELIVERED' 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}
+                          >
+                            {order.delivery_status.replace(/_/g, ' ')}
+                          </Badge>
+                        )}
+                        {driver && (
+                          <p className="text-xs text-primary mt-0.5">
+                            Completed by: {driver.driver_id}
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <p className="text-xs text-muted-foreground">Awaiting delivery</p>
                     )}

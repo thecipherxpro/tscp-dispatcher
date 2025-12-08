@@ -120,15 +120,13 @@ export function OrderDetailSheet({
                   {statusConfig.label}
                 </Badge>
               </div>
-              {order.shipment_id && (
-                <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+              {order.shipment_id && <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
                   <Package className="w-4 h-4 text-muted-foreground" />
                   <div className="flex-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipment ID</p>
-                    <p className="text-sm font-mono font-semibold text-foreground">{order.shipment_id}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium text-justify">Shipment ID</p>
+                    <p className="text-sm font-mono font-semibold text-foreground text-justify">{order.shipment_id}</p>
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
           </DrawerHeader>
 

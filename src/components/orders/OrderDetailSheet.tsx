@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Package, Clock, Copy, ExternalLink, Truck, Eye, Phone, Mail, Calendar, Hash, FileText } from 'lucide-react';
+import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -283,36 +283,32 @@ export function OrderDetailSheet({
                 </div>
               </section>
 
-              {/* Timeline Section */}
+              {/* Pharmacy Details Section */}
               <section>
                 <div className="flex items-center gap-2 mb-3">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">Timeline</h3>
+                  <Building className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Pharmacy Details</h3>
                 </div>
-                <div className="bg-muted/30 rounded-xl p-4">
-                  <div className="space-y-2">
-                    {[{
-                    label: 'Pending',
-                    time: order.pending_at
-                  }, {
-                    label: 'Confirmed',
-                    time: order.confirmed_at
-                  }, {
-                    label: 'In Route',
-                    time: order.in_route_at
-                  }, {
-                    label: 'Arrived',
-                    time: order.arrived_at
-                  }, {
-                    label: 'Completed',
-                    time: order.completed_at
-                  }].filter(item => item.time).map((item, index) => <div key={index} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                          <span className="text-muted-foreground">{item.label}</span>
-                        </div>
-                        <span className="text-foreground font-medium">{formatDateTime(item.time)}</span>
-                      </div>)}
+                <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                  {/* Pharmacy Name */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Pharmacy</p>
+                    <p className="text-sm font-medium text-foreground">{order.pharmacy_name || 'N/A'}</p>
+                  </div>
+                  
+                  {/* Authorizing Pharmacist & Training Status */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Authorizing Pharmacist</p>
+                      <p className="text-sm font-medium text-foreground">{order.authorizing_pharmacist || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Training Status</p>
+                      <div className="flex items-center gap-1.5">
+                        <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
+                        <p className="text-sm font-medium text-foreground">{order.training_status || 'N/A'}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>

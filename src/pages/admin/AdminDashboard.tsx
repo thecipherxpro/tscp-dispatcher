@@ -41,9 +41,9 @@ export default function AdminDashboard() {
           setStats({
             totalOrders: orders.length,
             pendingOrders: orders.filter(o => o.timeline_status === 'PENDING').length,
-            inRouteOrders: orders.filter(o => o.timeline_status === 'IN_ROUTE').length,
-            completedOrders: orders.filter(o => o.timeline_status === 'COMPLETED').length,
-            addressReviewOrders: orders.filter(o => o.timeline_status === 'REQUEST_ADDRESS_REVIEW').length,
+            inRouteOrders: orders.filter(o => o.timeline_status === 'SHIPPED').length,
+            completedOrders: orders.filter(o => o.timeline_status === 'DELIVERED' || o.timeline_status === 'DELIVERY_INCOMPLETE').length,
+            addressReviewOrders: orders.filter(o => o.timeline_status === 'PICKED_UP').length,
             totalDrivers: driversResult.data?.length || 0,
           });
         }

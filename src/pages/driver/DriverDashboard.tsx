@@ -42,10 +42,10 @@ export default function DriverDashboard() {
           
           const today = new Date().toISOString().split('T')[0];
           setStats({
-            assignedOrders: orders.filter(o => o.timeline_status !== 'COMPLETED').length,
-            inRouteOrders: orders.filter(o => o.timeline_status === 'IN_ROUTE').length,
+            assignedOrders: orders.filter(o => o.timeline_status !== 'DELIVERED' && o.timeline_status !== 'DELIVERY_INCOMPLETE').length,
+            inRouteOrders: orders.filter(o => o.timeline_status === 'SHIPPED').length,
             completedToday: orders.filter(o => 
-              o.timeline_status === 'COMPLETED' && 
+              (o.timeline_status === 'DELIVERED' || o.timeline_status === 'DELIVERY_INCOMPLETE') && 
               o.completed_at?.startsWith(today)
             ).length,
           });
@@ -63,10 +63,10 @@ export default function DriverDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800';
-      case 'IN_ROUTE': return 'bg-purple-100 text-purple-800';
-      case 'ARRIVED': return 'bg-indigo-100 text-indigo-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
+      case 'PICKED_UP': return 'bg-blue-100 text-blue-800';
+      case 'SHIPPED': return 'bg-purple-100 text-purple-800';
+      case 'DELIVERED': return 'bg-green-100 text-green-800';
+      case 'DELIVERY_INCOMPLETE': return 'bg-red-100 text-red-800';
       default: return 'bg-muted text-muted-foreground';
     }
   };

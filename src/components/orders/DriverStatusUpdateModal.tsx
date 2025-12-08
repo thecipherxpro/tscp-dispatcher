@@ -36,9 +36,8 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
 
   const getNextStatus = (): TimelineStatus | null => {
     switch (order.timeline_status) {
-      case 'CONFIRMED': return 'IN_ROUTE';
-      case 'IN_ROUTE': return 'ARRIVED';
-      case 'ARRIVED': return 'COMPLETED';
+      case 'PICKED_UP': return 'SHIPPED'; // Driver confirms and starts route -> SHIPPED
+      case 'SHIPPED': return 'DELIVERED'; // Driver marks arrived and can complete
       default: return null;
     }
   };
@@ -46,7 +45,7 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
   const nextStatus = getNextStatus();
 
   const handleStatusUpdate = async (newStatus: TimelineStatus, deliveryStatus?: DeliveryStatus) => {
-    if (newStatus === 'COMPLETED' && !deliveryStatus) {
+    if ((newStatus === 'DELIVERED' || newStatus === 'DELIVERY_INCOMPLETE') && !deliveryStatus) {
       setShowDeliveryStatus(true);
       return;
     }
@@ -91,7 +90,13 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
       return;
     }
 
-    await handleStatusUpdate('COMPLETED', selectedDeliveryStatus);
+    // Determine final timeline status based on delivery outcome
+    const finalStatus: TimelineStatus = 
+      selectedDeliveryStatus === 'SUCCESSFULLY_DELIVERED' || selectedDeliveryStatus === 'PACKAGE_DELIVERED_TO_CLIENT'
+        ? 'DELIVERED' 
+        : 'DELIVERY_INCOMPLETE';
+
+    await handleStatusUpdate(finalStatus, selectedDeliveryStatus);
   };
 
   const handleAddressReview = async () => {
@@ -100,10 +105,11 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
     // Fetch driver location data for audit logging
     const locationData = await fetchDriverLocationData();
 
+    // Address review keeps the order at PICKED_UP but logs the event
     const result = await updateOrderStatus(
       order.id,
       order.tracking_id,
-      'REQUEST_ADDRESS_REVIEW',
+      'PICKED_UP', // Status stays at PICKED_UP
       undefined,
       locationData
     );
@@ -148,33 +154,22 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
 
           {!showDeliveryStatus ? (
             <>
-              {/* Status Buttons */}
-              {order.timeline_status === 'CONFIRMED' && (
+              {/* Status Buttons - Driver flow: PICKED_UP -> SHIPPED -> DELIVERED/INCOMPLETE */}
+              {order.timeline_status === 'PICKED_UP' && (
                 <Button
                   className="w-full h-14"
-                  onClick={() => handleStatusUpdate('IN_ROUTE')}
+                  onClick={() => handleStatusUpdate('SHIPPED')}
                   disabled={isUpdating}
                 >
                   <Navigation className="w-5 h-5 mr-2" />
-                  Start Route
+                  Confirm & Start Route
                 </Button>
               )}
 
-              {order.timeline_status === 'IN_ROUTE' && (
+              {order.timeline_status === 'SHIPPED' && (
                 <Button
                   className="w-full h-14"
-                  onClick={() => handleStatusUpdate('ARRIVED')}
-                  disabled={isUpdating}
-                >
-                  <MapPin className="w-5 h-5 mr-2" />
-                  Mark as Arrived
-                </Button>
-              )}
-
-              {order.timeline_status === 'ARRIVED' && (
-                <Button
-                  className="w-full h-14"
-                  onClick={() => handleStatusUpdate('COMPLETED')}
+                  onClick={() => handleStatusUpdate('DELIVERED')}
                   disabled={isUpdating}
                 >
                   <CheckCircle className="w-5 h-5 mr-2" />
@@ -182,8 +177,10 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
                 </Button>
               )}
 
-              {/* Address Review Button */}
-              {order.timeline_status !== 'COMPLETED' && order.timeline_status !== 'PENDING' && (
+              {/* Address Review Button - available when not delivered */}
+              {order.timeline_status !== 'DELIVERED' && 
+               order.timeline_status !== 'DELIVERY_INCOMPLETE' && 
+               order.timeline_status !== 'PENDING' && (
                 <Button
                   variant="outline"
                   className="w-full text-destructive border-destructive hover:bg-destructive/10"

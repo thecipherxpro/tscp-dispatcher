@@ -130,16 +130,14 @@ export default function OrderAuditTrail() {
     switch (status) {
       case 'PENDING':
         return { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200' };
-      case 'CONFIRMED':
-        return { label: 'Confirmed', className: 'bg-blue-100 text-blue-800 border-blue-200' };
-      case 'IN_ROUTE':
-        return { label: 'In Route', className: 'bg-purple-100 text-purple-800 border-purple-200' };
-      case 'ARRIVED':
-        return { label: 'Arrived', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
-      case 'COMPLETED':
-        return { label: 'Completed', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
-      case 'REQUEST_ADDRESS_REVIEW':
-        return { label: 'Address Review', className: 'bg-red-100 text-red-800 border-red-200' };
+      case 'PICKED_UP':
+        return { label: 'Picked Up', className: 'bg-blue-100 text-blue-800 border-blue-200' };
+      case 'SHIPPED':
+        return { label: 'Shipped', className: 'bg-purple-100 text-purple-800 border-purple-200' };
+      case 'DELIVERED':
+        return { label: 'Delivered', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      case 'DELIVERY_INCOMPLETE':
+        return { label: 'Delivery Incomplete', className: 'bg-red-100 text-red-800 border-red-200' };
       default:
         return { label: status, className: '' };
     }
@@ -147,14 +145,26 @@ export default function OrderAuditTrail() {
 
   const getActionIcon = (action: string) => {
     switch (action) {
+      case 'ORDER_IMPORTED':
+        return <Package className="w-4 h-4" />;
+      case 'ORDER_ASSIGNED':
+        return <User className="w-4 h-4" />;
+      case 'ORDER_CONFIRMED':
+        return <CheckCircle2 className="w-4 h-4" />;
+      case 'ORDER_SHIPPED':
+        return <Truck className="w-4 h-4" />;
+      case 'ORDER_ARRIVED':
+        return <MapPin className="w-4 h-4" />;
+      case 'REVIEW_REQUESTED':
+        return <AlertTriangle className="w-4 h-4" />;
+      case 'DELIVERY_COMPLETED_SUCCESS':
+        return <CheckCircle2 className="w-4 h-4" />;
+      case 'DELIVERY_COMPLETED_INCOMPLETE':
+        return <AlertTriangle className="w-4 h-4" />;
       case 'STATUS_CHANGE':
         return <Navigation className="w-4 h-4" />;
       case 'DRIVER_ASSIGNED':
         return <User className="w-4 h-4" />;
-      case 'ORDER_CREATED':
-        return <Package className="w-4 h-4" />;
-      case 'DELIVERY_COMPLETED':
-        return <CheckCircle2 className="w-4 h-4" />;
       default:
         return <CircleDot className="w-4 h-4" />;
     }

@@ -9,12 +9,12 @@ import { PublicTracking } from '@/types/auth';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
+// Public timeline - only 4 steps visible to the public
 const timelineSteps = [
   { status: 'PENDING', label: 'Pending', icon: Clock },
-  { status: 'CONFIRMED', label: 'Confirmed', icon: Package },
-  { status: 'IN_ROUTE', label: 'In Route', icon: Truck },
-  { status: 'ARRIVED', label: 'Arrived', icon: MapPin },
-  { status: 'COMPLETED', label: 'Completed', icon: CheckCircle },
+  { status: 'PICKED_UP', label: 'Picked Up', icon: Package },
+  { status: 'SHIPPED', label: 'Shipped', icon: Truck },
+  { status: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
 ];
 
 export default function TrackShipment() {
@@ -117,7 +117,9 @@ export default function TrackShipment() {
   };
 
   const getStatusIndex = (status: string) => {
-    return timelineSteps.findIndex(s => s.status === status);
+    // Map DELIVERY_INCOMPLETE to show same position as DELIVERED
+    const mappedStatus = status === 'DELIVERY_INCOMPLETE' ? 'DELIVERED' : status;
+    return timelineSteps.findIndex(s => s.status === mappedStatus);
   };
 
   const formatTimestamp = (timestamp: string | null) => {
@@ -240,27 +242,40 @@ export default function TrackShipment() {
                     
                     const timestamps: Record<string, string | null> = {
                       'PENDING': tracking.pending_at,
-                      'CONFIRMED': tracking.confirmed_at,
-                      'IN_ROUTE': tracking.in_route_at,
-                      'ARRIVED': tracking.arrived_at,
-                      'COMPLETED': tracking.completed_at,
+                      'PICKED_UP': tracking.picked_up_at,
+                      'SHIPPED': tracking.shipped_at,
+                      'DELIVERED': tracking.completed_at,
                     };
+
+                    // For DELIVERY_INCOMPLETE, show special styling on the last step
+                    const isIncomplete = tracking.timeline_status === 'DELIVERY_INCOMPLETE';
+                    const showAsIncomplete = step.status === 'DELIVERED' && isIncomplete;
 
                     return (
                       <div key={step.status} className="flex gap-3">
                         <div className="flex flex-col items-center">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            isCompleted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                          } ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
-                            <Icon className="w-4 h-4" />
+                            showAsIncomplete 
+                              ? 'bg-destructive text-destructive-foreground' 
+                              : isCompleted 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'bg-muted text-muted-foreground'
+                          } ${isCurrent && !showAsIncomplete ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+                            {showAsIncomplete ? <AlertCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                           </div>
                           {index < timelineSteps.length - 1 && (
                             <div className={`w-0.5 h-8 ${isCompleted ? 'bg-primary' : 'bg-muted'}`} />
                           )}
                         </div>
                         <div className="flex-1 pb-4">
-                          <p className={`font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            {step.label}
+                          <p className={`font-medium ${
+                            showAsIncomplete 
+                              ? 'text-destructive' 
+                              : isCompleted 
+                                ? 'text-foreground' 
+                                : 'text-muted-foreground'
+                          }`}>
+                            {showAsIncomplete ? 'Delivery Incomplete' : step.label}
                           </p>
                           {timestamps[step.status] && (
                             <p className="text-xs text-muted-foreground">
@@ -276,13 +291,25 @@ export default function TrackShipment() {
             </Card>
 
             {tracking.delivery_status && (
-              <Card className="bg-green-50 border-green-200">
+              <Card className={tracking.timeline_status === 'DELIVERED' 
+                ? "bg-green-50 border-green-200" 
+                : "bg-red-50 border-red-200"
+              }>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    {tracking.timeline_status === 'DELIVERED' 
+                      ? <CheckCircle className="w-5 h-5 text-green-600" />
+                      : <AlertCircle className="w-5 h-5 text-red-600" />
+                    }
                     <div>
-                      <p className="font-medium text-green-900">Delivery Outcome</p>
-                      <p className="text-sm text-green-700">
+                      <p className={`font-medium ${
+                        tracking.timeline_status === 'DELIVERED' ? 'text-green-900' : 'text-red-900'
+                      }`}>
+                        Delivery Outcome
+                      </p>
+                      <p className={`text-sm ${
+                        tracking.timeline_status === 'DELIVERED' ? 'text-green-700' : 'text-red-700'
+                      }`}>
                         {tracking.delivery_status.replace(/_/g, ' ')}
                       </p>
                     </div>

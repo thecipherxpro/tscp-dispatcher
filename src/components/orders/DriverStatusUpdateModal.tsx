@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { CheckCircle, AlertTriangle, Navigation, Loader2, MapPin, FileText, Package } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CheckCircle, AlertTriangle, Navigation, Clock, FileText } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,8 +22,8 @@ const DELIVERED_STATUSES: { value: DeliveryStatus; label: string }[] = [
   { value: 'PACKAGE_DELIVERED_TO_CLIENT', label: 'Package Delivered to Client' },
 ];
 
-// Delivery statuses for incomplete delivery
-const INCOMPLETE_STATUSES: { value: DeliveryStatus; label: string }[] = [
+// Delivery statuses for delayed/incomplete delivery
+const DELAYED_STATUSES: { value: DeliveryStatus; label: string }[] = [
   { value: 'CLIENT_UNAVAILABLE', label: 'Client Unavailable' },
   { value: 'NO_ONE_HOME', label: 'No One Home / No Answer' },
   { value: 'WRONG_ADDRESS', label: 'Wrong Address' },
@@ -41,8 +41,9 @@ const REVIEW_REASONS = [
 export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: DriverStatusUpdateModalProps) {
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showDeliveryOutcome, setShowDeliveryOutcome] = useState(false);
   const [showDeliveryStatus, setShowDeliveryStatus] = useState(false);
-  const [showIncompleteStatus, setShowIncompleteStatus] = useState(false);
+  const [showDelayedStatus, setShowDelayedStatus] = useState(false);
   const [showReviewRequest, setShowReviewRequest] = useState(false);
   const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState<DeliveryStatus | null>(null);
   const [selectedReviewReason, setSelectedReviewReason] = useState<string | null>(null);
@@ -51,8 +52,9 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
   if (!order) return null;
 
   const resetState = () => {
+    setShowDeliveryOutcome(false);
     setShowDeliveryStatus(false);
-    setShowIncompleteStatus(false);
+    setShowDelayedStatus(false);
     setShowReviewRequest(false);
     setSelectedDeliveryStatus(null);
     setSelectedReviewReason(null);
@@ -150,10 +152,6 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
     handleStatusUpdate('IN_ROUTE');
   };
 
-  // Handle arrived (IN_ROUTE -> ARRIVED)
-  const handleArrived = () => {
-    handleStatusUpdate('ARRIVED');
-  };
 
   // Handle delivery completion
   const handleDeliveryComplete = async () => {
@@ -179,6 +177,36 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
 
   // Render content based on current status and selected view
   const renderContent = () => {
+    // Delivery Outcome Choice View (Delivered vs Delayed)
+    if (showDeliveryOutcome && !showDeliveryStatus && !showDelayedStatus) {
+      return (
+        <>
+          <h4 className="font-medium text-foreground text-lg">Mark Delivery Outcome</h4>
+          <p className="text-sm text-muted-foreground mb-4">Select the delivery outcome</p>
+          
+          <div className="space-y-3">
+            <Button
+              className="w-full h-16 bg-green-600 hover:bg-green-700 text-lg"
+              onClick={() => setShowDeliveryStatus(true)}
+              disabled={isUpdating}
+            >
+              <CheckCircle className="w-6 h-6 mr-3" />
+              Delivered
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-16 text-amber-600 border-amber-500 hover:bg-amber-50 text-lg"
+              onClick={() => setShowDelayedStatus(true)}
+              disabled={isUpdating}
+            >
+              <Clock className="w-6 h-6 mr-3" />
+              Delivery Delayed
+            </Button>
+          </div>
+        </>
+      );
+    }
+
     // Review Request View
     if (showReviewRequest) {
       return (
@@ -281,22 +309,22 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
       );
     }
 
-    // Incomplete Status Selection
-    if (showIncompleteStatus) {
+    // Delayed Status Selection
+    if (showDelayedStatus) {
       return (
         <>
-          <h4 className="font-medium text-foreground">Mark as Incomplete</h4>
-          <p className="text-sm text-muted-foreground mb-4">Select reason for incomplete delivery</p>
+          <h4 className="font-medium text-foreground">Delivery Delayed</h4>
+          <p className="text-sm text-muted-foreground mb-4">Select reason for delay</p>
           
           <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
-            {INCOMPLETE_STATUSES.map((status) => (
+            {DELAYED_STATUSES.map((status) => (
               <button
                 key={status.value}
                 onClick={() => setSelectedDeliveryStatus(status.value)}
                 className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                   selectedDeliveryStatus === status.value
-                    ? 'border-destructive bg-destructive/5'
-                    : 'border-border hover:border-destructive/50'
+                    ? 'border-amber-500 bg-amber-50'
+                    : 'border-border hover:border-amber-500/50'
                 }`}
               >
                 <p className="font-medium text-foreground">{status.label}</p>
@@ -309,19 +337,18 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
               variant="outline"
               className="flex-1"
               onClick={() => {
-                setShowIncompleteStatus(false);
+                setShowDelayedStatus(false);
                 setSelectedDeliveryStatus(null);
               }}
             >
               Back
             </Button>
             <Button
-              variant="destructive"
-              className="flex-1"
+              className="flex-1 bg-amber-600 hover:bg-amber-700"
               onClick={handleDeliveryComplete}
               disabled={!selectedDeliveryStatus || isUpdating}
             >
-              {isUpdating ? 'Completing...' : 'Mark Incomplete'}
+              {isUpdating ? 'Submitting...' : 'Confirm Delay'}
             </Button>
           </div>
         </>
@@ -366,39 +393,16 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
           </Button>
         )}
 
-        {/* IN_ROUTE - Show Arrived */}
-        {order.timeline_status === 'IN_ROUTE' && (
+        {/* IN_ROUTE or ARRIVED - Show Mark Delivery Outcome */}
+        {(order.timeline_status === 'IN_ROUTE' || order.timeline_status === 'ARRIVED') && (
           <Button
             className="w-full h-14"
-            onClick={handleArrived}
+            onClick={() => setShowDeliveryOutcome(true)}
             disabled={isUpdating}
           >
-            <MapPin className="w-5 h-5 mr-2" />
-            Mark as Arrived
+            <CheckCircle className="w-5 h-5 mr-2" />
+            Mark Delivery Outcome
           </Button>
-        )}
-
-        {/* ARRIVED - Show Delivered or Incomplete options */}
-        {order.timeline_status === 'ARRIVED' && (
-          <div className="space-y-3">
-            <Button
-              className="w-full h-14 bg-green-600 hover:bg-green-700"
-              onClick={() => setShowDeliveryStatus(true)}
-              disabled={isUpdating}
-            >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Delivered
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-14 text-destructive border-destructive hover:bg-destructive/10"
-              onClick={() => setShowIncompleteStatus(true)}
-              disabled={isUpdating}
-            >
-              <AlertTriangle className="w-5 h-5 mr-2" />
-              Incomplete
-            </Button>
-          </div>
         )}
 
         {/* REVIEW_REQUESTED - Show waiting message */}
@@ -439,11 +443,11 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Update Delivery Status</DialogTitle>
-        </DialogHeader>
+    <Drawer open={isOpen} onOpenChange={handleClose}>
+      <DrawerContent className="px-4 pb-8">
+        <DrawerHeader className="text-left px-0">
+          <DrawerTitle>Update Delivery Status</DrawerTitle>
+        </DrawerHeader>
 
         <div className="space-y-4">
           {/* Order Info */}
@@ -461,7 +465,7 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
 
           {renderContent()}
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

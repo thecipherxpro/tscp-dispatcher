@@ -167,7 +167,7 @@ export function OrderDetailSheet({
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-foreground truncate">{order.name || 'N/A'}</p>
+                      <p className="text-foreground truncate font-bold">{order.name || 'N/A'}</p>
                       <p className="text-xs text-muted-foreground">DOB: {formatDate(order.dob)}</p>
                     </div>
                   </div>

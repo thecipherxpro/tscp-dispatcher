@@ -24,6 +24,7 @@ interface AuditLog {
   delivery_status: string | null;
   ip_address: string | null;
   user_agent: string | null;
+  geolocation: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   user_role: string | null;
@@ -694,16 +695,20 @@ export default function OrderAuditTrail() {
                         <div style="font-size: 10px; color: #9ca3af; text-transform: capitalize;">${log.user_role?.replace('_', ' ') || 'Unknown Role'}</div>
                       </div>
                       <div>
+                        <div class="field-label">IP Address</div>
+                        <div class="field-value">${log.ip_address || 'Not recorded'}</div>
+                      </div>
+                      <div>
                         <div class="field-label">Device Type</div>
-                        <div class="field-value">${log.access_location || deviceInfo.device}</div>
+                        <div class="field-value">${deviceInfo.device}</div>
                       </div>
                       <div>
                         <div class="field-label">Browser</div>
                         <div class="field-value">${deviceInfo.browser} / ${deviceInfo.os}</div>
                       </div>
-                      <div>
-                        <div class="field-label">IP Address</div>
-                        <div class="field-value">${log.ip_address || 'Not recorded'}</div>
+                      <div style="grid-column: span 2;">
+                        <div class="field-label">Location</div>
+                        <div class="field-value">${log.access_location || 'Not recorded'}${log.geolocation ? ` (${log.geolocation})` : ''}</div>
                       </div>
                     </div>
 
@@ -1114,13 +1119,22 @@ export default function OrderAuditTrail() {
                             <p className="text-[10px] text-muted-foreground capitalize">{log.user_role?.replace('_', ' ') || 'Unknown Role'}</p>
                           </div>
 
+                          {/* IP Address */}
+                          <div>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
+                              <Globe className="w-3 h-3" />
+                              IP Address
+                            </p>
+                            <p className="text-xs font-medium">{log.ip_address || 'Not recorded'}</p>
+                          </div>
+
                           {/* Device Type */}
                           <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
                               <Smartphone className="w-3 h-3" />
                               Device Type
                             </p>
-                            <p className="text-xs font-medium">{log.access_location || deviceInfo.device}</p>
+                            <p className="text-xs font-medium">{deviceInfo.device}</p>
                           </div>
 
                           {/* Browser Type */}
@@ -1132,13 +1146,18 @@ export default function OrderAuditTrail() {
                             <p className="text-xs font-medium">{deviceInfo.browser} / {deviceInfo.os}</p>
                           </div>
 
-                          {/* IP Address */}
-                          <div>
+                          {/* Location */}
+                          <div className="col-span-2">
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              IP Address
+                              <MapPin className="w-3 h-3" />
+                              Location
                             </p>
-                            <p className="text-xs font-medium">{log.ip_address || 'Not recorded'}</p>
+                            <p className="text-xs font-medium">
+                              {log.access_location || 'Not recorded'}
+                              {log.geolocation && (
+                                <span className="text-muted-foreground ml-1">({log.geolocation})</span>
+                              )}
+                            </p>
                           </div>
                         </div>
 

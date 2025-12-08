@@ -177,7 +177,12 @@ export async function updateOrderStatus(
   orderId: string,
   trackingId: string | null,
   newStatus: string,
-  deliveryStatus?: string
+  deliveryStatus?: string,
+  locationData?: {
+    ip_address: string | null;
+    geolocation: string | null;
+    access_location: string | null;
+  }
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // First get the current order status for audit logging
@@ -224,7 +229,7 @@ export async function updateOrderStatus(
       if (trackingError) throw trackingError;
     }
 
-    // Create audit log entry
+    // Create audit log entry with location data
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData?.session?.user?.id;
 
@@ -238,6 +243,9 @@ export async function updateOrderStatus(
         new_status: newStatus,
         delivery_status: deliveryStatus,
         user_agent: navigator.userAgent,
+        ip_address: locationData?.ip_address || null,
+        geolocation: locationData?.geolocation || null,
+        access_location: locationData?.access_location || null,
         metadata: { trackingId } as Json
       }]);
 

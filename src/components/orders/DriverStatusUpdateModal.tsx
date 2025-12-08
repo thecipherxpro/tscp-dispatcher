@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Truck, MapPin, CheckCircle, AlertTriangle, Navigation } from 'lucide-react';
+import { MapPin, CheckCircle, AlertTriangle, Navigation, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Order, DeliveryStatus, TimelineStatus } from '@/types/auth';
 import { updateOrderStatus } from '@/hooks/useOrders';
 import { useToast } from '@/hooks/use-toast';
-
+import { fetchDriverLocationData } from '@/hooks/useDriverLocation';
 interface DriverStatusUpdateModalProps {
   order: Order | null;
   isOpen: boolean;
@@ -53,11 +53,15 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
 
     setIsUpdating(true);
 
+    // Fetch driver location data for audit logging
+    const locationData = await fetchDriverLocationData();
+
     const result = await updateOrderStatus(
       order.id,
       order.tracking_id,
       newStatus,
-      deliveryStatus
+      deliveryStatus,
+      locationData
     );
 
     setIsUpdating(false);
@@ -93,10 +97,15 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
   const handleAddressReview = async () => {
     setIsUpdating(true);
 
+    // Fetch driver location data for audit logging
+    const locationData = await fetchDriverLocationData();
+
     const result = await updateOrderStatus(
       order.id,
       order.tracking_id,
-      'REQUEST_ADDRESS_REVIEW'
+      'REQUEST_ADDRESS_REVIEW',
+      undefined,
+      locationData
     );
 
     setIsUpdating(false);

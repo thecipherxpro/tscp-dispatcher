@@ -19,6 +19,7 @@ import TrackingList from "./pages/admin/TrackingList";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
 import DriverMapPage from "./pages/driver/DriverMapPage";
+import DriverNavigationPage from "./pages/driver/DriverNavigationPage";
 import TrackShipment from "./pages/TrackShipment";
 import NotFound from "./pages/NotFound";
 
@@ -197,6 +198,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['driver']}>
             <DriverMapPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/driver-navigation"
+        element={
+          <ProtectedRoute allowedRoles={['driver']}>
+            <DriverNavigationPage />
           </ProtectedRoute>
         }
       />

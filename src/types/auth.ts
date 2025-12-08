@@ -87,6 +87,9 @@ export interface Order {
   tracking_url: string | null;
   timeline_status: TimelineStatus;
   delivery_status: DeliveryStatus | null;
+  latitude: number | null;
+  longitude: number | null;
+  geo_zone: string | null;
   pending_at: string | null;
   picked_up_at: string | null;
   assigned_at: string | null;
@@ -119,6 +122,9 @@ export interface PublicTracking {
   province: string | null;
   postal_code: string | null;
   country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geo_zone: string | null;
   timeline_status: TimelineStatus;
   delivery_status: DeliveryStatus | null;
   pending_at: string | null;

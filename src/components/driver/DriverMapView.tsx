@@ -106,8 +106,8 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
-  const driverMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const driverMarkerRef = useRef<google.maps.Marker | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const { user } = useAuth();
   
@@ -358,44 +358,36 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     if (!mapRef.current || !googleMapsLoaded) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.map = null);
+    markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
     // Add markers for each order
     ordersToShow.forEach((order, index) => {
       if (!order.latitude || !order.longitude) return;
 
-      // Create custom marker element
-      const markerEl = document.createElement('div');
-      markerEl.className = 'order-marker';
-      markerEl.style.cssText = `
-        width: 36px;
-        height: 36px;
-        background-color: #000000;
-        border: 3px solid white;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        position: relative;
-      `;
-      markerEl.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        ${activeDestination?.id === order.id ? '' : `<span style="position:absolute;top:-8px;right:-8px;background:#f97316;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:bold;">${index + 1}</span>`}
-      `;
-
-      const marker = new google.maps.marker.AdvancedMarkerElement({
+      const isActive = activeDestination?.id === order.id;
+      
+      const marker = new google.maps.Marker({
         map: mapRef.current!,
         position: { lat: order.latitude, lng: order.longitude },
-        content: markerEl,
-        title: order.name || 'Delivery'
+        title: order.name || 'Delivery',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 14,
+          fillColor: '#000000',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+        label: isActive ? undefined : {
+          text: String(index + 1),
+          color: '#F97316',
+          fontSize: '11px',
+          fontWeight: 'bold',
+        },
       });
 
-      markerEl.addEventListener('click', () => {
+      google.maps.event.addListener(marker, 'click', () => {
         drawRoute(order);
       });
 
@@ -408,26 +400,22 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     if (!mapRef.current || !googleMapsLoaded) return;
 
     if (driverMarkerRef.current) {
-      driverMarkerRef.current.position = location;
+      driverMarkerRef.current.setPosition(location);
       return;
     }
 
-    // Create driver marker element
-    const driverEl = document.createElement('div');
-    driverEl.style.cssText = `
-      width: 20px;
-      height: 20px;
-      background-color: #3b82f6;
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-    `;
-
-    driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
+    driverMarkerRef.current = new google.maps.Marker({
       map: mapRef.current,
       position: location,
-      content: driverEl,
-      title: 'Your Location'
+      title: 'Your Location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#3b82f6',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3,
+      },
     });
   }, [googleMapsLoaded]);
 
@@ -755,9 +743,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
-      markersRef.current.forEach(marker => marker.map = null);
+      markersRef.current.forEach(marker => marker.setMap(null));
       if (driverMarkerRef.current) {
-        driverMarkerRef.current.map = null;
+        driverMarkerRef.current.setMap(null);
       }
     };
   }, [fetchApiKey, fetchOrders, geocodeAndSetZone, startLocationTracking]);

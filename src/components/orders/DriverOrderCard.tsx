@@ -1,4 +1,4 @@
-import { MapPin, User } from 'lucide-react';
+import { MapPin, User, Map, Clock, Package } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Order } from '@/types/auth';
@@ -54,8 +54,21 @@ const getStatusConfig = (status: string) => {
   }
 };
 
+const formatDateTime = (date: string | null) => {
+  if (!date) return null;
+  return new Date(date).toLocaleString('en-CA', {
+    timeZone: 'America/Toronto',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 export function DriverOrderCard({ order, onClick, actionButton }: DriverOrderCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
+  const isCompleted = order.timeline_status === 'COMPLETED_DELIVERED' || 
+                      order.timeline_status === 'COMPLETED_INCOMPLETE';
   
   // Build full address - only show name and address for drivers
   const fullAddress = [
@@ -92,6 +105,56 @@ export function DriverOrderCard({ order, onClick, actionButton }: DriverOrderCar
           <div className="flex items-start gap-2 text-sm pl-[46px]">
             <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
             <span className="text-muted-foreground">{fullAddress}</span>
+          </div>
+        )}
+
+        {/* Completed Order Info */}
+        {isCompleted && (
+          <div className="mt-3 pl-[46px] space-y-2">
+            {/* Shipment ID and Timestamp */}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              {order.shipment_id && (
+                <div className="flex items-center gap-1">
+                  <Package className="w-3 h-3" />
+                  <span className="font-mono">{order.shipment_id}</span>
+                </div>
+              )}
+              {order.completed_at && (
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatDateTime(order.completed_at)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Delivery Outcome */}
+            {order.delivery_status && (
+              <p className={`text-xs font-medium ${
+                order.timeline_status === 'COMPLETED_DELIVERED' 
+                  ? 'text-emerald-600 dark:text-emerald-400' 
+                  : 'text-destructive'
+              }`}>
+                {order.delivery_status.replace(/_/g, ' ')}
+              </p>
+            )}
+
+            {/* Route Snapshot Image */}
+            {order.delivery_route_snapshot_url && (
+              <div className="mt-2 rounded-lg overflow-hidden border border-border">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/50 border-b border-border">
+                  <Map className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Delivery Route
+                  </span>
+                </div>
+                <img 
+                  src={order.delivery_route_snapshot_url} 
+                  alt="Delivery route map"
+                  className="w-full h-32 object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
           </div>
         )}
 

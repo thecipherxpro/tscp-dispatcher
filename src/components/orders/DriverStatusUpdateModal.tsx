@@ -8,6 +8,7 @@ import { Order, DeliveryStatus, TimelineStatus } from '@/types/auth';
 import { updateOrderStatus } from '@/hooks/useOrders';
 import { useToast } from '@/hooks/use-toast';
 import { fetchDriverLocationData } from '@/hooks/useDriverLocation';
+import { generateRouteSnapshot, getDriverLocation } from '@/hooks/useRouteSnapshot';
 
 interface DriverStatusUpdateModalProps {
   order: Order | null;
@@ -181,6 +182,31 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
       : 'COMPLETED_INCOMPLETE';
 
     await handleStatusUpdate(finalStatus, selectedDeliveryStatus);
+
+    // Generate route snapshot in background (non-blocking)
+    if (order.latitude && order.longitude) {
+      getDriverLocation().then(async (driverLocation) => {
+        if (driverLocation) {
+          console.log('Generating route snapshot...');
+          const result = await generateRouteSnapshot({
+            orderId: order.id,
+            driverLat: driverLocation.lat,
+            driverLng: driverLocation.lng,
+            destinationLat: order.latitude!,
+            destinationLng: order.longitude!,
+            trackingId: order.tracking_id || undefined,
+          });
+          
+          if (result.success) {
+            console.log('Route snapshot generated:', result.snapshotUrl);
+          } else {
+            console.error('Route snapshot failed:', result.error);
+          }
+        } else {
+          console.warn('Could not get driver location for route snapshot');
+        }
+      }).catch(console.error);
+    }
   };
 
   // Render content based on current status and selected view

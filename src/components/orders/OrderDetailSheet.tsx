@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap, AlertCircle, Calendar } from 'lucide-react';
+import { User, MapPin, Package, Copy, ExternalLink, Truck, Eye, Phone, Mail, Hash, FileText, Building, GraduationCap, AlertCircle, Calendar, Map } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -469,6 +469,29 @@ export function OrderDetailSheet({
                     </div>
                   </div>
                 </section>}
+
+              {/* Route Snapshot Section */}
+              {order.delivery_route_snapshot_url && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Map className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold text-foreground">Delivery Route Proof</h3>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-border">
+                    <img 
+                      src={order.delivery_route_snapshot_url} 
+                      alt="Delivery route map"
+                      className="w-full h-48 object-cover"
+                      loading="lazy"
+                    />
+                    <div className="p-2 bg-muted/30 text-center">
+                      <p className="text-[10px] text-muted-foreground">
+                        Route snapshot captured at delivery completion
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {/* Notes Section */}
               {order.call_notes && <section>

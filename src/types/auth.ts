@@ -104,6 +104,9 @@ export interface Order {
   address_review_requested_at: string | null;
   created_at: string;
   updated_at: string;
+  // Route snapshot fields
+  delivery_route_snapshot_url: string | null;
+  delivery_route_snapshot_status: string | null;
 }
 
 export interface PublicTracking {
@@ -141,4 +144,7 @@ export interface PublicTracking {
   address_review_requested_at: string | null;
   created_at: string;
   updated_at: string;
+  // Route snapshot fields
+  delivery_route_snapshot_url: string | null;
+  delivery_route_snapshot_status: string | null;
 }

@@ -56,7 +56,7 @@ const getStatusColor = (status: string) => {
 export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const markersRef = useRef<google.maps.Marker[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,10 +73,8 @@ export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
   const updateMarkers = useCallback(async (ordersToShow: Order[]) => {
     if (!mapRef.current || !googleMapsLoaded) return;
 
-    markersRef.current.forEach(marker => marker.map = null);
+    markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
-
-    const { AdvancedMarkerElement } = await importLibrary('marker') as google.maps.MarkerLibrary;
 
     for (const order of ordersToShow) {
       if (!order.latitude || !order.longitude) continue;
@@ -87,14 +85,21 @@ export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
       markerElement.style.backgroundColor = statusColor;
       markerElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 
-      const marker = new AdvancedMarkerElement({
+      const marker = new google.maps.Marker({
         map: mapRef.current,
         position: { lat: order.latitude, lng: order.longitude },
-        content: markerElement,
         title: order.name || 'Order',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: statusColor,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
       });
 
-      marker.addListener('click', () => onOrderSelect(order));
+      google.maps.event.addListener(marker, 'click', () => onOrderSelect(order));
       markersRef.current.push(marker);
     }
 
@@ -143,7 +148,7 @@ export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
         mapRef.current = new google.maps.Map(mapContainer.current, {
           center: { lat: CITY_CENTER_LAT, lng: CITY_CENTER_LNG },
           zoom: 11,
-          mapId: 'admin-orders-map',
+          styles: UBER_MAP_STYLE,
           disableDefaultUI: true,
           zoomControl: true,
           gestureHandling: 'greedy',
@@ -160,7 +165,7 @@ export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
     initMap();
     return () => {
       isMounted = false;
-      markersRef.current.forEach(marker => marker.map = null);
+      markersRef.current.forEach(marker => marker.setMap(null));
     };
   }, [fetchApiKey]);
 

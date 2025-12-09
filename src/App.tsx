@@ -12,13 +12,15 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import DriverDashboard from "./pages/driver/DriverDashboard";
 import DriverOnboarding from "./pages/driver/DriverOnboarding";
+import DriverZoneDashboard from "./pages/driver/DriverZoneDashboard";
+import DriverZoneDeliveryList from "./pages/driver/DriverZoneDeliveryList";
+import DriverDeliveryDetail from "./pages/driver/DriverDeliveryDetail";
 import Orders from "./pages/admin/Orders";
 import AdminTracking from "./pages/admin/AdminTracking";
 import OrderAuditTrail from "./pages/admin/OrderAuditTrail";
 import TrackingList from "./pages/admin/TrackingList";
 import Drivers from "./pages/admin/Drivers";
 import MyOrders from "./pages/driver/MyOrders";
-import DriverMapPage from "./pages/driver/DriverMapPage";
 import TrackShipment from "./pages/TrackShipment";
 import NotFound from "./pages/NotFound";
 
@@ -188,15 +190,23 @@ function AppRoutes() {
         path="/my-orders"
         element={
           <ProtectedRoute allowedRoles={['driver']}>
-            <MyOrders />
+            <DriverZoneDashboard />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/driver-map"
+        path="/driver-zone/:zone"
         element={
           <ProtectedRoute allowedRoles={['driver']}>
-            <DriverMapPage />
+            <DriverZoneDeliveryList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/driver-delivery/:orderId"
+        element={
+          <ProtectedRoute allowedRoles={['driver']}>
+            <DriverDeliveryDetail />
           </ProtectedRoute>
         }
       />

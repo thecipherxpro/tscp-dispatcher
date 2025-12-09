@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { Upload, FileSpreadsheet, CheckCircle, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -84,6 +84,8 @@ const COLUMN_MAPPING: Record<string, keyof ParsedOrder> = {
   'pharmacy': 'pharmacy_name',
 };
 
+type ImportCount = 10 | 20 | 'all';
+
 export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +94,7 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
   const [parsedData, setParsedData] = useState<ParsedOrder[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null);
+  const [selectedCount, setSelectedCount] = useState<ImportCount | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -176,14 +179,22 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     reader.readAsBinaryString(file);
   };
 
+  const getOrdersToImport = (): ParsedOrder[] => {
+    if (!selectedCount || selectedCount === 'all') {
+      return parsedData;
+    }
+    return parsedData.slice(0, selectedCount);
+  };
+
   const handleImport = async () => {
-    if (parsedData.length === 0) return;
+    const ordersToImport = getOrdersToImport();
+    if (ordersToImport.length === 0) return;
 
     setIsImporting(true);
     let success = 0;
     let failed = 0;
 
-    for (const order of parsedData) {
+    for (const order of ordersToImport) {
       try {
         const { error } = await supabase.from('orders').insert({
           call_datetime: order.call_datetime || null,
@@ -247,103 +258,148 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     setFile(null);
     setParsedData([]);
     setImportResult(null);
+    setSelectedCount(null);
     onClose();
   };
 
+  const getImportCountLabel = (count: ImportCount): string => {
+    if (count === 'all') return `All (${parsedData.length})`;
+    return `First ${count}`;
+  };
+
+  const importOptions: ImportCount[] = [10, 20, 'all'];
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Import Orders</DialogTitle>
-        </DialogHeader>
+    <Drawer open={isOpen} onOpenChange={handleClose}>
+      <DrawerContent className="max-h-[85vh]">
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Import Orders</DrawerTitle>
+        </DrawerHeader>
 
-        {!file ? (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-          >
-            <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="font-medium text-foreground mb-1">Upload File</p>
-            <p className="text-sm text-muted-foreground">
-              CSV or Excel (.xlsx, .xls)
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-              <FileSpreadsheet className="w-8 h-8 text-primary" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground text-sm">{file.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {parsedData.length} orders found
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => { setFile(null); setParsedData([]); }}>
-                <X className="w-4 h-4" />
-              </Button>
+        <div className="px-4 pb-4 overflow-y-auto">
+          {!file ? (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
+            >
+              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="font-medium text-foreground mb-1">Upload File</p>
+              <p className="text-sm text-muted-foreground">
+                CSV or Excel (.xlsx, .xls)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
             </div>
-
-            {parsedData.length > 0 && !importResult && (
-              <>
-                <div className="max-h-48 overflow-y-auto border border-border rounded-lg">
-                  <table className="w-full text-xs">
-                    <thead className="bg-muted sticky top-0">
-                      <tr>
-                        <th className="p-2 text-left text-muted-foreground">Name</th>
-                        <th className="p-2 text-left text-muted-foreground">City</th>
-                        <th className="p-2 text-left text-muted-foreground">Phone</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {parsedData.slice(0, 10).map((order, i) => (
-                        <tr key={i}>
-                          <td className="p-2 text-foreground">{order.name || '-'}</td>
-                          <td className="p-2 text-foreground">{order.city || '-'}</td>
-                          <td className="p-2 text-foreground">{order.phone_number || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {parsedData.length > 10 && (
-                    <p className="p-2 text-xs text-muted-foreground text-center bg-muted">
-                      + {parsedData.length - 10} more orders
-                    </p>
-                  )}
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <FileSpreadsheet className="w-8 h-8 text-primary" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground text-sm">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {parsedData.length} orders found
+                  </p>
                 </div>
-
-                <Button
-                  className="w-full"
-                  onClick={handleImport}
-                  disabled={isImporting}
-                >
-                  {isImporting ? 'Importing...' : `Import ${parsedData.length} Orders`}
-                </Button>
-              </>
-            )}
-
-            {importResult && (
-              <div className="text-center py-4">
-                <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                <p className="font-medium text-foreground">Import Complete</p>
-                <p className="text-sm text-muted-foreground">
-                  {importResult.success} imported
-                  {importResult.failed > 0 && `, ${importResult.failed} failed`}
-                </p>
-                <Button className="mt-4" onClick={handleClose}>
-                  Done
+                <Button variant="ghost" size="sm" onClick={() => { setFile(null); setParsedData([]); setSelectedCount(null); }}>
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+              {parsedData.length > 0 && !importResult && (
+                <>
+                  {/* Import Count Selection */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">How many orders to import?</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {importOptions.map((option) => {
+                        const count = option === 'all' ? parsedData.length : option;
+                        const isDisabled = option !== 'all' && parsedData.length < option;
+                        
+                        return (
+                          <Button
+                            key={option.toString()}
+                            variant={selectedCount === option ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedCount(option)}
+                            disabled={isDisabled}
+                            className="w-full"
+                          >
+                            {getImportCountLabel(option)}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Preview Table */}
+                  <div className="max-h-40 overflow-y-auto border border-border rounded-lg">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          <th className="p-2 text-left text-muted-foreground">#</th>
+                          <th className="p-2 text-left text-muted-foreground">Name</th>
+                          <th className="p-2 text-left text-muted-foreground">City</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {getOrdersToImport().slice(0, 10).map((order, i) => (
+                          <tr key={i}>
+                            <td className="p-2 text-muted-foreground">{i + 1}</td>
+                            <td className="p-2 text-foreground">{order.name || '-'}</td>
+                            <td className="p-2 text-foreground">{order.city || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {getOrdersToImport().length > 10 && (
+                      <p className="p-2 text-xs text-muted-foreground text-center bg-muted">
+                        + {getOrdersToImport().length - 10} more orders
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {importResult && (
+                <div className="text-center py-4">
+                  <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
+                  <p className="font-medium text-foreground">Import Complete</p>
+                  <p className="text-sm text-muted-foreground">
+                    {importResult.success} imported
+                    {importResult.failed > 0 && `, ${importResult.failed} failed`}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DrawerFooter className="border-t border-border">
+          {importResult ? (
+            <Button className="w-full" onClick={handleClose}>
+              Done
+            </Button>
+          ) : (
+            <Button
+              className="w-full"
+              onClick={handleImport}
+              disabled={isImporting || !selectedCount || parsedData.length === 0}
+            >
+              {isImporting 
+                ? 'Importing...' 
+                : selectedCount 
+                  ? `Import ${selectedCount === 'all' ? parsedData.length : Math.min(selectedCount, parsedData.length)} Orders`
+                  : 'Select Import Count'
+              }
+            </Button>
+          )}
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

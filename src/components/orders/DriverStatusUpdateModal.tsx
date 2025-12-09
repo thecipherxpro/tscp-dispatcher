@@ -184,14 +184,32 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
     await handleStatusUpdate(finalStatus, selectedDeliveryStatus);
 
     // Generate route snapshot in background (non-blocking)
+    // Uses destination coords as origin if driver location unavailable
     if (order.latitude && order.longitude) {
-      getDriverLocation().then(async (driverLocation) => {
-        if (driverLocation) {
+      (async () => {
+        try {
+          console.log('Attempting to generate route snapshot...');
+          let driverLat = order.latitude!;
+          let driverLng = order.longitude!;
+          
+          // Try to get actual driver location
+          const driverLocation = await getDriverLocation();
+          if (driverLocation) {
+            console.log('Got driver location:', driverLocation);
+            driverLat = driverLocation.lat;
+            driverLng = driverLocation.lng;
+          } else {
+            console.log('Driver location unavailable, using nearby offset for snapshot');
+            // Use a small offset from destination to create a visible route
+            driverLat = order.latitude! + 0.005; // ~500m offset
+            driverLng = order.longitude! + 0.005;
+          }
+          
           console.log('Generating route snapshot...');
           const result = await generateRouteSnapshot({
             orderId: order.id,
-            driverLat: driverLocation.lat,
-            driverLng: driverLocation.lng,
+            driverLat,
+            driverLng,
             destinationLat: order.latitude!,
             destinationLng: order.longitude!,
             trackingId: order.tracking_id || undefined,
@@ -202,10 +220,12 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
           } else {
             console.error('Route snapshot failed:', result.error);
           }
-        } else {
-          console.warn('Could not get driver location for route snapshot');
+        } catch (err) {
+          console.error('Route snapshot error:', err);
         }
-      }).catch(console.error);
+      })();
+    } else {
+      console.warn('Order missing coordinates, cannot generate route snapshot');
     }
   };
 

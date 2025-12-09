@@ -20,6 +20,8 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let body: RouteSnapshotRequest | null = null;
+
   try {
     const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -35,8 +37,20 @@ Deno.serve(async (req) => {
       throw new Error('Supabase credentials not configured');
     }
 
-    const body: RouteSnapshotRequest = await req.json();
+    // Parse body with error handling
+    const rawBody = await req.text();
+    console.log('Received raw body:', rawBody);
+    
+    if (!rawBody || rawBody.trim() === '') {
+      throw new Error('Empty request body received');
+    }
+    
+    body = JSON.parse(rawBody) as RouteSnapshotRequest;
     const { orderId, driverLat, driverLng, destinationLat, destinationLng, trackingId } = body;
+    
+    if (!orderId || !driverLat || !driverLng || !destinationLat || !destinationLng) {
+      throw new Error(`Missing required fields. Got: orderId=${orderId}, driverLat=${driverLat}, driverLng=${driverLng}, destLat=${destinationLat}, destLng=${destinationLng}`);
+    }
 
     console.log(`Generating route snapshot for order: ${orderId}`);
     console.log(`Driver location: ${driverLat}, ${driverLng}`);
@@ -192,13 +206,12 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Route snapshot error:', error);
 
-    // Try to update the order with failed status
+    // Try to update the order with failed status using the already-parsed body
     try {
-      const body = await req.clone().json();
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
       const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
       
-      if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && body.orderId) {
+      if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY && body?.orderId) {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await supabase
           .from('orders')
@@ -206,6 +219,7 @@ Deno.serve(async (req) => {
             delivery_route_snapshot_status: 'FAILED',
           })
           .eq('id', body.orderId);
+        console.log('Updated order with FAILED status');
       }
     } catch (e) {
       console.error('Failed to update failure status:', e);

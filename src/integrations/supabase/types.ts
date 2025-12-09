@@ -22,6 +22,7 @@ export type Database = {
           client_identifier: string | null
           consent_verified: boolean | null
           created_at: string
+          delivery_route_snapshot_url: string | null
           delivery_status: string | null
           driver_id: string | null
           geolocation: string | null
@@ -46,6 +47,7 @@ export type Database = {
           client_identifier?: string | null
           consent_verified?: boolean | null
           created_at?: string
+          delivery_route_snapshot_url?: string | null
           delivery_status?: string | null
           driver_id?: string | null
           geolocation?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           client_identifier?: string | null
           consent_verified?: boolean | null
           created_at?: string
+          delivery_route_snapshot_url?: string | null
           delivery_status?: string | null
           driver_id?: string | null
           geolocation?: string | null
@@ -114,6 +117,8 @@ export type Database = {
           confirmed_at: string | null
           country: string | null
           created_at: string | null
+          delivery_route_snapshot_status: string | null
+          delivery_route_snapshot_url: string | null
           delivery_status: Database["public"]["Enums"]["delivery_status"] | null
           dob: string | null
           doses_injectable: number | null
@@ -166,6 +171,8 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string | null
+          delivery_route_snapshot_status?: string | null
+          delivery_route_snapshot_url?: string | null
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
@@ -222,6 +229,8 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string | null
+          delivery_route_snapshot_status?: string | null
+          delivery_route_snapshot_url?: string | null
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
@@ -331,6 +340,8 @@ export type Database = {
           confirmed_at: string | null
           country: string | null
           created_at: string | null
+          delivery_route_snapshot_status: string | null
+          delivery_route_snapshot_url: string | null
           delivery_status: Database["public"]["Enums"]["delivery_status"] | null
           doses_injectable: number | null
           doses_nasal: number | null
@@ -367,6 +378,8 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string | null
+          delivery_route_snapshot_status?: string | null
+          delivery_route_snapshot_url?: string | null
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
@@ -407,6 +420,8 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string | null
+          delivery_route_snapshot_status?: string | null
+          delivery_route_snapshot_url?: string | null
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null

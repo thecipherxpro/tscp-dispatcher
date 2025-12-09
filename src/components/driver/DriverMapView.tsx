@@ -295,7 +295,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
           map: mapRef.current,
           suppressMarkers: true,
           polylineOptions: {
-            strokeColor: '#276EF1', // Uber blue
+            strokeColor: '#F97316', // Orange
             strokeWeight: 6,
             strokeOpacity: 1,
           }

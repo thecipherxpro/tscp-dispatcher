@@ -17,6 +17,22 @@ type GeoZone = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 const CITY_CENTER_LAT = 43.6532;
 const CITY_CENTER_LNG = -79.3832;
 
+// Uber-style map styling - high contrast, de-cluttered
+const UBER_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e8f5e9' }, { visibility: 'simplified' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e4f5' }] },
+];
+
 function determineGeoZone(lat: number, lng: number): GeoZone {
   if (lat > CITY_CENTER_LAT) return 'NORTH';
   if (lat < CITY_CENTER_LAT) return 'SOUTH';
@@ -127,9 +143,10 @@ export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
         mapRef.current = new google.maps.Map(mapContainer.current, {
           center: { lat: CITY_CENTER_LAT, lng: CITY_CENTER_LNG },
           zoom: 11,
-          mapId: 'admin-orders-map',
+          styles: UBER_MAP_STYLE,
           disableDefaultUI: true,
           zoomControl: true,
+          gestureHandling: 'greedy',
         });
         setIsLoading(false);
       } catch (err) {

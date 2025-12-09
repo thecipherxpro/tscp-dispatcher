@@ -40,6 +40,40 @@ interface OrderWithCoords extends Order {
 const CITY_CENTER_LAT = 43.6532;
 const CITY_CENTER_LNG = -79.3832;
 
+// Uber-style map styling - high contrast, de-cluttered
+const UBER_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  // Base map - muted grey tones
+  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
+  
+  // Administrative areas
+  { featureType: 'administrative.land_parcel', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  
+  // Hide POIs (stores, parks, landmarks)
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e8f5e9' }, { visibility: 'simplified' }] },
+  
+  // Roads - clean, high contrast
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  
+  // Transit - hide
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  
+  // Water - subtle blue
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e4f5' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+];
+
 const DELIVERY_OUTCOMES = {
   delivered: [
     { value: 'SUCCESSFULLY_DELIVERED', label: 'Successfully Delivered' },
@@ -261,9 +295,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
           map: mapRef.current,
           suppressMarkers: true,
           polylineOptions: {
-            strokeColor: '#f97316',
-            strokeWeight: 5,
-            strokeOpacity: 0.85
+            strokeColor: '#276EF1', // Uber blue
+            strokeWeight: 6,
+            strokeOpacity: 1,
           }
         });
       }
@@ -661,17 +695,17 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         setDriverLocation(initialLocation);
         setDriverZone(determineGeoZone(initialLocation.lat, initialLocation.lng));
 
-        // Create map
-        const mapId = 'driver-map';
+        // Create map with Uber-style styling
         mapRef.current = new google.maps.Map(mapContainer.current, {
           center: initialLocation,
-          zoom: 12,
-          mapId,
-          disableDefaultUI: false,
+          zoom: 13,
+          styles: UBER_MAP_STYLE,
+          disableDefaultUI: true,
           zoomControl: true,
           mapTypeControl: false,
           streetViewControl: false,
-          fullscreenControl: true
+          fullscreenControl: false,
+          gestureHandling: 'greedy',
         });
 
         // Fetch and geocode orders

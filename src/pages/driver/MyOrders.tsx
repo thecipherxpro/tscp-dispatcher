@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Package, Navigation, MapPin, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Package, Navigation, CheckCircle, AlertTriangle, List, Map } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,17 @@ import { DriverStatusUpdateModal } from '@/components/orders/DriverStatusUpdateM
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { toast } from '@/hooks/use-toast';
-import { OrderCard } from '@/components/orders/OrderCard';
+import { DriverOrderCard } from '@/components/orders/DriverOrderCard';
+import { DriverMapView } from '@/components/driver/DriverMapView';
+
+type ViewMode = 'list' | 'map';
 
 export default function MyOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const haptic = useHapticFeedback();
 
   const fetchOrders = useCallback(async () => {
@@ -154,72 +158,102 @@ export default function MyOrders() {
 
   return (
     <AppLayout title="My Orders" showBackButton>
-      <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
-        <div className="p-4 space-y-6">
-          <div className="space-y-4">
+      {viewMode === 'map' ? (
+        <div className="h-[calc(100vh-8rem)] relative">
+          {/* Toggle to List */}
+          <div className="absolute top-4 right-4 z-20">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shadow-lg"
+              onClick={() => {
+                haptic.light();
+                setViewMode('list');
+              }}
+            >
+              <List className="w-4 h-4 mr-1" />
+              List
+            </Button>
+          </div>
+          <DriverMapView 
+            onOrderSelect={(order) => setSelectedOrder(order)}
+          />
+        </div>
+      ) : (
+        <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
+          <div className="p-4 space-y-6">
+            {/* Header with toggle */}
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">Active Deliveries</h3>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    haptic.light();
+                    setViewMode('map');
+                  }}
+                >
+                  <Map className="w-4 h-4" />
+                </Button>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 <span className="text-sm text-muted-foreground">
                   {activeOrders.length} active
                 </span>
               </div>
             </div>
           
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-lg p-4 border border-border animate-pulse">
-                  <div className="h-4 bg-muted rounded w-1/3 mb-2" />
-                  <div className="h-3 bg-muted rounded w-2/3" />
-                </div>
-              ))}
-            </div>
-          ) : activeOrders.length === 0 ? (
-            <Card className="bg-card border-border">
-              <CardContent className="p-6 text-center">
-                <Package className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">No active deliveries</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Orders will appear here when assigned
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {activeOrders.map((order) => (
-                <OrderCard 
-                  key={order.id}
-                  order={order} 
-                  onClick={() => setSelectedOrder(order)}
-                  isDriver={true}
-                  actionButton={getActionButton(order)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-card rounded-lg p-4 border border-border animate-pulse">
+                    <div className="h-4 bg-muted rounded w-1/3 mb-2" />
+                    <div className="h-3 bg-muted rounded w-2/3" />
+                  </div>
+                ))}
+              </div>
+            ) : activeOrders.length === 0 ? (
+              <Card className="bg-card border-border">
+                <CardContent className="p-6 text-center">
+                  <Package className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-muted-foreground">No active deliveries</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Orders will appear here when assigned
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {activeOrders.map((order) => (
+                  <DriverOrderCard 
+                    key={order.id}
+                    order={order} 
+                    onClick={() => setSelectedOrder(order)}
+                    actionButton={getActionButton(order)}
+                  />
+                ))}
+              </div>
+            )}
 
-        {completedOrders.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">
-              Completed Today
-            </h3>
-            <div className="space-y-3 opacity-75">
-              {completedOrders.slice(0, 5).map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  onClick={() => {}}
-                  isDriver={true}
-                />
-              ))}
-            </div>
+            {completedOrders.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Completed Today
+                </h3>
+                <div className="space-y-3 opacity-75">
+                  {completedOrders.slice(0, 5).map((order) => (
+                    <DriverOrderCard 
+                      key={order.id} 
+                      order={order} 
+                      onClick={() => {}}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-        </div>
-      </PullToRefresh>
+        </PullToRefresh>
+      )}
 
       <DriverStatusUpdateModal
         order={selectedOrder}

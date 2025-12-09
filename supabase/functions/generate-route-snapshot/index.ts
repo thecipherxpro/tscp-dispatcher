@@ -48,13 +48,20 @@ Deno.serve(async (req) => {
     body = JSON.parse(rawBody) as RouteSnapshotRequest;
     const { orderId, driverLat, driverLng, destinationLat, destinationLng, trackingId } = body;
     
-    if (!orderId || !driverLat || !driverLng || !destinationLat || !destinationLng) {
+    if (!orderId || driverLat === undefined || driverLng === undefined || destinationLat === undefined || destinationLng === undefined) {
       throw new Error(`Missing required fields. Got: orderId=${orderId}, driverLat=${driverLat}, driverLng=${driverLng}, destLat=${destinationLat}, destLng=${destinationLng}`);
     }
 
     console.log(`Generating route snapshot for order: ${orderId}`);
-    console.log(`Driver location: ${driverLat}, ${driverLng}`);
+    console.log(`Driver start location: ${driverLat}, ${driverLng}`);
     console.log(`Destination: ${destinationLat}, ${destinationLng}`);
+
+    // Set status to PENDING while generating
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    await supabaseClient
+      .from('orders')
+      .update({ delivery_route_snapshot_status: 'PENDING' })
+      .eq('id', orderId);
 
     // First, get the directions to get the encoded polyline
     const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${driverLat},${driverLng}&destination=${destinationLat},${destinationLng}&key=${GOOGLE_MAPS_API_KEY}`;
@@ -64,8 +71,8 @@ Deno.serve(async (req) => {
     const directionsData = await directionsResponse.json();
 
     if (directionsData.status !== 'OK' || !directionsData.routes?.[0]) {
-      console.error('Directions API error:', directionsData.status);
-      throw new Error(`Failed to get directions: ${directionsData.status}`);
+      console.error('Directions API error:', directionsData.status, directionsData.error_message);
+      throw new Error(`Failed to get directions: ${directionsData.status} - ${directionsData.error_message || 'Unknown error'}`);
     }
 
     // Get the encoded polyline from the route
@@ -77,39 +84,58 @@ Deno.serve(async (req) => {
     }
 
     console.log('Got route polyline, generating static map...');
+    console.log('Polyline length:', encodedPolyline.length);
 
-    // Build the Static Maps API URL
-    // Muted, decluttered map style (similar to Waze/Uber)
-    const mapStyle = [
-      'feature:all|element:geometry|color:0xf0f0f0',
-      'feature:all|element:labels.text.fill|color:0x6b6b6b',
-      'feature:all|element:labels.text.stroke|color:0xffffff',
-      'feature:road.highway|element:geometry|color:0xdedede',
-      'feature:road.arterial|element:geometry|color:0xe0e0e0',
-      'feature:road.local|element:geometry|color:0xeeeeee',
-      'feature:poi|visibility:off',
-      'feature:transit|visibility:off',
+    // Uber-style muted map styling - high contrast, de-cluttered, route-focused
+    // Using URL-encoded style parameters
+    const mapStyles = [
+      'feature:all|element:geometry|color:0xe8ecef|saturation:-60',
+      'feature:all|element:labels.icon|visibility:off',
+      'feature:all|element:labels.text.fill|color:0x6b7280',
+      'feature:all|element:labels.text.stroke|color:0xffffff|weight:2',
+      'feature:administrative|element:labels|visibility:off',
+      'feature:administrative.locality|element:labels|visibility:simplified',
       'feature:administrative.neighborhood|visibility:off',
+      'feature:poi|visibility:off',
+      'feature:poi.business|visibility:off',
+      'feature:poi.park|visibility:off',
+      'feature:landscape|element:geometry|color:0xe8ecef',
+      'feature:landscape.man_made|visibility:off',
+      'feature:landscape.natural|element:geometry|color:0xdfe5e8',
+      'feature:road.local|element:geometry|color:0xffffff',
+      'feature:road.local|element:geometry.stroke|color:0xd1d5db',
+      'feature:road.arterial|element:geometry|color:0xf3f4f6',
+      'feature:road.arterial|element:geometry.stroke|color:0xc0c4c9',
+      'feature:road.highway|element:geometry|color:0xd1d5db',
+      'feature:road.highway|element:geometry.stroke|color:0x9ca3af',
+      'feature:transit|visibility:off',
+      'feature:water|element:geometry|color:0xb8d4e8|saturation:-40',
+      'feature:water|element:labels|visibility:off',
     ].map(s => `style=${encodeURIComponent(s)}`).join('&');
 
-    // Markers: Start (blue) and End (black with home icon)
-    const startMarker = `markers=color:blue|size:small|${driverLat},${driverLng}`;
-    const endMarker = `markers=color:black|label:H|${destinationLat},${destinationLng}`;
+    // Start marker - Blue dot (driver start location)
+    const startMarker = `markers=color:0x3b82f6|size:mid|${driverLat},${driverLng}`;
     
-    // Orange route path
-    const pathStyle = `path=color:0xF97316|weight:5|enc:${encodedPolyline}`;
+    // End marker - Black with H label (home/destination) - using custom icon styling
+    const endMarker = `markers=color:0x000000|size:mid|label:H|${destinationLat},${destinationLng}`;
     
-    // Build final URL
-    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?size=640x400&scale=2&maptype=roadmap&${mapStyle}&${startMarker}&${endMarker}&${pathStyle}&key=${GOOGLE_MAPS_API_KEY}`;
+    // Orange route path - bold, high visibility
+    const pathStyle = `path=color:0xF97316FF|weight:6|enc:${encodeURIComponent(encodedPolyline)}`;
+    
+    // Build final URL - 1280x1280 with scale 2 = 2560x2560 effective (max allowed)
+    // Using 640x640 with scale=2 for high DPI (1280x1280 actual pixels)
+    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?size=640x640&scale=2&maptype=roadmap&${mapStyles}&${startMarker}&${endMarker}&${pathStyle}&key=${GOOGLE_MAPS_API_KEY}`;
 
     console.log('Fetching static map image...');
+    console.log('Static map URL length:', staticMapUrl.length);
     
     // Fetch the static map image
     const imageResponse = await fetch(staticMapUrl);
     
     if (!imageResponse.ok) {
-      console.error('Static Maps API error:', imageResponse.status);
-      throw new Error(`Failed to fetch static map: ${imageResponse.status}`);
+      const errorText = await imageResponse.text();
+      console.error('Static Maps API error:', imageResponse.status, errorText);
+      throw new Error(`Failed to fetch static map: ${imageResponse.status} - ${errorText}`);
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
@@ -158,6 +184,8 @@ Deno.serve(async (req) => {
 
     if (orderError) {
       console.error('Error updating orders:', orderError);
+    } else {
+      console.log('Updated orders table with snapshot URL');
     }
 
     // Update public_tracking table
@@ -172,21 +200,32 @@ Deno.serve(async (req) => {
 
       if (trackingError) {
         console.error('Error updating public_tracking:', trackingError);
+      } else {
+        console.log('Updated public_tracking table with snapshot URL');
       }
     }
 
-    // Update audit log with snapshot URL
-    const { error: auditError } = await supabase
+    // Update the most recent audit log with snapshot URL
+    const { data: auditLogs, error: auditFetchError } = await supabase
       .from('order_audit_logs')
-      .update({
-        delivery_route_snapshot_url: snapshotUrl,
-      })
+      .select('id')
       .eq('order_id', orderId)
       .order('created_at', { ascending: false })
       .limit(1);
 
-    if (auditError) {
-      console.error('Error updating audit log:', auditError);
+    if (auditFetchError) {
+      console.error('Error fetching audit logs:', auditFetchError);
+    } else if (auditLogs && auditLogs.length > 0) {
+      const { error: auditError } = await supabase
+        .from('order_audit_logs')
+        .update({ delivery_route_snapshot_url: snapshotUrl })
+        .eq('id', auditLogs[0].id);
+
+      if (auditError) {
+        console.error('Error updating audit log:', auditError);
+      } else {
+        console.log('Updated audit log with snapshot URL');
+      }
     }
 
     console.log('Route snapshot generation completed successfully');

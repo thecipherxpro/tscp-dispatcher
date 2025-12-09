@@ -517,20 +517,51 @@ export default function AdminTracking() {
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Delivery Outcome</h3>
                 </div>
-                <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+                <div className={`rounded-xl p-4 border ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-                      <Truck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-red-100 dark:bg-red-900'}`}>
+                      <Truck className={`w-5 h-5 ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
                     </div>
                     <div>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Delivery Outcome</p>
-                      <p className="font-semibold text-emerald-900 dark:text-emerald-100">
+                      <p className={`text-xs font-medium ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>Delivery Outcome</p>
+                      <p className={`font-semibold ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'text-emerald-900 dark:text-emerald-100' : 'text-red-900 dark:text-red-100'}`}>
                         {order.delivery_status.replace(/_/g, ' ')}
                       </p>
                     </div>
                   </div>
                 </div>
               </section>}
+
+            {/* Delivery Route Snapshot - Only show when delivery is finished */}
+            {(order.timeline_status === 'COMPLETED_DELIVERED' || order.timeline_status === 'COMPLETED_INCOMPLETE') && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Delivery Route Snapshot</h3>
+                </div>
+                {order.delivery_route_snapshot_url ? (
+                  <div className="rounded-xl overflow-hidden border border-border">
+                    <img 
+                      src={order.delivery_route_snapshot_url} 
+                      alt="Delivery route snapshot" 
+                      className="w-full h-56 object-cover"
+                    />
+                    <div className="p-3 bg-muted/30">
+                      <p className="text-xs text-muted-foreground text-center">
+                        Route captured at {order.completed_at ? new Date(order.completed_at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'completion'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-border text-center">
+                    <MapPin className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {order.delivery_route_snapshot_status === 'FAILED' ? 'Snapshot generation failed' : 'Route snapshot pending...'}
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Notes Section */}
             {order.call_notes && <section>

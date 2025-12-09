@@ -238,14 +238,14 @@ export default function MyOrders() {
             {completedOrders.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground">
-                  Completed Today
+                  Completed Orders ({completedOrders.length})
                 </h3>
-                <div className="space-y-3 opacity-75">
-                  {completedOrders.slice(0, 5).map((order) => (
+                <div className="space-y-3">
+                  {completedOrders.map((order) => (
                     <DriverOrderCard 
                       key={order.id} 
                       order={order} 
-                      onClick={() => {}}
+                      onClick={() => setSelectedOrder(order)}
                     />
                   ))}
                 </div>

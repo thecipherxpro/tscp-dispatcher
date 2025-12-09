@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, MapPin, ChevronRight } from 'lucide-react';
+import { Package, Truck, CheckCircle, ChevronRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
+import { ActiveDeliveryCard } from '@/components/orders/ActiveDeliveryCard';
 
 interface DriverStats {
   assignedOrders: number;
@@ -38,14 +39,12 @@ export default function DriverDashboard() {
           .order('created_at', { ascending: false });
 
         if (allOrders) {
-          // Find current active order (IN_ROUTE first, then CONFIRMED, then PICKED_UP_AND_ASSIGNED)
           const activeOrder = allOrders.find(o => o.timeline_status === 'IN_ROUTE') ||
             allOrders.find(o => o.timeline_status === 'CONFIRMED') ||
             allOrders.find(o => o.timeline_status === 'PICKED_UP_AND_ASSIGNED');
           
           setCurrentOrder(activeOrder as Order || null);
           
-          // Recent completed orders
           const completedOrders = allOrders.filter(o => 
             o.timeline_status === 'COMPLETED_DELIVERED' || 
             o.timeline_status === 'COMPLETED_INCOMPLETE'
@@ -77,36 +76,13 @@ export default function DriverDashboard() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PICKED_UP_AND_ASSIGNED':
-        return <Badge className="bg-amber-500 hover:bg-amber-500 text-white">Assigned</Badge>;
-      case 'CONFIRMED':
-        return <Badge className="bg-blue-500 hover:bg-blue-500 text-white">Confirmed</Badge>;
-      case 'IN_ROUTE':
-        return <Badge className="bg-primary hover:bg-primary text-primary-foreground">In Transit</Badge>;
       case 'COMPLETED_DELIVERED':
-        return <Badge variant="outline" className="border-green-500 text-green-600">Done</Badge>;
+        return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">Done</Badge>;
       case 'COMPLETED_INCOMPLETE':
-        return <Badge variant="outline" className="border-destructive text-destructive">Incomplete</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Incomplete</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
-  };
-
-  const getTimelineProgress = (status: string) => {
-    switch (status) {
-      case 'PICKED_UP_AND_ASSIGNED': return 1;
-      case 'CONFIRMED': return 2;
-      case 'IN_ROUTE': return 3;
-      case 'COMPLETED_DELIVERED':
-      case 'COMPLETED_INCOMPLETE': return 4;
-      default: return 0;
-    }
-  };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '—';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-CA', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   return (
@@ -146,77 +122,12 @@ export default function DriverDashboard() {
           </CardContent>
         </Card>
 
-        {/* Current Shipping Card */}
+        {/* Active Delivery Card */}
         {currentOrder && (
-          <Card 
-            className="bg-card border-border cursor-pointer hover:shadow-md transition-shadow"
+          <ActiveDeliveryCard 
+            order={currentOrder} 
             onClick={() => navigate('/my-orders')}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-foreground">Current delivery</h3>
-                {getStatusBadge(currentOrder.timeline_status)}
-              </div>
-              
-              <p className="text-sm text-muted-foreground mb-1">
-                {currentOrder.shipment_id || 'Pending ID'}
-              </p>
-              
-              <div className="flex items-start gap-2 mb-4">
-                <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-sm font-medium text-foreground">
-                  {currentOrder.name || 'Unknown'}
-                  {currentOrder.city && `, ${currentOrder.city}`}
-                </p>
-              </div>
-
-              {/* Timeline Progress */}
-              <div className="flex items-center justify-between mb-4">
-                {[1, 2, 3, 4].map((step) => (
-                  <div key={step} className="flex items-center">
-                    <div 
-                      className={`w-3 h-3 rounded-full ${
-                        step <= getTimelineProgress(currentOrder.timeline_status)
-                          ? 'bg-primary'
-                          : 'bg-muted'
-                      }`}
-                    />
-                    {step < 4 && (
-                      <div 
-                        className={`w-16 h-0.5 ${
-                          step < getTimelineProgress(currentOrder.timeline_status)
-                            ? 'bg-primary'
-                            : 'bg-muted'
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Dates */}
-              <div className="flex justify-between text-sm">
-                <div>
-                  <p className="text-muted-foreground text-xs">Assigned</p>
-                  <p className="font-medium text-foreground">{formatDate(currentOrder.assigned_at)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-muted-foreground text-xs">Ship Date</p>
-                  <p className="font-medium text-foreground">{formatDate(currentOrder.ship_date)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {!currentOrder && !isLoading && (
-          <Card className="bg-card border-border">
-            <CardContent className="p-6 text-center">
-              <Truck className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-muted-foreground">No active deliveries</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Check My Orders for pending assignments</p>
-            </CardContent>
-          </Card>
+          />
         )}
 
         {/* Recent Deliveries */}

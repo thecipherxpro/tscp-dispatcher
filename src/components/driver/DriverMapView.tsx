@@ -40,38 +40,67 @@ interface OrderWithCoords extends Order {
 const CITY_CENTER_LAT = 43.6532;
 const CITY_CENTER_LNG = -79.3832;
 
-// Uber-style map styling - high contrast, de-cluttered
+// Waze-style map styling - high contrast, de-cluttered, route-focused
 const UBER_MAP_STYLE: google.maps.MapTypeStyle[] = [
-  // Base map - muted grey tones
-  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+  // Base map - muted light grey with subtle blue-green tint
+  { elementType: 'geometry', stylers: [{ color: '#e8ecef' }, { saturation: -60 }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }, { weight: 2 }] },
   
-  // Administrative areas
-  { featureType: 'administrative.land_parcel', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
+  // Administrative - hide neighborhood names and area branding
+  { featureType: 'administrative', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.locality', elementType: 'labels', stylers: [{ visibility: 'simplified' }] },
   { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.neighborhood', stylers: [{ visibility: 'off' }] },
   
-  // Hide POIs (stores, parks, landmarks)
+  // Hide ALL POIs - stores, restaurants, parks, attractions, landmarks
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e8f5e9' }, { visibility: 'simplified' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.attraction', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.school', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.medical', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.place_of_worship', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.government', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.sports_complex', stylers: [{ visibility: 'off' }] },
   
-  // Roads - clean, high contrast
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  // Landscape - subtle, non-distracting
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#e8ecef' }] },
+  { featureType: 'landscape.man_made', stylers: [{ visibility: 'off' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#dfe5e8' }] },
+  
+  // Roads - clean hierarchy with grey tones
   { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
-  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
   
-  // Transit - hide
+  // Local roads - light grey
+  { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.local', elementType: 'geometry.stroke', stylers: [{ color: '#d1d5db' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'road.local', elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+  
+  // Main/arterial roads - medium grey
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#f3f4f6' }] },
+  { featureType: 'road.arterial', elementType: 'geometry.stroke', stylers: [{ color: '#c0c4c9' }] },
+  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { featureType: 'road.arterial', elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+  
+  // Highways - slightly darker grey, more prominent
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#d1d5db' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#4b5563' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }, { weight: 3 }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#c9cdd1' }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry.stroke', stylers: [{ color: '#8b9197' }] },
+  
+  // Hide transit completely
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit.line', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit.station', stylers: [{ visibility: 'off' }] },
   
-  // Water - subtle blue
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e4f5' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  // Water - subtle blue-grey
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#b8d4e8' }, { saturation: -40 }] },
+  { featureType: 'water', elementType: 'labels', stylers: [{ visibility: 'off' }] },
 ];
 
 const DELIVERY_OUTCOMES = {

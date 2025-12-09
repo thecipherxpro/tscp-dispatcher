@@ -143,7 +143,7 @@ export function AdminOrdersMap({ orders, onOrderSelect }: AdminOrdersMapProps) {
         mapRef.current = new google.maps.Map(mapContainer.current, {
           center: { lat: CITY_CENTER_LAT, lng: CITY_CENTER_LNG },
           zoom: 11,
-          styles: UBER_MAP_STYLE,
+          mapId: 'admin-orders-map',
           disableDefaultUI: true,
           zoomControl: true,
           gestureHandling: 'greedy',

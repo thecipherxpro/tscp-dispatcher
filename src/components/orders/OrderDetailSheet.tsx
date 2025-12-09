@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown } from 'lucide-react';
+import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, MapPin } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -265,29 +265,60 @@ export function OrderDetailSheet({
                       </div>
                     </div>
                   )}
-                </div>
-              </section>
+              </div>
+            </section>
 
-              {/* Package Label Section - Placeholder */}
+            {/* Delivery Route Snapshot - Only show when delivery is finished */}
+            {(order.timeline_status === 'COMPLETED_DELIVERED' || order.timeline_status === 'COMPLETED_INCOMPLETE') && (
               <section>
                 <div className="flex items-center gap-2 mb-3">
-                  <FileDown className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">Package Label</h3>
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Delivery Route</h3>
                 </div>
-                <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-border">
-                  <div className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
-                      <FileDown className="w-6 h-6 text-muted-foreground/50" />
+                {order.delivery_route_snapshot_url ? (
+                  <div className="rounded-xl overflow-hidden border border-border">
+                    <img 
+                      src={order.delivery_route_snapshot_url} 
+                      alt="Delivery route snapshot" 
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-3 bg-muted/30 text-center">
+                      <p className="text-xs text-muted-foreground">
+                        Route captured at {order.completed_at ? new Date(order.completed_at).toLocaleString('en-CA', { timeZone: 'America/Toronto' }) : 'completion'}
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Package Label Preview</p>
-                    <p className="text-xs text-muted-foreground/70 mb-4">PDF label will appear here</p>
-                    <Button variant="outline" size="sm" disabled className="gap-2">
-                      <FileDown className="w-4 h-4" />
-                      Download Label
-                    </Button>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-muted/30 rounded-xl p-4 border border-dashed border-border text-center">
+                    <MapPin className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {order.delivery_route_snapshot_status === 'FAILED' ? 'Snapshot generation failed' : 'Route snapshot pending...'}
+                    </p>
+                  </div>
+                )}
               </section>
+            )}
+
+            {/* Package Label Section - Placeholder */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <FileDown className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Package Label</h3>
+              </div>
+              <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-border">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                    <FileDown className="w-6 h-6 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Package Label Preview</p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">PDF label will appear here</p>
+                  <Button variant="outline" size="sm" disabled className="gap-2">
+                    <FileDown className="w-4 h-4" />
+                    Download Label
+                  </Button>
+                </div>
+              </div>
+            </section>
 
             </div>
           </div>

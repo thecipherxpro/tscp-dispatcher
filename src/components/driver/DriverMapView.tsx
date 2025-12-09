@@ -1,13 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Order } from '@/types/auth';
-import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass, Play } from 'lucide-react';
+import { Order, TimelineStatus } from '@/types/auth';
+import { updateOrderStatus } from '@/hooks/useOrders';
+import { fetchDriverLocationData } from '@/hooks/useDriverLocation';
+import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass, Play, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { toast } from 'sonner';
 
 interface DriverMapViewProps {
@@ -32,6 +40,21 @@ interface OrderWithCoords extends Order {
 const CITY_CENTER_LAT = 43.6532;
 const CITY_CENTER_LNG = -79.3832;
 
+const DELIVERY_OUTCOMES = {
+  delivered: [
+    { value: 'SUCCESSFULLY_DELIVERED', label: 'Successfully Delivered' },
+    { value: 'PACKAGE_DELIVERED_TO_CLIENT', label: 'Package Delivered to Client' },
+  ],
+  incomplete: [
+    { value: 'CLIENT_UNAVAILABLE', label: 'Client Unavailable' },
+    { value: 'NO_ONE_HOME', label: 'No One Home' },
+    { value: 'WRONG_ADDRESS', label: 'Wrong Address' },
+    { value: 'ADDRESS_INCORRECT', label: 'Address Incorrect' },
+    { value: 'UNSAFE_LOCATION', label: 'Unsafe Location' },
+    { value: 'OTHER', label: 'Other' },
+  ],
+};
+
 // Determine geo zone based on coordinates
 function determineGeoZone(lat: number, lng: number): GeoZone {
   if (lat > CITY_CENTER_LAT) {
@@ -46,7 +69,6 @@ function determineGeoZone(lat: number, lng: number): GeoZone {
 }
 
 export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
-  const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
@@ -68,6 +90,17 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const [zoneCounts, setZoneCounts] = useState<Record<GeoZone, number>>({ NORTH: 0, SOUTH: 0, EAST: 0, WEST: 0 });
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [activeDestination, setActiveDestination] = useState<OrderWithCoords | null>(null);
+  
+  // Delivery outcome state
+  const [showOutcomeSheet, setShowOutcomeSheet] = useState(false);
+  const [outcomeType, setOutcomeType] = useState<'delivered' | 'incomplete' | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [pendingDeliveryOrder, setPendingDeliveryOrder] = useState<OrderWithCoords | null>(null);
+  const [showNextDeliveryCard, setShowNextDeliveryCard] = useState(false);
+  const [nextDeliveryOrder, setNextDeliveryOrder] = useState<OrderWithCoords | null>(null);
+
+  // Track when user leaves/returns to detect return from Google Maps
+  const navigationStartedRef = useRef<string | null>(null);
 
   // Fetch Google Maps API key
   const fetchApiKey = useCallback(async () => {
@@ -392,9 +425,159 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     );
   }, [updateDriverMarker]);
 
+  // Set order to CONFIRMED and SHIPPED status
+  const setConfirmedAndShippedStatus = useCallback(async (orderData: OrderWithCoords) => {
+    if (orderData.timeline_status === 'IN_ROUTE') return;
+
+    try {
+      const locationData = await fetchDriverLocationData();
+      
+      // First set to CONFIRMED if not already
+      if (!['CONFIRMED', 'IN_ROUTE'].includes(orderData.timeline_status || '')) {
+        await updateOrderStatus(
+          orderData.id,
+          orderData.tracking_id || null,
+          'CONFIRMED' as TimelineStatus,
+          undefined,
+          {
+            ip_address: locationData.ip_address,
+            geolocation: locationData.geolocation,
+            access_location: locationData.access_location
+          }
+        );
+      }
+
+      // Then set to SHIPPED (IN_ROUTE)
+      await updateOrderStatus(
+        orderData.id,
+        orderData.tracking_id || null,
+        'IN_ROUTE' as TimelineStatus,
+        undefined,
+        {
+          ip_address: locationData.ip_address,
+          geolocation: locationData.geolocation,
+          access_location: locationData.access_location
+        }
+      );
+
+      // Update local state
+      setOrders(prev => prev.map(o => 
+        o.id === orderData.id ? { ...o, timeline_status: 'IN_ROUTE' as TimelineStatus } : o
+      ));
+      setFilteredOrders(prev => prev.map(o => 
+        o.id === orderData.id ? { ...o, timeline_status: 'IN_ROUTE' as TimelineStatus } : o
+      ));
+      if (selectedOrder?.id === orderData.id) {
+        setSelectedOrder(prev => prev ? { ...prev, timeline_status: 'IN_ROUTE' as TimelineStatus } : null);
+      }
+
+      toast.success('Order confirmed and shipped');
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update order status');
+    }
+  }, [selectedOrder]);
+
+  // Start navigation - confirm, ship, and open external Google Maps
+  const handleStartNavigation = useCallback(async (order: OrderWithCoords) => {
+    if (!order.latitude || !order.longitude) {
+      toast.error('Order location not available');
+      return;
+    }
+
+    // Set confirmed and shipped status
+    await setConfirmedAndShippedStatus(order);
+    
+    // Store order ID for when driver returns
+    navigationStartedRef.current = order.id;
+    setPendingDeliveryOrder(order);
+
+    // Build Google Maps URL for navigation
+    const destLat = order.latitude;
+    const destLng = order.longitude;
+    const address = encodeURIComponent([
+      order.address_1,
+      order.city,
+      order.province,
+      order.postal
+    ].filter(Boolean).join(', '));
+
+    // Try Google Maps app first, fallback to web
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&destination_place_id=${address}&travelmode=driving`;
+
+    // Open external Google Maps
+    window.open(googleMapsUrl, '_blank');
+  }, [setConfirmedAndShippedStatus]);
+
+  // Handle delivery outcome selection
+  const handleDeliveryOutcome = async (deliveryStatus: string) => {
+    if (!pendingDeliveryOrder) return;
+
+    setIsUpdating(true);
+    try {
+      const locationData = await fetchDriverLocationData();
+      const newStatus = outcomeType === 'delivered' ? 'COMPLETED_DELIVERED' : 'COMPLETED_INCOMPLETE';
+
+      const result = await updateOrderStatus(
+        pendingDeliveryOrder.id,
+        pendingDeliveryOrder.tracking_id || null,
+        newStatus as TimelineStatus,
+        deliveryStatus,
+        {
+          ip_address: locationData.ip_address,
+          geolocation: locationData.geolocation,
+          access_location: locationData.access_location
+        }
+      );
+
+      if (result.success) {
+        toast.success(outcomeType === 'delivered' ? 'Delivery completed!' : 'Delivery marked as incomplete');
+        
+        // Remove completed order from lists
+        const remainingOrders = filteredOrders.filter(o => o.id !== pendingDeliveryOrder.id);
+        setFilteredOrders(remainingOrders);
+        setOrders(prev => prev.filter(o => o.id !== pendingDeliveryOrder.id));
+        updateMarkers(remainingOrders);
+        
+        // Close outcome sheet
+        setShowOutcomeSheet(false);
+        setOutcomeType(null);
+        setPendingDeliveryOrder(null);
+        navigationStartedRef.current = null;
+        clearRoute();
+
+        // Check for next delivery and show card
+        if (remainingOrders.length > 0) {
+          // Recalculate distances for remaining orders
+          if (driverLocation) {
+            const sortedOrders = await calculateDistances(driverLocation, remainingOrders);
+            setFilteredOrders(sortedOrders);
+            updateMarkers(sortedOrders);
+            setNextDeliveryOrder(sortedOrders[0]);
+            setShowNextDeliveryCard(true);
+          } else {
+            setNextDeliveryOrder(remainingOrders[0]);
+            setShowNextDeliveryCard(true);
+          }
+        } else {
+          toast.success('All deliveries in this zone completed!');
+        }
+      } else {
+        toast.error(result.error || 'Failed to update status');
+      }
+    } catch (err) {
+      console.error('Error updating delivery outcome:', err);
+      toast.error('Failed to update delivery status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Handle zone selection
   const handleZoneSelect = useCallback(async (zone: GeoZone) => {
     setSelectedZone(zone);
+    setShowNextDeliveryCard(false);
+    setNextDeliveryOrder(null);
     
     const zoneOrders = orders.filter(o => o.geo_zone === zone);
     
@@ -412,6 +595,28 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       updateMarkers(zoneOrders);
     }
   }, [orders, driverLocation, calculateDistances, updateMarkers, drawRoute]);
+
+  // Detect when driver returns to app from navigation
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && navigationStartedRef.current) {
+        // Driver returned from Google Maps - show delivery outcome modal
+        const orderId = navigationStartedRef.current;
+        const order = orders.find(o => o.id === orderId) || filteredOrders.find(o => o.id === orderId);
+        
+        if (order && order.timeline_status === 'IN_ROUTE') {
+          setPendingDeliveryOrder(order);
+          // Small delay to let the app settle
+          setTimeout(() => {
+            setShowOutcomeSheet(true);
+          }, 500);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [orders, filteredOrders]);
 
   // Initialize map
   useEffect(() => {
@@ -538,26 +743,6 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       }
     }
   }, [driverLocation, activeDestination, drawRoute]);
-
-  // Handle delivery completion - advance to next
-  const handleDeliveryComplete = useCallback(async () => {
-    if (!activeDestination) return;
-
-    // Remove completed order from list
-    const remainingOrders = filteredOrders.filter(o => o.id !== activeDestination.id);
-    setFilteredOrders(remainingOrders);
-    updateMarkers(remainingOrders);
-
-    // Auto-advance to next
-    if (remainingOrders.length > 0) {
-      const nextOrder = remainingOrders[0];
-      drawRoute(nextOrder);
-      toast.success('Route updated to next delivery');
-    } else {
-      clearRoute();
-      toast.success('All deliveries in this zone completed!');
-    }
-  }, [activeDestination, filteredOrders, updateMarkers, drawRoute, clearRoute]);
 
   // Recenter map on driver
   const recenterOnDriver = useCallback(() => {
@@ -687,7 +872,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       </div>
 
       {/* Delivery queue list */}
-      {selectedZone && filteredOrders.length > 0 && !selectedOrder && (
+      {selectedZone && filteredOrders.length > 0 && !selectedOrder && !showNextDeliveryCard && (
         <div className="absolute bottom-4 left-4 right-4 z-10 max-h-48 overflow-y-auto">
           <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
             <CardContent className="p-2 space-y-1">
@@ -724,7 +909,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       )}
 
       {/* Selected order card */}
-      {selectedOrder && (
+      {selectedOrder && !showNextDeliveryCard && (
         <div className="absolute bottom-4 left-4 right-4 z-10">
           <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
             <CardContent className="p-4">
@@ -753,9 +938,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                 <Button 
                   size="sm" 
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => navigate(`/driver-navigation?orderId=${selectedOrder.id}`)}
+                  onClick={() => handleStartNavigation(selectedOrder)}
                 >
-                  <Play className="w-4 h-4 mr-1" />
+                  <ExternalLink className="w-4 h-4 mr-1" />
                   Start Navigation
                 </Button>
                 <Button 
@@ -772,6 +957,136 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
           </Card>
         </div>
       )}
+
+      {/* Next Delivery Card - shown after completing a delivery */}
+      {showNextDeliveryCard && nextDeliveryOrder && (
+        <div className="absolute bottom-4 left-4 right-4 z-10">
+          <Card className="bg-background/95 backdrop-blur-sm shadow-lg border-2 border-green-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-semibold text-green-700">Next Delivery</span>
+              </div>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {nextDeliveryOrder.city}, {nextDeliveryOrder.province}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {nextDeliveryOrder.address_1}
+                  </p>
+                  {nextDeliveryOrder.drivingDuration && (
+                    <p className="text-xs text-primary mt-1">
+                      ~{Math.round(nextDeliveryOrder.drivingDuration / 60)} min away
+                    </p>
+                  )}
+                </div>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  {nextDeliveryOrder.timeline_status?.replace(/_/g, ' ') || 'Pending'}
+                </Badge>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    setShowNextDeliveryCard(false);
+                    handleStartNavigation(nextDeliveryOrder);
+                  }}
+                >
+                  <ExternalLink className="w-4 h-4 mr-1" />
+                  Start Navigation
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm" 
+                  onClick={() => {
+                    setShowNextDeliveryCard(false);
+                    setSelectedOrder(nextDeliveryOrder);
+                    drawRoute(nextDeliveryOrder);
+                  }}
+                >
+                  View on Map
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delivery Outcome Bottom Sheet */}
+      <Sheet open={showOutcomeSheet} onOpenChange={setShowOutcomeSheet}>
+        <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+          <SheetHeader className="text-left">
+            <SheetTitle>
+              {!outcomeType ? 'Mark Delivery Outcome' : (
+                outcomeType === 'delivered' ? 'Confirm Delivery' : 'Delivery Incomplete'
+              )}
+            </SheetTitle>
+            <SheetDescription>
+              {pendingDeliveryOrder && (
+                <span className="block mt-1">
+                  {pendingDeliveryOrder.city}, {pendingDeliveryOrder.province} {pendingDeliveryOrder.postal}
+                </span>
+              )}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-3">
+            {!outcomeType ? (
+              <>
+                <Button
+                  size="lg"
+                  className="w-full h-16 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold"
+                  onClick={() => setOutcomeType('delivered')}
+                >
+                  <CheckCircle className="w-6 h-6 mr-3" />
+                  Delivered
+                </Button>
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  className="w-full h-16 text-lg font-semibold"
+                  onClick={() => setOutcomeType('incomplete')}
+                >
+                  <XCircle className="w-6 h-6 mr-3" />
+                  Delivery Incomplete
+                </Button>
+              </>
+            ) : (
+              <>
+                {DELIVERY_OUTCOMES[outcomeType].map((outcome) => (
+                  <Button
+                    key={outcome.value}
+                    variant="outline"
+                    className="w-full justify-start h-14 text-left"
+                    onClick={() => handleDeliveryOutcome(outcome.value)}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                    ) : outcomeType === 'delivered' ? (
+                      <CheckCircle className="w-5 h-5 mr-3 text-green-600" />
+                    ) : (
+                      <XCircle className="w-5 h-5 mr-3 text-destructive" />
+                    )}
+                    {outcome.label}
+                  </Button>
+                ))}
+                <Button
+                  variant="ghost"
+                  className="w-full mt-2"
+                  onClick={() => setOutcomeType(null)}
+                  disabled={isUpdating}
+                >
+                  Back
+                </Button>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

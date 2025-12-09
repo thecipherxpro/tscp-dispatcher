@@ -30,24 +30,26 @@ export default function DriverDashboard() {
       if (!user) return;
 
       try {
-        const { data: orders } = await supabase
+        // Fetch ALL orders for accurate stats
+        const { data: allOrders } = await supabase
           .from('orders')
           .select('*')
           .eq('assigned_driver_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
+          .order('created_at', { ascending: false });
 
-        if (orders) {
-          setRecentOrders(orders as Order[]);
+        if (allOrders) {
+          // Set recent orders (first 5 for display)
+          setRecentOrders(allOrders.slice(0, 5) as Order[]);
           
           const today = new Date().toISOString().split('T')[0];
+          // Calculate stats from ALL orders
           setStats({
-            assignedOrders: orders.filter(o => 
+            assignedOrders: allOrders.filter(o => 
               o.timeline_status !== 'COMPLETED_DELIVERED' && 
               o.timeline_status !== 'COMPLETED_INCOMPLETE'
             ).length,
-            inRouteOrders: orders.filter(o => o.timeline_status === 'IN_ROUTE').length,
-            completedToday: orders.filter(o => 
+            inRouteOrders: allOrders.filter(o => o.timeline_status === 'IN_ROUTE').length,
+            completedToday: allOrders.filter(o => 
               (o.timeline_status === 'COMPLETED_DELIVERED' || o.timeline_status === 'COMPLETED_INCOMPLETE') && 
               o.completed_at?.startsWith(today)
             ).length,
@@ -87,10 +89,7 @@ export default function DriverDashboard() {
     }
   };
 
-  const formatDOB = (dob: string | null) => {
-    if (!dob) return 'N/A';
-    return new Date(dob).getFullYear().toString();
-  };
+  // Removed formatDOB - DOB should not be shown to drivers
 
   return (
     <AppLayout title="My Deliveries">
@@ -168,21 +167,18 @@ export default function DriverDashboard() {
                 <Card key={order.id} className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {order.name || 'Unknown Client'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          DOB Year: {formatDOB(order.dob)}
-                        </p>
-                      </div>
+                      <p className="font-medium text-foreground">
+                        {order.name || 'Unknown Client'}
+                      </p>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.timeline_status)}`}>
                         {getStatusLabel(order.timeline_status)}
                       </span>
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {order.city}, {order.province} {order.postal}
+                    <div className="flex items-start text-sm text-muted-foreground">
+                      <MapPin className="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" />
+                      <span>
+                        {[order.address_1, order.address_2, order.city, order.province, order.postal].filter(Boolean).join(', ')}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>

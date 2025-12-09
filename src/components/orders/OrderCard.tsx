@@ -7,6 +7,8 @@ import { format } from 'date-fns';
 interface OrderCardProps {
   order: Order;
   onClick: () => void;
+  isDriver?: boolean;
+  actionButton?: React.ReactNode;
 }
 
 const getStatusConfig = (status: string) => {
@@ -62,7 +64,12 @@ const getStatusConfig = (status: string) => {
   }
 };
 
-export function OrderCard({ order, onClick }: OrderCardProps) {
+const getFullAddress = (order: Order) => {
+  const parts = [order.address_1, order.address_2, order.city, order.province, order.postal].filter(Boolean);
+  return parts.join(', ');
+};
+
+export function OrderCard({ order, onClick, isDriver = false, actionButton }: OrderCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
   const hasLocation = order.city || order.province;
   const shippedDate = order.shipped_at ? new Date(order.shipped_at) : null;
@@ -83,7 +90,8 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
               <p className="font-semibold text-foreground truncate leading-tight">
                 {order.name || 'Unknown Client'}
               </p>
-              {order.phone_number && (
+              {/* Phone only for admin, not for driver */}
+              {!isDriver && order.phone_number && (
                 <p className="text-xs text-muted-foreground truncate">
                   {order.phone_number}
                 </p>
@@ -97,18 +105,18 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
 
         {/* Details Grid */}
         <div className="space-y-2 pl-[46px]">
-          {/* Location */}
+          {/* Location - Full address for drivers, partial for admin */}
           {hasLocation && (
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-muted-foreground truncate">
-                {[order.address_1, order.city, order.province].filter(Boolean).join(', ')}
+            <div className="flex items-start gap-2 text-sm">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <span className="text-muted-foreground">
+                {isDriver ? getFullAddress(order) : [order.address_1, order.city, order.province].filter(Boolean).join(', ')}
               </span>
             </div>
           )}
 
-          {/* Shipped Date */}
-          {shippedDate && (
+          {/* Shipped Date - Admin only */}
+          {!isDriver && shippedDate && (
             <div className="flex items-center gap-2 text-sm">
               <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">
@@ -117,32 +125,43 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
             </div>
           )}
 
-          {/* Shipment ID */}
-          <div className="flex items-center gap-2 text-sm">
-            <Package className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            {order.shipment_id ? (
-              <span className="font-mono text-primary text-xs bg-primary/5 px-1.5 py-0.5 rounded">
-                {order.shipment_id}
-              </span>
-            ) : (
-              <span className="text-muted-foreground/60 italic text-xs">
-                Not assigned
-              </span>
-            )}
-          </div>
+          {/* Shipment ID - Admin only */}
+          {!isDriver && (
+            <div className="flex items-center gap-2 text-sm">
+              <Package className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              {order.shipment_id ? (
+                <span className="font-mono text-primary text-xs bg-primary/5 px-1.5 py-0.5 rounded">
+                  {order.shipment_id}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/60 italic text-xs">
+                  Not assigned
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Bottom Row - Pharmacy & Arrow */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50 pl-[46px]">
-          <div className="flex-1 min-w-0">
-            {order.pharmacy_name && (
-              <p className="text-xs text-muted-foreground truncate">
-                {order.pharmacy_name}
-              </p>
-            )}
+        {/* Action Button (for driver) */}
+        {actionButton && (
+          <div className="mt-3 pl-[46px]">
+            {actionButton}
           </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
-        </div>
+        )}
+
+        {/* Bottom Row - Pharmacy & Arrow (Admin only) */}
+        {!isDriver && (
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50 pl-[46px]">
+            <div className="flex-1 min-w-0">
+              {order.pharmacy_name && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {order.pharmacy_name}
+                </p>
+              )}
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
+          </div>
+        )}
       </div>
     </Card>
   );

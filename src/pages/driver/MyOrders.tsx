@@ -93,7 +93,7 @@ export default function MyOrders() {
         return (
           <Button
             size="sm"
-            className="w-full mt-3"
+            className="w-full"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedOrder(order);
@@ -107,7 +107,7 @@ export default function MyOrders() {
         return (
           <Button
             size="sm"
-            className="w-full mt-3"
+            className="w-full"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedOrder(order);
@@ -121,7 +121,7 @@ export default function MyOrders() {
         return (
           <Button
             size="sm"
-            className="w-full mt-3"
+            className="w-full"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedOrder(order);
@@ -133,9 +133,9 @@ export default function MyOrders() {
         );
       case 'REVIEW_REQUESTED':
         return (
-          <div className="flex items-center gap-2 mt-3 p-2 bg-amber-50 rounded-lg">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span className="text-xs text-amber-700">Waiting for admin review</span>
+          <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-xs text-amber-700 dark:text-amber-300">Waiting for admin review</span>
           </div>
         );
       default:
@@ -189,13 +189,13 @@ export default function MyOrders() {
           ) : (
             <div className="space-y-3">
               {activeOrders.map((order) => (
-                <div key={order.id} className="space-y-0">
-                  <OrderCard 
-                    order={order} 
-                    onClick={() => setSelectedOrder(order)} 
-                  />
-                  {getActionButton(order)}
-                </div>
+                <OrderCard 
+                  key={order.id}
+                  order={order} 
+                  onClick={() => setSelectedOrder(order)}
+                  isDriver={true}
+                  actionButton={getActionButton(order)}
+                />
               ))}
             </div>
           )}
@@ -211,7 +211,8 @@ export default function MyOrders() {
                 <OrderCard 
                   key={order.id} 
                   order={order} 
-                  onClick={() => {}} 
+                  onClick={() => {}}
+                  isDriver={true}
                 />
               ))}
             </div>

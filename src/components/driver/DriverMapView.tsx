@@ -890,10 +890,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {order.city}
+                      {order.name || 'Unknown Client'}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {order.address_1}
+                      {order.address_1}, {order.city}
                     </p>
                   </div>
                   {order.drivingDuration && (
@@ -915,11 +915,14 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedOrder.city}, {selectedOrder.province}
+                  <p className="font-medium text-foreground">
+                    {selectedOrder.name || 'Unknown Client'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {selectedOrder.postal}
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {[selectedOrder.address_1, selectedOrder.address_2].filter(Boolean).join(', ')}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedOrder.city}, {selectedOrder.province} {selectedOrder.postal}
                   </p>
                 </div>
                 <Badge 
@@ -963,27 +966,38 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
         <div className="absolute bottom-4 left-4 right-4 z-10">
           <Card className="bg-background/95 backdrop-blur-sm shadow-lg border-2 border-green-500">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-700">Next Delivery</span>
-              </div>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {nextDeliveryOrder.city}, {nextDeliveryOrder.province}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {nextDeliveryOrder.address_1}
-                  </p>
-                  {nextDeliveryOrder.drivingDuration && (
-                    <p className="text-xs text-primary mt-1">
-                      ~{Math.round(nextDeliveryOrder.drivingDuration / 60)} min away
-                    </p>
-                  )}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">Next Delivery</span>
                 </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  {nextDeliveryOrder.timeline_status?.replace(/_/g, ' ') || 'Pending'}
-                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground"
+                  onClick={() => {
+                    setShowNextDeliveryCard(false);
+                    setNextDeliveryOrder(null);
+                  }}
+                >
+                  Dismiss
+                </Button>
+              </div>
+              <div className="mb-3">
+                <p className="font-medium text-foreground">
+                  {nextDeliveryOrder.name || 'Unknown Client'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {[nextDeliveryOrder.address_1, nextDeliveryOrder.address_2].filter(Boolean).join(', ')}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {nextDeliveryOrder.city}, {nextDeliveryOrder.province} {nextDeliveryOrder.postal}
+                </p>
+                {nextDeliveryOrder.drivingDuration && (
+                  <p className="text-xs text-primary mt-1">
+                    ~{Math.round(nextDeliveryOrder.drivingDuration / 60)} min away
+                  </p>
+                )}
               </div>
               
               <div className="flex gap-2">

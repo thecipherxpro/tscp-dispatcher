@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Search, Upload, CheckSquare, Square, X, Users } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, X, Users, List, Map } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,13 @@ import { OrderImportModal } from '@/components/orders/OrderImportModal';
 import { OrderDetailSheet } from '@/components/orders/OrderDetailSheet';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { BulkAssignmentModal } from '@/components/orders/BulkAssignmentModal';
+import { AdminOrdersMap } from '@/components/orders/AdminOrdersMap';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { Order } from '@/types/auth';
 
 type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'delivered' | 'incomplete' | 'review';
+type ViewMode = 'list' | 'map';
 
 export default function Orders() {
   const { orders, isLoading, refetch } = useOrders(true); // Enable realtime
@@ -25,6 +27,7 @@ export default function Orders() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const haptic = useHapticFeedback();
 
   const handleRefresh = async () => {
@@ -112,6 +115,29 @@ export default function Orders() {
 
   return (
     <AppLayout title="Orders" showBackButton>
+      {viewMode === 'map' ? (
+        <div className="h-[calc(100vh-8rem)] relative">
+          {/* Map View Toggle */}
+          <div className="absolute top-4 right-4 z-20">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shadow-lg"
+              onClick={() => {
+                haptic.light();
+                setViewMode('list');
+              }}
+            >
+              <List className="w-4 h-4 mr-1" />
+              List
+            </Button>
+          </div>
+          <AdminOrdersMap 
+            orders={filteredOrders} 
+            onOrderSelect={(order) => setSelectedOrder(order)}
+          />
+        </div>
+      ) : (
       <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-8rem)]">
         <div className="p-4 space-y-4">
           {/* Actions */}
@@ -125,6 +151,15 @@ export default function Orders() {
             >
               <Upload className="w-4 h-4 mr-2" />
               Import Orders
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                haptic.light();
+                setViewMode('map');
+              }}
+            >
+              <Map className="w-4 h-4" />
             </Button>
             <Button
               variant={isSelectionMode ? "secondary" : "outline"}
@@ -277,6 +312,7 @@ export default function Orders() {
           )}
         </div>
       </PullToRefresh>
+      )}
 
       {/* Modals */}
       <OrderImportModal

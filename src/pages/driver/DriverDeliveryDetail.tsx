@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Navigation, Package, CheckCircle, XCircle, MapPin, Loader2, Clock, Route } from 'lucide-react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,11 +42,11 @@ export default function DriverDeliveryDetail() {
   const [outcomeType, setOutcomeType] = useState<'delivered' | 'incomplete' | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string; arrivalTime: string } | null>(null);
-  const [googleMapsKey, setGoogleMapsKey] = useState<string | null>(null);
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   const driverStartLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const { fetchLocation, locationData } = useDriverLocation();
   const haptic = useHapticFeedback();
@@ -87,23 +89,23 @@ export default function DriverDeliveryDetail() {
     }
   }, []);
 
-  // Fetch Google Maps API key
+  // Fetch Mapbox token
   useEffect(() => {
-    const getApiKey = async () => {
+    const getToken = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         if (error) {
-          console.error('Error fetching Google Maps key:', error);
+          console.error('Error fetching Mapbox token:', error);
           return;
         }
-        if (data?.apiKey) {
-          setGoogleMapsKey(data.apiKey);
+        if (data?.token) {
+          setMapboxToken(data.token);
         }
       } catch (error) {
-        console.error('Error fetching Google Maps key:', error);
+        console.error('Error fetching Mapbox token:', error);
       }
     };
-    getApiKey();
+    getToken();
   }, []);
 
   useEffect(() => {
@@ -112,9 +114,9 @@ export default function DriverDeliveryDetail() {
     fetchLocation();
   }, [fetchOrder, getDriverLocation, fetchLocation]);
 
-  // Geocode address if no coordinates
+  // Geocode address if no coordinates using Mapbox
   useEffect(() => {
-    if (!order || !googleMapsKey) return;
+    if (!order || !mapboxToken) return;
 
     if (order.latitude && order.longitude) {
       setDestinationCoords({ lat: order.latitude, lng: order.longitude });
@@ -123,11 +125,14 @@ export default function DriverDeliveryDetail() {
         try {
           const address = `${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`;
           const response = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxToken}`
           );
           const data = await response.json();
-          if (data.results?.[0]?.geometry?.location) {
-            setDestinationCoords(data.results[0].geometry.location);
+          if (data.features?.[0]?.center) {
+            setDestinationCoords({ 
+              lat: data.features[0].center[1], 
+              lng: data.features[0].center[0] 
+            });
           }
         } catch (error) {
           console.error('Geocoding error:', error);
@@ -135,129 +140,120 @@ export default function DriverDeliveryDetail() {
       };
       geocodeAddress();
     }
-  }, [order, googleMapsKey]);
+  }, [order, mapboxToken]);
 
-  // Initialize Google Map with route
+  // Initialize Mapbox Map with route
   useEffect(() => {
-    if (!driverLocation || !destinationCoords || !googleMapsKey || !mapRef.current) return;
+    if (!driverLocation || !destinationCoords || !mapboxToken || !mapContainerRef.current || mapRef.current) return;
 
-    const initMap = async () => {
-      // Load Google Maps script if not already loaded
-      if (!window.google) {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places`;
-        script.async = true;
-        script.onload = () => createMap();
-        document.head.appendChild(script);
-      } else {
-        createMap();
+    mapboxgl.accessToken = mapboxToken;
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [driverLocation.lng, driverLocation.lat],
+      zoom: 13,
+      attributionControl: false,
+    });
+
+    mapRef.current = map;
+
+    map.on('load', async () => {
+      setMapLoaded(true);
+
+      // Add driver marker (blue dot)
+      const driverEl = document.createElement('div');
+      driverEl.className = 'driver-marker';
+      driverEl.innerHTML = `
+        <div style="width: 24px; height: 24px; background: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+      `;
+      new mapboxgl.Marker({ element: driverEl })
+        .setLngLat([driverLocation.lng, driverLocation.lat])
+        .addTo(map);
+
+      // Add destination marker (white house icon in black circle)
+      const destEl = document.createElement('div');
+      destEl.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="#1f2937" stroke="#ffffff" stroke-width="2"/>
+          <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#ffffff"/>
+        </svg>
+      `;
+      new mapboxgl.Marker({ element: destEl })
+        .setLngLat([destinationCoords.lng, destinationCoords.lat])
+        .addTo(map);
+
+      // Fetch and draw route
+      try {
+        const routeResponse = await fetch(
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${driverLocation.lng},${driverLocation.lat};${destinationCoords.lng},${destinationCoords.lat}?geometries=geojson&overview=full&access_token=${mapboxToken}`
+        );
+        const routeData = await routeResponse.json();
+
+        if (routeData.routes?.[0]) {
+          const route = routeData.routes[0];
+          
+          // Add route line
+          map.addSource('route', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: route.geometry,
+            },
+          });
+
+          map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': '#F97316',
+              'line-width': 5,
+            },
+          });
+
+          // Calculate route info
+          const distanceKm = (route.distance / 1000).toFixed(1);
+          const durationMin = Math.round(route.duration / 60);
+          const now = new Date();
+          const arrivalDate = new Date(now.getTime() + route.duration * 1000);
+          const arrivalTime = arrivalDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          });
+
+          setRouteInfo({
+            distance: `${distanceKm} km`,
+            duration: `${durationMin} min`,
+            arrivalTime,
+          });
+
+          // Fit bounds to show entire route
+          const coordinates = route.geometry.coordinates;
+          const bounds = coordinates.reduce((bounds: mapboxgl.LngLatBounds, coord: number[]) => {
+            return bounds.extend(coord as [number, number]);
+          }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+          map.fitBounds(bounds, { padding: 60 });
+        }
+      } catch (error) {
+        console.error('Error fetching route:', error);
+      }
+    });
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
     };
-
-    const createMap = () => {
-      if (!mapRef.current) return;
-
-      // Create map
-      const map = new google.maps.Map(mapRef.current, {
-        center: driverLocation,
-        zoom: 14,
-        disableDefaultUI: true,
-        zoomControl: false,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        styles: [
-          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          { featureType: 'all', elementType: 'geometry', stylers: [{ saturation: -30 }] },
-        ],
-      });
-
-      mapInstanceRef.current = map;
-
-      // Create directions renderer
-      const directionsRenderer = new google.maps.DirectionsRenderer({
-        map,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: '#F97316',
-          strokeWeight: 5,
-        },
-      });
-      directionsRendererRef.current = directionsRenderer;
-
-      // Get directions
-      const directionsService = new google.maps.DirectionsService();
-      directionsService.route(
-        {
-          origin: driverLocation,
-          destination: destinationCoords,
-          travelMode: google.maps.TravelMode.DRIVING,
-        },
-        (result, status) => {
-          if (status === google.maps.DirectionsStatus.OK && result) {
-            directionsRenderer.setDirections(result);
-
-            // Add custom markers
-            // Driver marker (blue dot)
-            new google.maps.Marker({
-              position: driverLocation,
-              map,
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 10,
-                fillColor: '#3B82F6',
-                fillOpacity: 1,
-                strokeColor: '#ffffff',
-                strokeWeight: 3,
-              },
-            });
-
-            // Destination marker (white house icon in black circle)
-            new google.maps.Marker({
-              position: destinationCoords,
-              map,
-              icon: {
-                url: 'data:image/svg+xml,' + encodeURIComponent(`
-                  <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="18" fill="#1f2937" stroke="#ffffff" stroke-width="2"/>
-                    <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#ffffff"/>
-                  </svg>
-                `),
-                scaledSize: new google.maps.Size(40, 40),
-                anchor: new google.maps.Point(20, 20),
-              },
-            });
-
-            // Extract route info
-            const leg = result.routes[0].legs[0];
-            const now = new Date();
-            const durationMs = leg.duration?.value ? leg.duration.value * 1000 : 0;
-            const arrivalDate = new Date(now.getTime() + durationMs);
-            const arrivalTime = arrivalDate.toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            });
-
-            setRouteInfo({
-              distance: leg.distance?.text || '—',
-              duration: leg.duration?.text || '—',
-              arrivalTime,
-            });
-
-            // Fit bounds to show entire route
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend(driverLocation);
-            bounds.extend(destinationCoords);
-            map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
-          }
-        }
-      );
-    };
-
-    initMap();
-  }, [driverLocation, destinationCoords, googleMapsKey]);
+  }, [driverLocation, destinationCoords, mapboxToken]);
 
   const handleStartNavigation = async () => {
     if (!order || !driverLocation) return;
@@ -394,7 +390,6 @@ export default function DriverDeliveryDetail() {
 
   // Timeline steps
   const getTimelineProgress = () => {
-    const steps = ['PENDING', 'PICKED_UP_AND_ASSIGNED', 'IN_ROUTE', 'COMPLETED'];
     const currentStatus = order?.timeline_status || 'PENDING';
     
     if (currentStatus === 'COMPLETED_DELIVERED' || currentStatus === 'COMPLETED_INCOMPLETE') {
@@ -435,12 +430,12 @@ export default function DriverDeliveryDetail() {
   return (
     <AppLayout title="Delivery Details" showBackButton>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
-        {/* Google Map with Route */}
+        {/* Mapbox Map with Route */}
         <div className="relative h-56 bg-muted">
-          <div ref={mapRef} className="w-full h-full" />
+          <div ref={mapContainerRef} className="w-full h-full" />
           
           {/* Loading overlay */}
-          {(!driverLocation || !destinationCoords) && (
+          {(!driverLocation || !destinationCoords || !mapLoaded) && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>

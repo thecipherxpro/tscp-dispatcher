@@ -213,19 +213,26 @@ export default function DriverZoneDeliveryList() {
                         {/* Order Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-foreground">
-                              {order.shipment_id || 'No Shipment ID'}
+                            <span className="font-medium text-foreground">
+                              {order.name || 'Unknown Client'}
                             </span>
                             <Badge variant={status.variant} className="text-xs">
                               {status.label}
                             </Badge>
                           </div>
                           
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            <span className="text-sm truncate">
-                              {order.city}, {order.province} {order.postal}
+                          {/* Full Address */}
+                          <div className="flex items-start gap-1 text-muted-foreground mb-1">
+                            <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">
+                              {order.address_1}{order.address_2 ? `, ${order.address_2}` : ''}, {order.city}, {order.province} {order.postal}
                             </span>
+                          </div>
+
+                          {/* Shipment & Tracking IDs */}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>Ship: <span className="font-medium text-foreground">{order.shipment_id || '—'}</span></span>
+                            <span>Track: <span className="font-medium text-foreground">{order.tracking_id || '—'}</span></span>
                           </div>
                         </div>
 

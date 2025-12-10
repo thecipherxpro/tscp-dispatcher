@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Navigation, Package, CheckCircle, XCircle, MapPin, Loader2 } from 'lucide-react';
+import { Navigation, Package, CheckCircle, XCircle, MapPin, Loader2, Clock, Route } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,8 +38,13 @@ export default function DriverDeliveryDetail() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showOutcomeSheet, setShowOutcomeSheet] = useState(false);
   const [outcomeType, setOutcomeType] = useState<'delivered' | 'incomplete' | null>(null);
-  const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string; arrivalTime: string } | null>(null);
+  const [googleMapsKey, setGoogleMapsKey] = useState<string | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const driverStartLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const { fetchLocation, locationData } = useDriverLocation();
   const haptic = useHapticFeedback();
@@ -82,52 +87,173 @@ export default function DriverDeliveryDetail() {
     }
   }, []);
 
+  // Fetch Google Maps API key
+  useEffect(() => {
+    const getApiKey = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('get-google-maps-key');
+        if (data?.key) {
+          setGoogleMapsKey(data.key);
+        }
+      } catch (error) {
+        console.error('Error fetching Google Maps key:', error);
+      }
+    };
+    getApiKey();
+  }, []);
+
   useEffect(() => {
     fetchOrder();
     getDriverLocation();
     fetchLocation();
   }, [fetchOrder, getDriverLocation, fetchLocation]);
 
-  // Generate static map URL using address geocoding if no coordinates
+  // Geocode address if no coordinates
   useEffect(() => {
-    if (!order || !driverLocation) return;
+    if (!order || !googleMapsKey) return;
 
-    const generateStaticMap = async () => {
-      try {
-        const { data } = await supabase.functions.invoke('get-google-maps-key');
-        if (!data?.key) return;
-
-        const origin = `${driverLocation.lat},${driverLocation.lng}`;
-        
-        // Use coordinates if available, otherwise use address
-        let destination: string;
-        if (order.latitude && order.longitude) {
-          destination = `${order.latitude},${order.longitude}`;
-        } else {
-          // Geocode using address
-          const address = `${order.address_1 || ''}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, ${order.country || 'CA'}`;
-          destination = encodeURIComponent(address);
+    if (order.latitude && order.longitude) {
+      setDestinationCoords({ lat: order.latitude, lng: order.longitude });
+    } else if (order.address_1) {
+      const geocodeAddress = async () => {
+        try {
+          const address = `${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`;
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`
+          );
+          const data = await response.json();
+          if (data.results?.[0]?.geometry?.location) {
+            setDestinationCoords(data.results[0].geometry.location);
+          }
+        } catch (error) {
+          console.error('Geocoding error:', error);
         }
-        
-        // Simple static map with markers
-        const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?` +
-          `size=640x300&scale=2` +
-          `&maptype=roadmap` +
-          `&style=feature:poi|visibility:off` +
-          `&style=feature:transit|visibility:off` +
-          `&markers=color:blue|${origin}` +
-          `&markers=color:red|${destination}` +
-          `&path=color:0xF97316|weight:4|${origin}|${destination}` +
-          `&key=${data.key}`;
+      };
+      geocodeAddress();
+    }
+  }, [order, googleMapsKey]);
 
-        setStaticMapUrl(mapUrl);
-      } catch (error) {
-        console.error('Error generating static map:', error);
+  // Initialize Google Map with route
+  useEffect(() => {
+    if (!driverLocation || !destinationCoords || !googleMapsKey || !mapRef.current) return;
+
+    const initMap = async () => {
+      // Load Google Maps script if not already loaded
+      if (!window.google) {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places`;
+        script.async = true;
+        script.onload = () => createMap();
+        document.head.appendChild(script);
+      } else {
+        createMap();
       }
     };
 
-    generateStaticMap();
-  }, [order, driverLocation]);
+    const createMap = () => {
+      if (!mapRef.current) return;
+
+      // Create map
+      const map = new google.maps.Map(mapRef.current, {
+        center: driverLocation,
+        zoom: 14,
+        disableDefaultUI: true,
+        zoomControl: false,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: [
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+          { featureType: 'all', elementType: 'geometry', stylers: [{ saturation: -30 }] },
+        ],
+      });
+
+      mapInstanceRef.current = map;
+
+      // Create directions renderer
+      const directionsRenderer = new google.maps.DirectionsRenderer({
+        map,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#F97316',
+          strokeWeight: 5,
+        },
+      });
+      directionsRendererRef.current = directionsRenderer;
+
+      // Get directions
+      const directionsService = new google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: driverLocation,
+          destination: destinationCoords,
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === google.maps.DirectionsStatus.OK && result) {
+            directionsRenderer.setDirections(result);
+
+            // Add custom markers
+            // Driver marker (blue dot)
+            new google.maps.Marker({
+              position: driverLocation,
+              map,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: '#3B82F6',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 3,
+              },
+            });
+
+            // Destination marker (white house icon in black circle)
+            new google.maps.Marker({
+              position: destinationCoords,
+              map,
+              icon: {
+                url: 'data:image/svg+xml,' + encodeURIComponent(`
+                  <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" fill="#1f2937" stroke="#ffffff" stroke-width="2"/>
+                    <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#ffffff"/>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(40, 40),
+                anchor: new google.maps.Point(20, 20),
+              },
+            });
+
+            // Extract route info
+            const leg = result.routes[0].legs[0];
+            const now = new Date();
+            const durationMs = leg.duration?.value ? leg.duration.value * 1000 : 0;
+            const arrivalDate = new Date(now.getTime() + durationMs);
+            const arrivalTime = arrivalDate.toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            });
+
+            setRouteInfo({
+              distance: leg.distance?.text || '—',
+              duration: leg.duration?.text || '—',
+              arrivalTime,
+            });
+
+            // Fit bounds to show entire route
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(driverLocation);
+            bounds.extend(destinationCoords);
+            map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+          }
+        }
+      );
+    };
+
+    initMap();
+  }, [driverLocation, destinationCoords, googleMapsKey]);
 
   const handleStartNavigation = async () => {
     if (!order || !driverLocation) return;
@@ -146,10 +272,10 @@ export default function DriverDeliveryDetail() {
       
       await updateOrderStatus(order.id, order.tracking_id || null, 'IN_ROUTE', undefined, locationData || undefined);
 
-      // Open external Google Maps - use coordinates if available, otherwise address
+      // Open external Google Maps
       let destination: string;
-      if (order.latitude && order.longitude) {
-        destination = `${order.latitude},${order.longitude}`;
+      if (destinationCoords) {
+        destination = `${destinationCoords.lat},${destinationCoords.lng}`;
       } else {
         destination = encodeURIComponent(`${order.address_1 || ''}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}`);
       }
@@ -200,15 +326,15 @@ export default function DriverDeliveryDetail() {
       );
 
       // Generate route snapshot
-      if (driverStartLocationRef.current && order.latitude && order.longitude) {
+      if (driverStartLocationRef.current && destinationCoords) {
         try {
           await supabase.functions.invoke('generate-route-snapshot', {
             body: {
               orderId: order.id,
               startLat: driverStartLocationRef.current.lat,
               startLng: driverStartLocationRef.current.lng,
-              endLat: order.latitude,
-              endLng: order.longitude,
+              endLat: destinationCoords.lat,
+              endLng: destinationCoords.lng,
             }
           });
         } catch (snapshotError) {
@@ -240,18 +366,19 @@ export default function DriverDeliveryDetail() {
   const getPublicTimelineStatus = (status: string | null) => {
     switch (status) {
       case 'PENDING':
-        return { label: 'PENDING', variant: 'secondary' as const };
+        return { label: 'Pending', variant: 'secondary' as const };
       case 'PICKED_UP_AND_ASSIGNED':
-        return { label: 'PICKED UP', variant: 'default' as const };
+        return { label: 'Picked Up', variant: 'default' as const };
       case 'CONFIRMED':
+        return { label: 'Confirmed', variant: 'default' as const };
       case 'IN_ROUTE':
-        return { label: 'SHIPPED', variant: 'default' as const };
+        return { label: 'In Transit', variant: 'default' as const };
       case 'COMPLETED_DELIVERED':
-        return { label: 'DELIVERED', variant: 'default' as const };
+        return { label: 'Delivered', variant: 'default' as const };
       case 'COMPLETED_INCOMPLETE':
-        return { label: 'INCOMPLETE', variant: 'destructive' as const };
+        return { label: 'Incomplete', variant: 'destructive' as const };
       default:
-        return { label: 'PENDING', variant: 'secondary' as const };
+        return { label: 'Pending', variant: 'secondary' as const };
     }
   };
 
@@ -260,6 +387,23 @@ export default function DriverDeliveryDetail() {
   const canDropOff = order?.timeline_status === 'IN_ROUTE';
   const isCompleted = order?.timeline_status === 'COMPLETED_DELIVERED' || 
                       order?.timeline_status === 'COMPLETED_INCOMPLETE';
+
+  // Timeline steps
+  const getTimelineProgress = () => {
+    const steps = ['PENDING', 'PICKED_UP_AND_ASSIGNED', 'IN_ROUTE', 'COMPLETED'];
+    const currentStatus = order?.timeline_status || 'PENDING';
+    
+    if (currentStatus === 'COMPLETED_DELIVERED' || currentStatus === 'COMPLETED_INCOMPLETE') {
+      return 100;
+    }
+    if (currentStatus === 'IN_ROUTE' || currentStatus === 'CONFIRMED') {
+      return 66;
+    }
+    if (currentStatus === 'PICKED_UP_AND_ASSIGNED') {
+      return 33;
+    }
+    return 0;
+  };
 
   if (isLoading) {
     return (
@@ -284,96 +428,150 @@ export default function DriverDeliveryDetail() {
 
   const status = getPublicTimelineStatus(order.timeline_status);
 
-  // Timeline steps
-  const timelineSteps = [
-    { label: 'Pending', active: true },
-    { label: 'Picked Up', active: ['PICKED_UP_AND_ASSIGNED', 'CONFIRMED', 'IN_ROUTE', 'COMPLETED_DELIVERED', 'COMPLETED_INCOMPLETE'].includes(order.timeline_status || '') },
-    { label: 'Shipped', active: ['IN_ROUTE', 'COMPLETED_DELIVERED', 'COMPLETED_INCOMPLETE'].includes(order.timeline_status || '') },
-    { label: isCompleted ? (order.timeline_status === 'COMPLETED_DELIVERED' ? 'Delivered' : 'Incomplete') : 'Delivered', active: isCompleted },
-  ];
-
   return (
     <AppLayout title="Delivery Details" showBackButton>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
-        {/* Static Route Preview */}
-        <div className="relative h-48 bg-muted">
-          {staticMapUrl ? (
-            <img 
-              src={staticMapUrl} 
-              alt="Route preview" 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
+        {/* Google Map with Route */}
+        <div className="relative h-56 bg-muted">
+          <div ref={mapRef} className="w-full h-full" />
+          
+          {/* Loading overlay */}
+          {(!driverLocation || !destinationCoords) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           )}
+
           {/* Order Number Overlay */}
-          <div className="absolute top-4 left-4 w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold shadow-lg">
+          <div className="absolute top-3 left-3 w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center text-lg font-bold shadow-lg">
             {orderNumber}
           </div>
         </div>
 
-        {/* Delivery Info */}
+        {/* Route Stats Card */}
+        <Card className="mx-4 -mt-6 relative z-10 shadow-lg border-border">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-xl font-bold text-foreground">{routeInfo?.distance || '—'}</p>
+                <p className="text-xs text-muted-foreground">Distance</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-foreground">{routeInfo?.duration || '—'}</p>
+                <p className="text-xs text-muted-foreground">Time Left</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-foreground">{routeInfo?.arrivalTime || '—'}</p>
+                <p className="text-xs text-muted-foreground">Arrival</p>
+              </div>
+            </div>
+
+            {/* Visual Progress Bar */}
+            <div className="mt-4 flex items-center gap-2">
+              <Package className="w-5 h-5 text-foreground" />
+              <div className="flex-1 relative h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-500"
+                  style={{ width: `${getTimelineProgress()}%` }}
+                />
+                {/* Arrow indicator */}
+                <div 
+                  className="absolute top-1/2 -translate-y-1/2 transition-all duration-500"
+                  style={{ left: `${Math.min(getTimelineProgress(), 95)}%` }}
+                >
+                  <div className="w-0 h-0 border-l-[8px] border-l-primary border-y-[5px] border-y-transparent" />
+                </div>
+              </div>
+              <MapPin className="w-5 h-5 text-destructive" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Order Details */}
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+          {/* Shipment Info Card */}
           <Card className="bg-card border-border">
-            <CardContent className="p-4 space-y-4">
-              {/* Client Name & Status */}
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <Package className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-primary text-lg">#{order.shipment_id || order.tracking_id || '—'}</p>
+                    <p className="text-sm text-muted-foreground">Shipment ID</p>
+                  </div>
+                </div>
+                <Badge variant={status.variant} className="text-xs px-3 py-1">
+                  {status.label}
+                </Badge>
+              </div>
+
+              <div className="border-t border-border pt-3 space-y-3">
+                {/* Customer */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Customer</p>
+                  <p className="font-semibold text-foreground">{order.name || 'Unknown Client'}</p>
+                </div>
+
+                {/* Delivery Address */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Delivery Address</p>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-foreground">
+                      {order.address_1}{order.address_2 ? `, ${order.address_2}` : ''}, {order.city}, {order.province} {order.postal}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tracking ID */}
+                {order.tracking_id && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Tracking ID</p>
+                    <p className="text-sm font-medium text-foreground">{order.tracking_id}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Timeline Card */}
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground mb-3">Delivery Timeline</p>
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Client</p>
-                  <p className="font-semibold text-foreground text-lg">{order.name || 'Unknown Client'}</p>
+                {/* Start point */}
+                <div className="text-center">
+                  <div className="w-3 h-3 rounded-full bg-foreground mx-auto" />
+                  <p className="text-[10px] text-muted-foreground mt-1">Pickup</p>
                 </div>
-                <Badge variant={status.variant}>{status.label}</Badge>
-              </div>
+                
+                {/* Progress line */}
+                <div className="flex-1 mx-2 relative">
+                  <div className="h-0.5 bg-muted rounded-full" />
+                  <div 
+                    className="absolute top-0 left-0 h-0.5 bg-foreground rounded-full transition-all duration-500"
+                    style={{ width: `${getTimelineProgress()}%` }}
+                  />
+                </div>
 
-              {/* Shipment & Tracking IDs */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Shipment ID</p>
-                  <p className="font-medium text-foreground">{order.shipment_id || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Tracking ID</p>
-                  <p className="font-medium text-foreground">{order.tracking_id || '—'}</p>
-                </div>
-              </div>
-
-              {/* Full Address */}
-              <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {order.address_1}{order.address_2 ? `, ${order.address_2}` : ''}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {order.city}, {order.province} {order.postal}
-                  </p>
+                {/* End point */}
+                <div className="text-center">
+                  <div className={`w-3 h-3 rounded-full mx-auto ${isCompleted ? 'bg-foreground' : 'bg-muted'}`} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Delivery</p>
                 </div>
               </div>
 
-              {/* Timeline Progress */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between">
-                  {timelineSteps.map((step, index) => (
-                    <div key={step.label} className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full ${
-                        step.active ? 'bg-primary' : 'bg-muted'
-                      }`} />
-                      {index < timelineSteps.length - 1 && (
-                        <div className={`w-12 h-0.5 ${
-                          timelineSteps[index + 1].active ? 'bg-primary' : 'bg-muted'
-                        }`} />
-                      )}
-                    </div>
-                  ))}
+              {/* Locations */}
+              <div className="flex justify-between mt-3 text-xs">
+                <div>
+                  <p className="text-muted-foreground">From</p>
+                  <p className="font-medium text-foreground">Pharmacy</p>
                 </div>
-                <div className="flex justify-between mt-1">
-                  {timelineSteps.map((step) => (
-                    <span key={step.label} className="text-[10px] text-muted-foreground">
-                      {step.label}
-                    </span>
-                  ))}
+                <div className="text-right">
+                  <p className="text-muted-foreground">To</p>
+                  <p className="font-medium text-foreground">{order.city}, {order.province}</p>
                 </div>
               </div>
             </CardContent>
@@ -384,7 +582,7 @@ export default function DriverDeliveryDetail() {
         {!isCompleted && (
           <div className="p-4 space-y-3 border-t border-border bg-card safe-area-bottom">
             <Button
-              className="w-full"
+              className="w-full h-12"
               size="lg"
               onClick={handleStartNavigation}
               disabled={!canStartNavigation || isUpdating || !driverLocation}
@@ -398,7 +596,7 @@ export default function DriverDeliveryDetail() {
             </Button>
             
             <Button
-              className="w-full"
+              className="w-full h-12"
               size="lg"
               variant="secondary"
               onClick={handleDropOff}

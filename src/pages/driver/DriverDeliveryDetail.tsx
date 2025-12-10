@@ -88,9 +88,9 @@ export default function DriverDeliveryDetail() {
     fetchLocation();
   }, [fetchOrder, getDriverLocation, fetchLocation]);
 
-  // Generate static map URL
+  // Generate static map URL using address geocoding if no coordinates
   useEffect(() => {
-    if (!order?.latitude || !order?.longitude || !driverLocation) return;
+    if (!order || !driverLocation) return;
 
     const generateStaticMap = async () => {
       try {
@@ -98,7 +98,16 @@ export default function DriverDeliveryDetail() {
         if (!data?.key) return;
 
         const origin = `${driverLocation.lat},${driverLocation.lng}`;
-        const destination = `${order.latitude},${order.longitude}`;
+        
+        // Use coordinates if available, otherwise use address
+        let destination: string;
+        if (order.latitude && order.longitude) {
+          destination = `${order.latitude},${order.longitude}`;
+        } else {
+          // Geocode using address
+          const address = `${order.address_1 || ''}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, ${order.country || 'CA'}`;
+          destination = encodeURIComponent(address);
+        }
         
         // Simple static map with markers
         const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?` +
@@ -107,7 +116,7 @@ export default function DriverDeliveryDetail() {
           `&style=feature:poi|visibility:off` +
           `&style=feature:transit|visibility:off` +
           `&markers=color:blue|${origin}` +
-          `&markers=icon:https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png|${destination}` +
+          `&markers=color:red|${destination}` +
           `&path=color:0xF97316|weight:4|${origin}|${destination}` +
           `&key=${data.key}`;
 
@@ -137,8 +146,13 @@ export default function DriverDeliveryDetail() {
       
       await updateOrderStatus(order.id, order.tracking_id || null, 'IN_ROUTE', undefined, locationData || undefined);
 
-      // Open external Google Maps
-      const destination = `${order.latitude},${order.longitude}`;
+      // Open external Google Maps - use coordinates if available, otherwise address
+      let destination: string;
+      if (order.latitude && order.longitude) {
+        destination = `${order.latitude},${order.longitude}`;
+      } else {
+        destination = encodeURIComponent(`${order.address_1 || ''}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}`);
+      }
       const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${driverLocation.lat},${driverLocation.lng}&destination=${destination}&travelmode=driving`;
       
       window.open(mapsUrl, '_blank');
@@ -304,23 +318,37 @@ export default function DriverDeliveryDetail() {
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           <Card className="bg-card border-border">
             <CardContent className="p-4 space-y-4">
-              {/* Shipment ID & Status */}
+              {/* Client Name & Status */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Shipment ID</p>
-                  <p className="font-semibold text-foreground">{order.shipment_id || 'Not assigned'}</p>
+                  <p className="text-xs text-muted-foreground">Client</p>
+                  <p className="font-semibold text-foreground text-lg">{order.name || 'Unknown Client'}</p>
                 </div>
                 <Badge variant={status.variant}>{status.label}</Badge>
               </div>
 
-              {/* Location */}
+              {/* Shipment & Tracking IDs */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Shipment ID</p>
+                  <p className="font-medium text-foreground">{order.shipment_id || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tracking ID</p>
+                  <p className="font-medium text-foreground">{order.tracking_id || '—'}</p>
+                </div>
+              </div>
+
+              {/* Full Address */}
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-sm text-foreground">
-                    {order.city}, {order.province}
+                  <p className="text-sm font-medium text-foreground">
+                    {order.address_1}{order.address_2 ? `, ${order.address_2}` : ''}
                   </p>
-                  <p className="text-sm text-muted-foreground">{order.postal}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {order.city}, {order.province} {order.postal}
+                  </p>
                 </div>
               </div>
 

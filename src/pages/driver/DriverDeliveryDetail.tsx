@@ -91,9 +91,13 @@ export default function DriverDeliveryDetail() {
   useEffect(() => {
     const getApiKey = async () => {
       try {
-        const { data } = await supabase.functions.invoke('get-google-maps-key');
-        if (data?.key) {
-          setGoogleMapsKey(data.key);
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        if (error) {
+          console.error('Error fetching Google Maps key:', error);
+          return;
+        }
+        if (data?.apiKey) {
+          setGoogleMapsKey(data.apiKey);
         }
       } catch (error) {
         console.error('Error fetching Google Maps key:', error);

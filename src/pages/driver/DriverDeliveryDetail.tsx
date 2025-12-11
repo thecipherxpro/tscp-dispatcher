@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Navigation, Package, CheckCircle, XCircle, MapPin, Loader2, Clock, ChevronUp, ChevronDown, Phone } from 'lucide-react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { setOptions as setGoogleMapsOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +30,9 @@ const INCOMPLETE_OUTCOMES = [
   { value: 'OTHER', label: 'Other' },
 ];
 
+// Track if Google Maps has been initialized
+let googleMapsInitialized = false;
+
 export default function DriverDeliveryDetail() {
   const { orderId } = useParams<{ orderId: string }>();
   const location = useLocation();
@@ -43,17 +45,40 @@ export default function DriverDeliveryDetail() {
   const [outcomeType, setOutcomeType] = useState<'delivered' | 'incomplete' | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string; arrivalTime: string } | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [apiKeyReady, setApiKeyReady] = useState(googleMapsInitialized);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const driverStartLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const { fetchLocation, locationData } = useDriverLocation();
   const haptic = useHapticFeedback();
 
   const orderNumber = (location.state as { orderNumber?: number })?.orderNumber || 1;
+
+  // Initialize Google Maps API key on mount
+  useEffect(() => {
+    if (googleMapsInitialized) {
+      setApiKeyReady(true);
+      return;
+    }
+    
+    const initGoogleMaps = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        if (!error && data?.apiKey) {
+          setGoogleMapsOptions({ key: data.apiKey });
+          googleMapsInitialized = true;
+          setApiKeyReady(true);
+        }
+      } catch (error) {
+        console.error('Error fetching Google Maps API key:', error);
+      }
+    };
+    initGoogleMaps();
+  }, []);
 
   const fetchOrder = useCallback(async () => {
     if (!orderId) return;
@@ -80,22 +105,10 @@ export default function DriverDeliveryDetail() {
             lng: position.coords.longitude
           });
         },
-        (error) => console.error('Geolocation error:', error)
+        (error) => console.error('Geolocation error:', error),
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
     }
-  }, []);
-
-  // Fetch Mapbox token
-  useEffect(() => {
-    const getToken = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
-        if (!error && data?.token) setMapboxToken(data.token);
-      } catch (error) {
-        console.error('Error fetching Mapbox token:', error);
-      }
-    };
-    getToken();
   }, []);
 
   useEffect(() => {
@@ -104,95 +117,170 @@ export default function DriverDeliveryDetail() {
     fetchLocation();
   }, [fetchOrder, getDriverLocation, fetchLocation]);
 
-  // Geocode address if no coordinates
+  // Set destination coordinates from order
   useEffect(() => {
-    if (!order || !mapboxToken) return;
+    if (!order) return;
     if (order.latitude && order.longitude) {
       setDestinationCoords({ lat: order.latitude, lng: order.longitude });
-    } else if (order.address_1) {
-      const geocodeAddress = async () => {
-        try {
-          const address = `${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`;
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxToken}`
-          );
-          const data = await response.json();
-          if (data.features?.[0]?.center) {
-            setDestinationCoords({ lat: data.features[0].center[1], lng: data.features[0].center[0] });
-          }
-        } catch (error) {
-          console.error('Geocoding error:', error);
-        }
-      };
-      geocodeAddress();
     }
-  }, [order, mapboxToken]);
+  }, [order]);
 
-  // Initialize Mapbox Map
+  // Initialize Google Map immediately when API key is ready
   useEffect(() => {
-    if (!driverLocation || !destinationCoords || !mapboxToken || !mapContainerRef.current || mapRef.current) return;
+    if (!apiKeyReady || !mapContainerRef.current || mapRef.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [driverLocation.lng, driverLocation.lat],
-      zoom: 13,
-      attributionControl: false,
-    });
-
-    mapRef.current = map;
-
-    map.on('load', async () => {
-      setMapLoaded(true);
-
-      // Driver marker
-      const driverEl = document.createElement('div');
-      driverEl.innerHTML = `<div style="width: 20px; height: 20px; background: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`;
-      new mapboxgl.Marker({ element: driverEl }).setLngLat([driverLocation.lng, driverLocation.lat]).addTo(map);
-
-      // Destination marker
-      const destEl = document.createElement('div');
-      destEl.innerHTML = `<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#1f2937" stroke="#fff" stroke-width="2"/><path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#fff"/></svg>`;
-      new mapboxgl.Marker({ element: destEl }).setLngLat([destinationCoords.lng, destinationCoords.lat]).addTo(map);
-
-      // Fetch route
+    const initMap = async () => {
       try {
-        const routeResponse = await fetch(
-          `https://api.mapbox.com/directions/v5/mapbox/driving/${driverLocation.lng},${driverLocation.lat};${destinationCoords.lng},${destinationCoords.lat}?geometries=geojson&overview=full&access_token=${mapboxToken}`
-        );
-        const routeData = await routeResponse.json();
+        // Load the maps library
+        await importLibrary('maps');
+        await importLibrary('routes');
+        
+        // Default center (Toronto) until we get driver location
+        const defaultCenter = driverLocation || { lat: 43.6532, lng: -79.3832 };
+        
+        const map = new google.maps.Map(mapContainerRef.current!, {
+          center: defaultCenter,
+          zoom: 13,
+          disableDefaultUI: true,
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+            { featureType: 'all', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#e9e9e9' }] },
+            { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+            { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e0e0e0' }] },
+          ],
+        });
 
-        if (routeData.routes?.[0]) {
-          const route = routeData.routes[0];
-          map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: route.geometry } });
-          map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#F97316', 'line-width': 4 } });
-
-          const distanceKm = (route.distance / 1000).toFixed(1);
-          const durationMin = Math.round(route.duration / 60);
-          const arrivalDate = new Date(Date.now() + route.duration * 1000);
-          setRouteInfo({
-            distance: `${distanceKm} km`,
-            duration: `${durationMin} min`,
-            arrivalTime: arrivalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-          });
-
-          const coordinates = route.geometry.coordinates;
-          const bounds = coordinates.reduce((b: mapboxgl.LngLatBounds, c: number[]) => b.extend(c as [number, number]), new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-          map.fitBounds(bounds, { padding: 40 });
-        }
+        mapRef.current = map;
+        
+        // Initialize directions renderer
+        const directionsRenderer = new google.maps.DirectionsRenderer({
+          map,
+          suppressMarkers: true,
+          polylineOptions: {
+            strokeColor: '#F97316',
+            strokeWeight: 5,
+            strokeOpacity: 1,
+          },
+        });
+        directionsRendererRef.current = directionsRenderer;
+        
+        setMapLoaded(true);
       } catch (error) {
-        console.error('Error fetching route:', error);
-      }
-    });
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+        console.error('Error initializing Google Map:', error);
       }
     };
-  }, [driverLocation, destinationCoords, mapboxToken]);
+
+    initMap();
+  }, [apiKeyReady, driverLocation]);
+
+  // Update map with route when driver location and destination are available
+  useEffect(() => {
+    if (!mapRef.current || !driverLocation || !destinationCoords || !directionsRendererRef.current) return;
+
+    const map = mapRef.current;
+    const directionsRenderer = directionsRendererRef.current;
+
+    // Clear existing markers
+    map.data.forEach((feature) => map.data.remove(feature));
+
+    // Add driver marker (blue dot)
+    new google.maps.Marker({
+      position: driverLocation,
+      map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#3B82F6',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3,
+      },
+      zIndex: 100,
+    });
+
+    // Add destination marker (house icon)
+    new google.maps.Marker({
+      position: destinationCoords,
+      map,
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="16" fill="#1f2937" stroke="#fff" stroke-width="2"/>
+            <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#fff"/>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(32, 32),
+        anchor: new google.maps.Point(16, 16),
+      },
+      zIndex: 99,
+    });
+
+    // Get directions
+    const directionsService = new google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: driverLocation,
+        destination: destinationCoords,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === 'OK' && result) {
+          directionsRenderer.setDirections(result);
+          
+          const route = result.routes[0];
+          if (route?.legs?.[0]) {
+            const leg = route.legs[0];
+            const durationSeconds = leg.duration?.value || 0;
+            const arrivalDate = new Date(Date.now() + durationSeconds * 1000);
+            
+            setRouteInfo({
+              distance: leg.distance?.text || '—',
+              duration: leg.duration?.text || '—',
+              arrivalTime: arrivalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            });
+          }
+
+          // Fit bounds
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(driverLocation);
+          bounds.extend(destinationCoords);
+          map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+        }
+      }
+    );
+  }, [driverLocation, destinationCoords, mapLoaded]);
+
+  // Geocode address if no coordinates using Google Maps Geocoder
+  useEffect(() => {
+    if (!order || !apiKeyReady || destinationCoords) return;
+    if (order.latitude && order.longitude) return;
+    if (!order.address_1) return;
+
+    const geocodeAddress = async () => {
+      try {
+        await importLibrary('geocoding');
+        const geocoder = new google.maps.Geocoder();
+        const address = `${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`;
+        
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === 'OK' && results?.[0]?.geometry?.location) {
+            const loc = results[0].geometry.location;
+            setDestinationCoords({ lat: loc.lat(), lng: loc.lng() });
+          }
+        });
+      } catch (error) {
+        console.error('Geocoding error:', error);
+      }
+    };
+    geocodeAddress();
+  }, [order, apiKeyReady, destinationCoords]);
 
   const handleStartNavigation = async () => {
     if (!order || !driverLocation) return;
@@ -321,7 +409,7 @@ export default function DriverDeliveryDetail() {
         >
           <div ref={mapContainerRef} className="w-full h-full" />
           
-          {(!driverLocation || !destinationCoords || !mapLoaded) && (
+          {(!mapLoaded) && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>

@@ -1,6 +1,7 @@
-import { Package } from 'lucide-react';
+import { MapPin, ChevronRight, Navigation } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Order } from '@/types/auth';
 
 interface ActiveDeliveryCardProps {
@@ -11,17 +12,17 @@ interface ActiveDeliveryCardProps {
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'PICKED_UP_AND_ASSIGNED':
-      return { label: 'Assigned', variant: 'secondary' as const, className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
+      return { label: 'Assigned', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
     case 'CONFIRMED':
-      return { label: 'Confirmed', variant: 'secondary' as const, className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
+      return { label: 'Confirmed', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
     case 'IN_ROUTE':
-      return { label: 'In Transit', variant: 'default' as const, className: 'bg-primary/10 text-primary border-primary/20' };
+      return { label: 'In Transit', className: 'bg-primary/10 text-primary border-primary/20' };
     case 'COMPLETED_DELIVERED':
-      return { label: 'Delivered', variant: 'outline' as const, className: 'bg-green-500/10 text-green-600 border-green-500/20' };
+      return { label: 'Delivered', className: 'bg-green-500/10 text-green-600 border-green-500/20' };
     case 'COMPLETED_INCOMPLETE':
-      return { label: 'Incomplete', variant: 'outline' as const, className: 'bg-destructive/10 text-destructive border-destructive/20' };
+      return { label: 'Incomplete', className: 'bg-destructive/10 text-destructive border-destructive/20' };
     default:
-      return { label: 'Pending', variant: 'secondary' as const, className: 'bg-muted text-muted-foreground' };
+      return { label: 'Pending', className: 'bg-muted text-muted-foreground' };
   }
 };
 
@@ -42,87 +43,82 @@ export function ActiveDeliveryCard({ order, onClick }: ActiveDeliveryCardProps) 
   const progress = getTimelineProgress(order.timeline_status);
   const steps = 4;
 
+  const fullAddress = [
+    order.address_1,
+    order.address_2,
+    order.city,
+    order.province,
+    order.postal
+  ].filter(Boolean).join(', ');
+
   return (
     <Card 
-      className="bg-card border-border overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
-      onClick={onClick}
+      className="bg-card border-border overflow-hidden"
     >
       <CardContent className="p-0">
-        {/* Header with gradient accent */}
-        <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 px-4 py-3 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Package className="w-4 h-4 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-foreground">Active Delivery</span>
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Navigation className="w-4 h-4 text-primary" />
             </div>
-            <Badge variant={statusConfig.variant} className={statusConfig.className}>
-              {statusConfig.label}
-            </Badge>
+            <span className="text-sm font-semibold text-foreground">Current Delivery</span>
           </div>
+          <Badge variant="outline" className={statusConfig.className}>
+            {statusConfig.label}
+          </Badge>
         </div>
 
         {/* Content */}
         <div className="p-4 space-y-4">
-          {/* IDs Section */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Shipping ID</p>
-              <p className="text-sm font-semibold text-foreground font-mono">
-                {order.shipment_id || '—'}
-              </p>
+          {/* Address Section - Primary Focus */}
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-primary" />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Tracking ID</p>
-              <p className="text-sm font-semibold text-foreground font-mono">
-                {order.tracking_id || '—'}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Destination</p>
+              <p className="text-sm font-medium text-foreground leading-snug">
+                {fullAddress || 'Address not available'}
               </p>
             </div>
           </div>
 
-          {/* Timeline Progress */}
-          <div className="pt-2">
-            <div className="flex items-center justify-between">
+          {/* IDs Row */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="font-mono">{order.shipment_id || '—'}</span>
+            <span>•</span>
+            <span className="font-mono">{order.tracking_id || '—'}</span>
+          </div>
+
+          {/* Timeline Progress - Compact */}
+          <div className="pt-1">
+            <div className="flex items-center gap-1">
               {Array.from({ length: steps }).map((_, index) => (
-                <div key={index} className="flex items-center flex-1 last:flex-none">
-                  {/* Dot */}
-                  <div className="relative">
-                    <div 
-                      className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-300 ${
-                        index < progress 
-                          ? 'bg-primary border-primary' 
-                          : index === progress 
-                            ? 'bg-primary border-primary ring-4 ring-primary/20' 
-                            : 'bg-muted border-muted-foreground/30'
-                      }`}
-                    />
-                    {/* Pulse animation for current step */}
-                    {index === progress && progress < steps && (
-                      <div className="absolute inset-0 w-3.5 h-3.5 rounded-full bg-primary animate-ping opacity-40" />
-                    )}
-                  </div>
-                  {/* Connecting line */}
-                  {index < steps - 1 && (
-                    <div 
-                      className={`flex-1 h-0.5 mx-1 transition-all duration-300 ${
-                        index < progress 
-                          ? 'bg-primary' 
-                          : 'bg-muted-foreground/20'
-                      }`}
-                    />
-                  )}
-                </div>
+                <div 
+                  key={index} 
+                  className={`flex-1 h-1.5 rounded-full transition-all ${
+                    index < progress 
+                      ? 'bg-primary' 
+                      : index === progress 
+                        ? 'bg-primary/50' 
+                        : 'bg-muted'
+                  }`}
+                />
               ))}
             </div>
-            {/* Step labels */}
-            <div className="flex justify-between mt-2">
-              <span className="text-[10px] text-muted-foreground">Pickup</span>
-              <span className="text-[10px] text-muted-foreground">Confirm</span>
-              <span className="text-[10px] text-muted-foreground">Transit</span>
-              <span className="text-[10px] text-muted-foreground">Done</span>
-            </div>
           </div>
+
+          {/* Navigate Button */}
+          <Button 
+            onClick={onClick}
+            className="w-full"
+            size="lg"
+          >
+            <Navigation className="w-4 h-4 mr-2" />
+            View Delivery Details
+            <ChevronRight className="w-4 h-4 ml-auto" />
+          </Button>
         </div>
       </CardContent>
     </Card>

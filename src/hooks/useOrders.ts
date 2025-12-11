@@ -45,7 +45,11 @@ export function useOrders(enableRealtime = true) {
             setOrders(prev => 
               prev.map(order => 
                 order.id === payload.new.id ? (payload.new as Order) : order
-              )
+              ).sort((a, b) => {
+                const dateA = new Date(a.created_at || 0).getTime();
+                const dateB = new Date(b.created_at || 0).getTime();
+                return dateB - dateA; // Newest first
+              })
             );
           } else if (payload.eventType === 'DELETE') {
             setOrders(prev => prev.filter(order => order.id !== payload.old.id));

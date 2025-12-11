@@ -129,7 +129,14 @@ export default function DriverDeliveryDetail() {
 
   // Initialize Mapbox immediately when token is ready
   useEffect(() => {
-    if (!tokenReady || !mapContainerRef.current || mapRef.current) return;
+    if (!tokenReady || !mapContainerRef.current) return;
+
+    // Clean up existing map if any
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+      setMapLoaded(false);
+    }
 
     mapboxgl.accessToken = mapboxToken!;
     
@@ -143,15 +150,53 @@ export default function DriverDeliveryDetail() {
 
     map.on('load', () => {
       setMapLoaded(true);
+      console.log('Mapbox map loaded successfully');
+    });
+
+    map.on('error', (e) => {
+      console.error('Mapbox error:', e);
     });
 
     mapRef.current = map;
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, [tokenReady]);
+
+  // Handle app visibility changes - reinitialize map when returning to foreground
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && tokenReady && mapContainerRef.current) {
+        // Check if map is still valid
+        if (mapRef.current) {
+          try {
+            mapRef.current.resize();
+            // Re-add route if we have the data
+            if (driverLocation && destinationCoords && mapRef.current.isStyleLoaded()) {
+              const bounds = new mapboxgl.LngLatBounds()
+                .extend([driverLocation.lng, driverLocation.lat])
+                .extend([destinationCoords.lng, destinationCoords.lat]);
+              mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+            }
+          } catch (e) {
+            console.log('Map needs reinitialization');
+            // Map is invalid, force reinitialization by clearing and resetting token
+            mapRef.current = null;
+            setMapLoaded(false);
+            setTokenReady(false);
+            setTimeout(() => setTokenReady(!!mapboxToken), 100);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [tokenReady, driverLocation, destinationCoords]);
 
   // Update map with route when driver location and destination are available
   useEffect(() => {

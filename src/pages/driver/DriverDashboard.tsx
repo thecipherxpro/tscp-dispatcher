@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Truck, CheckCircle, ChevronRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
 import { ActiveDeliveryCard } from '@/components/orders/ActiveDeliveryCard';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 interface DriverStats {
   assignedOrders: number;
@@ -26,6 +27,16 @@ export default function DriverDashboard() {
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,57 +88,69 @@ export default function DriverDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED_DELIVERED':
-        return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">Done</Badge>;
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">Done</Badge>;
       case 'COMPLETED_INCOMPLETE':
-        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Incomplete</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">Incomplete</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary" className="text-xs">{status}</Badge>;
     }
   };
 
+  const statItems = [
+    { label: 'Pending', value: stats.assignedOrders, icon: Package },
+    { label: 'In Route', value: stats.inRouteOrders, icon: Truck },
+    { label: 'Today', value: stats.completedToday, icon: CheckCircle },
+  ];
+
   return (
-    <AppLayout title="Dashboard">
+    <AppLayout title="Dashboard" showUserMenu>
       <div className="p-4 space-y-6">
-        {/* Welcome Card with Stats */}
-        <Card className="bg-gradient-to-br from-primary to-primary/80 border-0 overflow-hidden">
-          <CardContent className="p-5">
-            <p className="text-primary-foreground/70 text-sm">Welcome back,</p>
-            <h2 className="text-xl font-bold text-primary-foreground mb-4">
+        {/* Welcome Section with Avatar */}
+        <div className="flex items-center gap-4 py-2">
+          <Avatar className="h-14 w-14 border-2 border-border">
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold">
+              {getInitials(profile?.full_name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Welcome back,</p>
+            <h2 className="text-xl font-bold text-foreground">
               {profile?.full_name || 'Driver'}
             </h2>
-            
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center backdrop-blur-sm">
-                <Package className="w-5 h-5 mx-auto mb-1 text-primary-foreground" />
-                <p className="text-xl font-bold text-primary-foreground">
-                  {isLoading ? '-' : stats.assignedOrders}
-                </p>
-                <p className="text-xs text-primary-foreground/70">Pending</p>
+            {profile?.driver_id && (
+              <p className="text-xs text-muted-foreground">{profile.driver_id}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-3">
+          {statItems.map(({ label, value, icon: Icon }) => (
+            <div
+              key={label}
+              className="bg-card border border-border rounded-xl p-4 text-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-muted mx-auto mb-2 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center backdrop-blur-sm">
-                <Truck className="w-5 h-5 mx-auto mb-1 text-primary-foreground" />
-                <p className="text-xl font-bold text-primary-foreground">
-                  {isLoading ? '-' : stats.inRouteOrders}
-                </p>
-                <p className="text-xs text-primary-foreground/70">In Route</p>
-              </div>
-              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center backdrop-blur-sm">
-                <CheckCircle className="w-5 h-5 mx-auto mb-1 text-primary-foreground" />
-                <p className="text-xl font-bold text-primary-foreground">
-                  {isLoading ? '-' : stats.completedToday}
-                </p>
-                <p className="text-xs text-primary-foreground/70">Today</p>
-              </div>
+              <p className="text-2xl font-bold text-foreground">
+                {isLoading ? '-' : value}
+              </p>
+              <p className="text-xs text-muted-foreground">{label}</p>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
 
         {/* Active Delivery Card */}
         {currentOrder && (
-          <ActiveDeliveryCard 
-            order={currentOrder} 
-            onClick={() => navigate('/my-orders')}
-          />
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">Current Delivery</h3>
+            <ActiveDeliveryCard 
+              order={currentOrder} 
+              onClick={() => navigate('/my-orders')}
+            />
+          </div>
         )}
 
         {/* Recent Deliveries */}
@@ -145,45 +168,55 @@ export default function DriverDashboard() {
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-lg p-4 border border-border animate-pulse">
-                  <div className="h-4 bg-muted rounded w-1/3 mb-2" />
-                  <div className="h-3 bg-muted rounded w-1/2" />
+                <div key={i} className="bg-card rounded-xl p-4 border border-border animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-muted rounded-full" />
+                    <div className="flex-1">
+                      <div className="h-4 bg-muted rounded w-1/3 mb-2" />
+                      <div className="h-3 bg-muted rounded w-1/2" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           ) : recentOrders.length === 0 ? (
-            <Card className="bg-card border-border">
-              <CardContent className="py-8 text-center">
-                <Package className="w-10 h-10 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">No completed deliveries yet</p>
-              </CardContent>
-            </Card>
+            <div className="bg-muted/50 rounded-xl p-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                <Package className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="font-medium text-foreground">No completed deliveries yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your recent deliveries will appear here
+              </p>
+            </div>
           ) : (
             <div className="space-y-2">
               {recentOrders.map((order) => (
-                <Card 
+                <button 
                   key={order.id} 
-                  className="bg-card border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                  className={cn(
+                    "w-full bg-card rounded-xl p-4 border border-border",
+                    "flex items-center gap-3 text-left",
+                    "transition-all active:scale-[0.98]"
+                  )}
                   onClick={() => navigate('/my-orders')}
                 >
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <Truck className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm truncate">
-                        {order.shipment_id || 'No ID'}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {order.city || 'Unknown'}{order.province && ` - ${order.province}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(order.timeline_status)}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <Truck className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">
+                      {order.shipment_id || 'No ID'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {order.city || 'Unknown'}{order.province && ` • ${order.province}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(order.timeline_status)}
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </button>
               ))}
             </div>
           )}

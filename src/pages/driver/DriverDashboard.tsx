@@ -106,21 +106,23 @@ export default function DriverDashboard() {
     <AppLayout title="Dashboard" showUserMenu>
       <div className="p-4 space-y-6">
         {/* Welcome Section with Avatar */}
-        <div className="flex items-center gap-4 py-2">
-          <Avatar className="h-14 w-14 border-2 border-border">
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold">
-              {getInitials(profile?.full_name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <p className="text-sm text-muted-foreground">Welcome back,</p>
-            <h2 className="text-xl font-bold text-foreground">
-              {profile?.full_name || 'Driver'}
-            </h2>
-            {profile?.driver_id && (
-              <p className="text-xs text-muted-foreground">{profile.driver_id}</p>
-            )}
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 rounded-2xl p-5">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14 border-2 border-primary/30 shadow-sm">
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/20 text-primary text-lg font-semibold">
+                {getInitials(profile?.full_name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Welcome back,</p>
+              <h2 className="text-xl font-bold text-foreground">
+                {profile?.full_name || 'Driver'}
+              </h2>
+              {profile?.driver_id && (
+                <p className="text-xs text-primary/70 font-medium">{profile.driver_id}</p>
+              )}
+            </div>
           </div>
         </div>
 

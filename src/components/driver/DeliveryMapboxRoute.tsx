@@ -13,6 +13,7 @@ interface DeliveryMapboxRouteProps {
   driverLocation: { lat: number; lng: number } | null;
   destinationCoords: { lat: number; lng: number } | null;
   defaultCenter: [number, number];
+  isExpanded?: boolean;
   onMapReady?: () => void;
   onRouteInfo?: (info: RouteInfo) => void;
 }
@@ -21,6 +22,7 @@ export function DeliveryMapboxRoute({
   driverLocation, 
   destinationCoords,
   defaultCenter,
+  isExpanded,
   onMapReady,
   onRouteInfo
 }: DeliveryMapboxRouteProps) {
@@ -30,6 +32,7 @@ export function DeliveryMapboxRoute({
   const destMarker = useRef<mapboxgl.Marker | null>(null);
   const mapboxToken = useRef<string | null>(null);
   const isMapLoaded = useRef(false);
+  const hasInitialRoute = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -218,9 +221,24 @@ export function DeliveryMapboxRoute({
       }
     }
 
-    // Update route
-    updateRoute();
+    // Update route only if not already loaded
+    if (!hasInitialRoute.current) {
+      updateRoute();
+      hasInitialRoute.current = true;
+    }
   }, [driverLocation, destinationCoords, updateRoute]);
+
+  // Handle resize when expanded state changes
+  useEffect(() => {
+    if (!map.current) return;
+    
+    // Small delay to let CSS transition complete
+    const timeoutId = setTimeout(() => {
+      map.current?.resize();
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [isExpanded]);
 
   return (
     <div className="w-full h-full bg-muted relative overflow-hidden">

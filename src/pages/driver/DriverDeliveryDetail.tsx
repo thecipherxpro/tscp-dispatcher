@@ -353,6 +353,7 @@ export default function DriverDeliveryDetail() {
             driverLocation={driverLocation} 
             destinationCoords={destinationCoords} 
             defaultCenter={defaultCenter} 
+            isExpanded={isMapExpanded}
             onMapReady={() => setMapReady(true)}
             onRouteInfo={handleRouteInfo}
           />

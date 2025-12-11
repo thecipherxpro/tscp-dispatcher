@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { User, Mail, Phone, Calendar, LogOut, Shield, Edit2, Save, X, IdCard } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { User, Mail, Phone, Calendar, LogOut, Shield, Edit2, Save, X, IdCard, Camera, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,92 @@ export default function Profile() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
   const [dob, setDob] = useState(profile?.dob || '');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Add cache-busting timestamp
+      const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+
+      toast({
+        title: "Avatar Updated",
+        description: "Your profile photo has been updated.",
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -88,7 +170,18 @@ export default function Profile() {
     <AppLayout title="Profile" showBackButton>
       <div className="p-4 space-y-6">
         <div className="flex flex-col items-center py-6">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
+          <button
+            onClick={handleAvatarClick}
+            disabled={isUploadingAvatar}
+            className="relative w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4 group cursor-pointer overflow-hidden"
+          >
             {profile?.avatar_url ? (
               <img 
                 src={profile.avatar_url} 
@@ -98,7 +191,20 @@ export default function Profile() {
             ) : (
               <User className="w-12 h-12 text-primary" />
             )}
-          </div>
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+              {isUploadingAvatar ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Camera className="w-6 h-6 text-white" />
+              )}
+            </div>
+            {isUploadingAvatar && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              </div>
+            )}
+          </button>
           <h2 className="text-xl font-bold text-foreground">
             {profile?.full_name || 'User'}
           </h2>

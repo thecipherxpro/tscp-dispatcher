@@ -1,47 +1,54 @@
 import { useEffect, useState } from 'react';
-import pharmanetLogo from '@/assets/pharmanet-logo.jpg';
+import pharmanetLogo from '@/assets/pharmanet-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
-  const [isAnimating, setIsAnimating] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsAnimating(false);
-      setTimeout(onComplete, 500);
-    }, 2500);
+      setFadeOut(true);
+      setTimeout(onComplete, 800);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-opacity duration-500 ${
-        isAnimating ? 'opacity-100' : 'opacity-0'
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-background transition-opacity duration-700 ease-in-out ${
+        fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      <div className="flex flex-col items-center space-y-6 animate-fade-in">
-        <div className="relative">
-          <img 
-            src={pharmanetLogo} 
-            alt="PharmaNet Delivery" 
-            className="w-48 h-48 object-contain animate-pulse-slow"
-          />
-        </div>
-
-        <div className="flex space-x-1.5 mt-4">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="w-2.5 h-2.5 rounded-full bg-[#2D9596] animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            />
-          ))}
-        </div>
+      <div 
+        className={`flex flex-col items-center transition-all duration-1000 ease-out ${
+          fadeOut ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+        }`}
+        style={{
+          animation: 'fadeInScale 0.8s ease-out forwards'
+        }}
+      >
+        <img 
+          src={pharmanetLogo} 
+          alt="PharmaNet Delivery Service" 
+          className="w-64 h-64 object-contain"
+        />
       </div>
+      <style>{`
+        @keyframes fadeInScale {
+          0% {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }

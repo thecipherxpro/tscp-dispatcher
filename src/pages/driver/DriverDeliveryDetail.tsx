@@ -43,8 +43,6 @@ const INCOMPLETE_OUTCOMES = [{
   label: 'Other'
 }];
 
-// Cache Google Maps API key for route calculation only
-let googleMapsApiKey: string | null = null;
 export default function DriverDeliveryDetail() {
   const {
     orderId
@@ -76,7 +74,6 @@ export default function DriverDeliveryDetail() {
   } | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
   const driverStartLocationRef = useRef<{
     lat: number;
     lng: number;
@@ -89,22 +86,6 @@ export default function DriverDeliveryDetail() {
   const orderNumber = (location.state as {
     orderNumber?: number;
   })?.orderNumber || 1;
-
-  // Fetch Google Maps API key for route calculation
-  useEffect(() => {
-    const fetchApiKey = async () => {
-      if (!googleMapsApiKey) {
-        const {
-          data,
-          error
-        } = await supabase.functions.invoke('get-google-maps-key');
-        if (!error && data?.apiKey) {
-          googleMapsApiKey = data.apiKey;
-        }
-      }
-    };
-    fetchApiKey();
-  }, []);
   const fetchOrder = useCallback(async () => {
     if (!orderId) return;
     try {
@@ -149,51 +130,10 @@ export default function DriverDeliveryDetail() {
     }
   }, [order]);
 
-  // Fetch route from Google Directions API (for accurate routing)
-  useEffect(() => {
-    if (!driverLocation || !destinationCoords || !googleMapsApiKey) return;
-    const fetchRoute = async () => {
-      try {
-        const origin = `${driverLocation.lat},${driverLocation.lng}`;
-        const destination = `${destinationCoords.lat},${destinationCoords.lng}`;
-        const response = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${googleMapsApiKey}`);
-
-        // Note: Due to CORS, we'll use a simpler approach - just draw a straight line
-        // and use distance matrix for accurate time/distance
-
-        // For now, draw simple route line
-        setRouteCoords([[driverLocation.lat, driverLocation.lng], [destinationCoords.lat, destinationCoords.lng]]);
-
-        // Calculate rough distance and time
-        const R = 6371; // Earth's radius in km
-        const dLat = (destinationCoords.lat - driverLocation.lat) * Math.PI / 180;
-        const dLon = (destinationCoords.lng - driverLocation.lng) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(driverLocation.lat * Math.PI / 180) * Math.cos(destinationCoords.lat * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c;
-
-        // Rough estimate: 30 km/h average city driving
-        const durationMin = Math.round(distance / 30 * 60);
-        const arrivalDate = new Date(Date.now() + durationMin * 60000);
-        setRouteInfo({
-          distance: `${distance.toFixed(1)} km`,
-          duration: `${durationMin} min`,
-          arrivalTime: arrivalDate.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          })
-        });
-        setMapReady(true);
-      } catch (error) {
-        console.error('Error fetching route:', error);
-        // Still show the map with a simple line
-        setRouteCoords([[driverLocation.lat, driverLocation.lng], [destinationCoords.lat, destinationCoords.lng]]);
-        setMapReady(true);
-      }
-    };
-    fetchRoute();
-  }, [driverLocation, destinationCoords]);
+  // Handle route info from Mapbox component
+  const handleRouteInfo = useCallback((info: { distance: string; duration: string; arrivalTime: string }) => {
+    setRouteInfo(info);
+  }, []);
 
   // Geocode address if no coordinates (using Nominatim - free geocoding)
   useEffect(() => {
@@ -409,7 +349,13 @@ export default function DriverDeliveryDetail() {
             </div>}
 
           {/* Mapbox GL Route Map */}
-          <DeliveryMapboxRoute driverLocation={driverLocation} destinationCoords={destinationCoords} defaultCenter={defaultCenter} onMapReady={() => setMapReady(true)} />
+          <DeliveryMapboxRoute 
+            driverLocation={driverLocation} 
+            destinationCoords={destinationCoords} 
+            defaultCenter={defaultCenter} 
+            onMapReady={() => setMapReady(true)}
+            onRouteInfo={handleRouteInfo}
+          />
 
           {/* Order badge overlay */}
           <div className="absolute top-3 left-3 flex items-center gap-2 z-[1000]">

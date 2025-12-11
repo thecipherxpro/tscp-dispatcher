@@ -3,18 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+interface RouteInfo {
+  distance: string;
+  duration: string;
+  arrivalTime: string;
+}
+
 interface DeliveryMapboxRouteProps {
   driverLocation: { lat: number; lng: number } | null;
   destinationCoords: { lat: number; lng: number } | null;
   defaultCenter: [number, number];
   onMapReady?: () => void;
+  onRouteInfo?: (info: RouteInfo) => void;
 }
 
 export function DeliveryMapboxRoute({ 
   driverLocation, 
   destinationCoords,
   defaultCenter,
-  onMapReady
+  onMapReady,
+  onRouteInfo
 }: DeliveryMapboxRouteProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -100,31 +108,58 @@ export function DeliveryMapboxRoute({
 
               if (routeData.routes && routeData.routes[0]) {
                 const route = routeData.routes[0].geometry;
+                const routeDetails = routeData.routes[0];
 
-                // Add route source and layer
-                map.current!.addSource('route', {
-                  type: 'geojson',
-                  data: {
+                // Calculate ETA info from Mapbox response
+                const distanceKm = (routeDetails.distance / 1000).toFixed(1);
+                const durationMin = Math.round(routeDetails.duration / 60);
+                const arrivalDate = new Date(Date.now() + routeDetails.duration * 1000);
+                const arrivalTime = arrivalDate.toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                });
+
+                // Send route info to parent
+                onRouteInfo?.({
+                  distance: `${distanceKm} km`,
+                  duration: `${durationMin} min`,
+                  arrivalTime
+                });
+
+                // Check if source already exists before adding
+                if (map.current!.getSource('route')) {
+                  (map.current!.getSource('route') as mapboxgl.GeoJSONSource).setData({
                     type: 'Feature',
                     properties: {},
                     geometry: route
-                  }
-                });
+                  });
+                } else {
+                  // Add route source and layer
+                  map.current!.addSource('route', {
+                    type: 'geojson',
+                    data: {
+                      type: 'Feature',
+                      properties: {},
+                      geometry: route
+                    }
+                  });
 
-                map.current!.addLayer({
-                  id: 'route',
-                  type: 'line',
-                  source: 'route',
-                  layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                  },
-                  paint: {
-                    'line-color': '#F97316', // Orange
-                    'line-width': 6,
-                    'line-opacity': 0.9
-                  }
-                });
+                  map.current!.addLayer({
+                    id: 'route',
+                    type: 'line',
+                    source: 'route',
+                    layout: {
+                      'line-join': 'round',
+                      'line-cap': 'round'
+                    },
+                    paint: {
+                      'line-color': '#F97316', // Orange
+                      'line-width': 6,
+                      'line-opacity': 0.9
+                    }
+                  });
+                }
 
                 // Fit map bounds to show entire route
                 const coordinates = route.coordinates;
@@ -173,35 +208,42 @@ export function DeliveryMapboxRoute({
     const drawStraightLine = (driver: { lat: number; lng: number }, dest: { lat: number; lng: number }) => {
       if (!map.current) return;
       
-      map.current.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: [
-              [driver.lng, driver.lat],
-              [dest.lng, dest.lat]
-            ]
-          }
+      const lineData = {
+        type: 'Feature' as const,
+        properties: {},
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [driver.lng, driver.lat],
+            [dest.lng, dest.lat]
+          ]
         }
-      });
+      };
 
-      map.current.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': '#F97316',
-          'line-width': 6,
-          'line-opacity': 0.9
-        }
-      });
+      // Check if source already exists
+      if (map.current.getSource('route')) {
+        (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData(lineData);
+      } else {
+        map.current.addSource('route', {
+          type: 'geojson',
+          data: lineData
+        });
+
+        map.current.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#F97316',
+            'line-width': 6,
+            'line-opacity': 0.9
+          }
+        });
+      }
 
       // Fit bounds
       const bounds = new mapboxgl.LngLatBounds()

@@ -99,25 +99,43 @@ export default function DriverDeliveryDetail() {
       setIsLoading(false);
     }
   }, [orderId]);
-  const getDriverLocation = useCallback(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(position => {
+  // Real-time location tracking
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    // Get initial position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
         setDriverLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude
         });
-      }, error => console.error('Geolocation error:', error), {
-        enableHighAccuracy: false,
-        timeout: 5000,
-        maximumAge: 60000
-      });
-    }
+      },
+      (error) => console.error('Initial geolocation error:', error),
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+    );
+
+    // Watch position for real-time updates
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setDriverLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      },
+      (error) => console.error('Watch geolocation error:', error),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
+
   useEffect(() => {
     fetchOrder();
-    getDriverLocation();
     fetchLocation();
-  }, [fetchOrder, getDriverLocation, fetchLocation]);
+  }, [fetchOrder, fetchLocation]);
 
   // Set destination coordinates from order
   useEffect(() => {

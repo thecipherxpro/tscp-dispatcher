@@ -1,26 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import type { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-
-// Custom driver marker (blue dot)
-const driverIcon = L.divIcon({
-  className: 'driver-marker',
-  html: '<div style="width:16px;height:16px;background:#3B82F6;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-});
-
-// Custom destination marker (house icon)
-const destinationIcon = L.divIcon({
-  className: 'destination-marker',
-  html: `<svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="20" cy="20" r="16" fill="#1f2937" stroke="#fff" stroke-width="2"/>
-    <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#fff"/>
-  </svg>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
 
 // Component to fit map bounds
 function MapBoundsUpdater({ 
@@ -33,20 +14,73 @@ function MapBoundsUpdater({
   const map = useMap();
   
   useEffect(() => {
-    if (driverLocation && destinationCoords) {
-      const bounds = L.latLngBounds([
-        [driverLocation.lat, driverLocation.lng],
-        [destinationCoords.lat, destinationCoords.lng]
-      ]);
-      map.fitBounds(bounds, { padding: [50, 50] });
-    } else if (driverLocation) {
-      map.setView([driverLocation.lat, driverLocation.lng], 14);
-    } else if (destinationCoords) {
-      map.setView([destinationCoords.lat, destinationCoords.lng], 14);
-    }
+    // Dynamic import of Leaflet for bounds
+    import('leaflet').then((L) => {
+      if (driverLocation && destinationCoords) {
+        const bounds = L.latLngBounds([
+          [driverLocation.lat, driverLocation.lng],
+          [destinationCoords.lat, destinationCoords.lng]
+        ]);
+        map.fitBounds(bounds, { padding: [50, 50] });
+      } else if (driverLocation) {
+        map.setView([driverLocation.lat, driverLocation.lng], 14);
+      } else if (destinationCoords) {
+        map.setView([destinationCoords.lat, destinationCoords.lng], 14);
+      }
+    });
   }, [map, driverLocation, destinationCoords]);
   
   return null;
+}
+
+// Create icons lazily
+function useLeafletIcons() {
+  return useMemo(() => {
+    // We need to dynamically create these after Leaflet is loaded
+    const createDriverIcon = () => {
+      const L = (window as any).L;
+      if (!L) return undefined;
+      return L.divIcon({
+        className: 'driver-marker',
+        html: '<div style="width:16px;height:16px;background:#3B82F6;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+    };
+
+    const createDestinationIcon = () => {
+      const L = (window as any).L;
+      if (!L) return undefined;
+      return L.divIcon({
+        className: 'destination-marker',
+        html: `<svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="16" fill="#1f2937" stroke="#fff" stroke-width="2"/>
+          <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#fff"/>
+        </svg>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      });
+    };
+
+    return { createDriverIcon, createDestinationIcon };
+  }, []);
+}
+
+// Custom marker component that creates icon on mount
+function DriverMarker({ position }: { position: LatLngExpression }) {
+  const { createDriverIcon } = useLeafletIcons();
+  const icon = createDriverIcon();
+  
+  if (!icon) return null;
+  return <Marker position={position} icon={icon} />;
+}
+
+function DestinationMarker({ position }: { position: LatLngExpression }) {
+  const { createDestinationIcon } = useLeafletIcons();
+  const icon = createDestinationIcon();
+  
+  if (!icon) return null;
+  return <Marker position={position} icon={icon} />;
 }
 
 interface DeliveryLeafletMapProps {
@@ -93,12 +127,12 @@ export function DeliveryLeafletMap({
       
       {/* Driver marker */}
       {driverLocation && (
-        <Marker position={[driverLocation.lat, driverLocation.lng]} icon={driverIcon} />
+        <DriverMarker position={[driverLocation.lat, driverLocation.lng]} />
       )}
       
       {/* Destination marker */}
       {destinationCoords && (
-        <Marker position={[destinationCoords.lat, destinationCoords.lng]} icon={destinationIcon} />
+        <DestinationMarker position={[destinationCoords.lat, destinationCoords.lng]} />
       )}
     </MapContainer>
   );

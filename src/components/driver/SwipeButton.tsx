@@ -5,7 +5,7 @@ interface SwipeButtonProps {
   onSwipeComplete: () => void;
   label: string;
   icon: React.ReactNode;
-  variant?: 'primary' | 'destructive' | 'secondary';
+  variant?: 'primary' | 'destructive' | 'secondary' | 'success';
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -57,12 +57,14 @@ export function SwipeButton({
     primary: 'bg-primary',
     destructive: 'bg-destructive',
     secondary: 'bg-secondary',
+    success: 'bg-green-600',
   };
 
   const thumbStyles = {
     primary: 'bg-primary-foreground text-primary',
     destructive: 'bg-destructive-foreground text-destructive',
     secondary: 'bg-secondary-foreground text-secondary',
+    success: 'bg-white text-green-600',
   };
 
   return (
@@ -79,7 +81,8 @@ export function SwipeButton({
         <span className={cn(
           'text-sm font-medium transition-opacity',
           variant === 'primary' ? 'text-primary-foreground' : 
-          variant === 'destructive' ? 'text-destructive-foreground' : 'text-secondary-foreground',
+          variant === 'destructive' ? 'text-destructive-foreground' :
+          variant === 'success' ? 'text-white' : 'text-secondary-foreground',
           swipeProgress > 0.3 && 'opacity-0'
         )}>
           {label}

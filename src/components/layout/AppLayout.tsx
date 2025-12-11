@@ -1,8 +1,8 @@
-import { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { MobileNav } from './MobileNav';
-import { Button } from '@/components/ui/button';
+import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { MobileNav } from "./MobileNav";
+import { Button } from "@/components/ui/button";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,12 +20,7 @@ export function AppLayout({ children, title, showNav = true, showBackButton = fa
         <header className="sticky top-0 z-30 bg-card border-b border-border safe-area-top">
           <div className="px-4 py-4 flex items-center gap-3">
             {showBackButton && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 -ml-2"
-                onClick={() => navigate(-1)}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
@@ -33,9 +28,7 @@ export function AppLayout({ children, title, showNav = true, showBackButton = fa
           </div>
         </header>
       )}
-      <main className={`${showNav ? 'pb-20' : ''} ${title ? '' : 'pt-safe'}`}>
-        {children}
-      </main>
+      <main className={`${showNav ? "pb-22" : ""} ${title ? "" : "pt-safe"}`}>{children}</main>
       {showNav && <MobileNav />}
     </div>
   );

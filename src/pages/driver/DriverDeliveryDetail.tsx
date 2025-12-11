@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Navigation, Package, CheckCircle, XCircle, MapPin, Clock, ChevronUp, ChevronDown, Phone } from 'lucide-react';
-import { DeliveryLeafletMap } from '@/components/driver/DeliveryLeafletMap';
+import { DeliveryMapboxRoute } from '@/components/driver/DeliveryMapboxRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -371,12 +371,12 @@ export default function DriverDeliveryDetail() {
             </div>
           )}
 
-          {/* Leaflet Map */}
-          <DeliveryLeafletMap
+          {/* Mapbox GL Route Map */}
+          <DeliveryMapboxRoute
             driverLocation={driverLocation}
             destinationCoords={destinationCoords}
-            routeCoords={routeCoords}
             defaultCenter={defaultCenter}
+            onMapReady={() => setMapReady(true)}
           />
 
           {/* Order badge overlay */}

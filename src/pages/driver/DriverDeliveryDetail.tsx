@@ -330,7 +330,7 @@ export default function DriverDeliveryDetail() {
   return <AppLayout title="" showBackButton>
       <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
         {/* Collapsible Map Section */}
-        <div className={cn('relative bg-muted transition-all duration-300 ease-out overflow-hidden', isMapExpanded ? 'h-[50vh]' : 'h-32')} onClick={() => setIsMapExpanded(!isMapExpanded)}>
+        <div className={cn('relative bg-muted transition-all duration-300 ease-out overflow-hidden', isMapExpanded ? 'h-[50vh]' : 'h-32')}>
           {/* Skeleton loader while map loads */}
           {!mapReady && <div className="absolute inset-0 bg-muted z-20">
               <div className="w-full h-full relative overflow-hidden">
@@ -365,36 +365,25 @@ export default function DriverDeliveryDetail() {
             <Badge variant={status.variant} className="shadow-lg">{status.label}</Badge>
           </div>
 
-          {/* Expand/collapse indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 text-xs text-muted-foreground z-[1000]">
+          {/* Expand/collapse button */}
+          <button 
+            onClick={() => setIsMapExpanded(!isMapExpanded)}
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 text-xs text-muted-foreground z-[1000]"
+          >
             {isMapExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {isMapExpanded ? 'Tap to collapse' : 'Tap to expand'}
-          </div>
+          </button>
+        </div>
 
-          {/* ETA Modal - Collapsed Version (compact overlay) */}
-          {!isMapExpanded && routeInfo && (
-            <div className="absolute bottom-2 right-3 bg-background/95 backdrop-blur-md rounded-xl px-4 py-2.5 shadow-xl border border-border/50 z-[1000]">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-bold text-foreground">{routeInfo.arrivalTime}</span>
-                </div>
-                <div className="h-4 w-px bg-border" />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{routeInfo.distance}</span>
-                  <span>•</span>
-                  <span>{routeInfo.duration}</span>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-4">
 
-          {/* ETA Modal - Expanded Version (full card at bottom of map) */}
-          {isMapExpanded && routeInfo && (
-            <div className="absolute bottom-12 left-3 right-3 bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 z-[1000] overflow-hidden">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
+            {/* ETA Card - Always visible below map */}
+            {routeInfo && (
+              <div className="bg-card border rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <Clock className="w-5 h-5 text-primary" />
                     </div>
@@ -403,26 +392,14 @@ export default function DriverDeliveryDetail() {
                       <p className="text-xl font-bold text-foreground">{routeInfo.arrivalTime}</p>
                     </div>
                   </div>
-                  <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted/50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Distance</p>
-                    <p className="text-lg font-semibold text-foreground">{routeInfo.distance}</p>
-                  </div>
-                  <div className="bg-muted/50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Duration</p>
-                    <p className="text-lg font-semibold text-foreground">{routeInfo.duration}</p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>{routeInfo.distance}</span>
+                    <span>•</span>
+                    <span>{routeInfo.duration}</span>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 space-y-4">
+            )}
 
             {/* Progress Bar */}
             <div className="bg-card border rounded-xl p-4">

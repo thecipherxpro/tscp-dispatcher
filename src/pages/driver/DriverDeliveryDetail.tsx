@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Navigation, Package, CheckCircle, XCircle, MapPin, Loader2, Clock, ChevronUp, ChevronDown, Phone } from 'lucide-react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { Navigation, Package, CheckCircle, XCircle, MapPin, Clock, ChevronUp, ChevronDown, Phone } from 'lucide-react';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { SwipeButton } from '@/components/driver/SwipeButton';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,8 +31,9 @@ const INCOMPLETE_OUTCOMES = [
   { value: 'OTHER', label: 'Other' },
 ];
 
-// Cache the Mapbox token
-let mapboxToken: string | null = null;
+// Cache the Google Maps API key
+let googleMapsApiKey: string | null = null;
+let googleMapsInitialized = false;
 
 export default function DriverDeliveryDetail() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -49,37 +50,48 @@ export default function DriverDeliveryDetail() {
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [tokenReady, setTokenReady] = useState(!!mapboxToken);
+  const [apiReady, setApiReady] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const driverMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const destMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const driverMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const destMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const driverStartLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const { fetchLocation, locationData } = useDriverLocation();
   const haptic = useHapticFeedback();
 
   const orderNumber = (location.state as { orderNumber?: number })?.orderNumber || 1;
 
-  // Fetch Mapbox token on mount
+  // Fetch Google Maps API key on mount
   useEffect(() => {
-    if (mapboxToken) {
-      setTokenReady(true);
-      return;
-    }
-    
-    const fetchToken = async () => {
+    const initGoogleMaps = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
-        if (!error && data?.token) {
-          mapboxToken = data.token;
-          mapboxgl.accessToken = data.token;
-          setTokenReady(true);
+        if (!googleMapsApiKey) {
+          const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+          if (error || !data?.apiKey) {
+            console.error('Error fetching Google Maps API key:', error);
+            return;
+          }
+          googleMapsApiKey = data.apiKey;
         }
+
+        if (!googleMapsInitialized) {
+          setOptions({
+            key: googleMapsApiKey,
+            v: 'weekly',
+            libraries: ['places', 'geometry', 'marker'],
+          });
+          googleMapsInitialized = true;
+        }
+
+        await importLibrary('maps');
+        await importLibrary('marker');
+        setApiReady(true);
       } catch (error) {
-        console.error('Error fetching Mapbox token:', error);
+        console.error('Error initializing Google Maps:', error);
       }
     };
-    fetchToken();
+    initGoogleMaps();
   }, []);
 
   const fetchOrder = useCallback(async () => {
@@ -127,78 +139,74 @@ export default function DriverDeliveryDetail() {
     }
   }, [order]);
 
-  // Initialize Mapbox immediately when token is ready
+  // Initialize Google Maps
   useEffect(() => {
-    if (!tokenReady || !mapContainerRef.current) return;
+    if (!apiReady || !mapContainerRef.current) return;
 
-    // Clean up existing map if any
+    // Clean up existing map
     if (mapRef.current) {
-      mapRef.current.remove();
+      // Google Maps doesn't have a remove method, just clear refs
       mapRef.current = null;
+      driverMarkerRef.current = null;
+      destMarkerRef.current = null;
+      directionsRendererRef.current = null;
       setMapLoaded(false);
     }
 
-    mapboxgl.accessToken = mapboxToken!;
-    
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [-79.3832, 43.6532], // Toronto default
+    const map = new google.maps.Map(mapContainerRef.current, {
+      center: { lat: 43.6532, lng: -79.3832 }, // Toronto default
       zoom: 12,
-      attributionControl: false,
+      disableDefaultUI: true,
+      zoomControl: false,
+      mapId: 'driver_delivery_map',
+      styles: [
+        { elementType: 'geometry', stylers: [{ saturation: -50 }] },
+        { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+      ],
     });
 
-    map.on('load', () => {
+    map.addListener('tilesloaded', () => {
       setMapLoaded(true);
-      console.log('Mapbox map loaded successfully');
     });
 
-    map.on('error', (e) => {
-      console.error('Mapbox error:', e);
+    // Initialize directions renderer
+    const directionsRenderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: '#F97316',
+        strokeWeight: 5,
+        strokeOpacity: 1,
+      },
     });
+    directionsRenderer.setMap(map);
+    directionsRendererRef.current = directionsRenderer;
 
     mapRef.current = map;
+  }, [apiReady]);
 
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [tokenReady]);
-
-  // Handle app visibility changes - reinitialize map when returning to foreground
+  // Handle app visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && tokenReady && mapContainerRef.current) {
-        // Check if map is still valid
-        if (mapRef.current) {
-          try {
-            mapRef.current.resize();
-            // Re-add route if we have the data
-            if (driverLocation && destinationCoords && mapRef.current.isStyleLoaded()) {
-              const bounds = new mapboxgl.LngLatBounds()
-                .extend([driverLocation.lng, driverLocation.lat])
-                .extend([destinationCoords.lng, destinationCoords.lat]);
-              mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 15 });
-            }
-          } catch (e) {
-            console.log('Map needs reinitialization');
-            // Map is invalid, force reinitialization by clearing and resetting token
-            mapRef.current = null;
-            setMapLoaded(false);
-            setTokenReady(false);
-            setTimeout(() => setTokenReady(!!mapboxToken), 100);
-          }
+      if (document.visibilityState === 'visible' && mapRef.current) {
+        // Trigger resize to fix any rendering issues
+        google.maps.event.trigger(mapRef.current, 'resize');
+        
+        // Re-fit bounds if we have both locations
+        if (driverLocation && destinationCoords) {
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(driverLocation);
+          bounds.extend(destinationCoords);
+          mapRef.current.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [tokenReady, driverLocation, destinationCoords]);
+  }, [driverLocation, destinationCoords]);
 
-  // Update map with route when driver location and destination are available
+  // Update map with markers and route
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !driverLocation || !destinationCoords) return;
 
@@ -206,21 +214,22 @@ export default function DriverDeliveryDetail() {
 
     // Remove existing markers
     if (driverMarkerRef.current) {
-      driverMarkerRef.current.remove();
+      driverMarkerRef.current.map = null;
     }
     if (destMarkerRef.current) {
-      destMarkerRef.current.remove();
+      destMarkerRef.current.map = null;
     }
 
-    // Add driver marker (blue dot)
+    // Create driver marker (blue dot)
     const driverEl = document.createElement('div');
-    driverEl.className = 'driver-marker';
     driverEl.style.cssText = 'width:16px;height:16px;background:#3B82F6;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);';
-    driverMarkerRef.current = new mapboxgl.Marker({ element: driverEl })
-      .setLngLat([driverLocation.lng, driverLocation.lat])
-      .addTo(map);
+    driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
+      map,
+      position: driverLocation,
+      content: driverEl,
+    });
 
-    // Add destination marker (house icon)
+    // Create destination marker (house icon)
     const destEl = document.createElement('div');
     destEl.innerHTML = `
       <svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
@@ -228,99 +237,63 @@ export default function DriverDeliveryDetail() {
         <path d="M20 12L12 18V28H17V23H23V28H28V18L20 12Z" fill="#fff"/>
       </svg>
     `;
-    destMarkerRef.current = new mapboxgl.Marker({ element: destEl })
-      .setLngLat([destinationCoords.lng, destinationCoords.lat])
-      .addTo(map);
+    destMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
+      map,
+      position: destinationCoords,
+      content: destEl,
+    });
 
     // Fit bounds
-    const bounds = new mapboxgl.LngLatBounds()
-      .extend([driverLocation.lng, driverLocation.lat])
-      .extend([destinationCoords.lng, destinationCoords.lat]);
-    map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(driverLocation);
+    bounds.extend(destinationCoords);
+    map.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
 
-    // Fetch route from Mapbox Directions API
-    const fetchRoute = async () => {
-      try {
-        const response = await fetch(
-          `https://api.mapbox.com/directions/v5/mapbox/driving/${driverLocation.lng},${driverLocation.lat};${destinationCoords.lng},${destinationCoords.lat}?geometries=geojson&overview=full&access_token=${mapboxToken}`
-        );
-        const data = await response.json();
-        
-        if (data.routes && data.routes[0]) {
-          const route = data.routes[0];
-          const distanceKm = (route.distance / 1000).toFixed(1);
-          const durationMin = Math.round(route.duration / 60);
-          const arrivalDate = new Date(Date.now() + route.duration * 1000);
+    // Fetch route using Directions API
+    const directionsService = new google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: driverLocation,
+        destination: destinationCoords,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === 'OK' && result && directionsRendererRef.current) {
+          directionsRendererRef.current.setDirections(result);
           
-          setRouteInfo({
-            distance: `${distanceKm} km`,
-            duration: `${durationMin} min`,
-            arrivalTime: arrivalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-          });
-
-          // Add or update route line
-          if (map.getSource('route')) {
-            (map.getSource('route') as mapboxgl.GeoJSONSource).setData({
-              type: 'Feature',
-              properties: {},
-              geometry: route.geometry,
-            });
-          } else {
-            map.addSource('route', {
-              type: 'geojson',
-              data: {
-                type: 'Feature',
-                properties: {},
-                geometry: route.geometry,
-              },
-            });
-            map.addLayer({
-              id: 'route',
-              type: 'line',
-              source: 'route',
-              layout: {
-                'line-join': 'round',
-                'line-cap': 'round',
-              },
-              paint: {
-                'line-color': '#F97316',
-                'line-width': 5,
-              },
+          const leg = result.routes[0]?.legs[0];
+          if (leg) {
+            const distanceKm = ((leg.distance?.value || 0) / 1000).toFixed(1);
+            const durationMin = Math.round((leg.duration?.value || 0) / 60);
+            const arrivalDate = new Date(Date.now() + (leg.duration?.value || 0) * 1000);
+            
+            setRouteInfo({
+              distance: `${distanceKm} km`,
+              duration: `${durationMin} min`,
+              arrivalTime: arrivalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
             });
           }
         }
-      } catch (error) {
-        console.error('Error fetching route:', error);
       }
-    };
-
-    fetchRoute();
+    );
   }, [driverLocation, destinationCoords, mapLoaded]);
 
-  // Geocode address if no coordinates using Mapbox Geocoding
+  // Geocode address if no coordinates
   useEffect(() => {
-    if (!order || !tokenReady || destinationCoords) return;
+    if (!order || !apiReady || destinationCoords) return;
     if (order.latitude && order.longitude) return;
     if (!order.address_1) return;
 
-    const geocodeAddress = async () => {
-      try {
-        const address = encodeURIComponent(`${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`);
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${address}.json?access_token=${mapboxToken}&limit=1`
-        );
-        const data = await response.json();
-        
-        if (data.features && data.features[0]) {
-          const [lng, lat] = data.features[0].center;
-          setDestinationCoords({ lat, lng });
-        }
-      } catch (error) {
-        console.error('Geocoding error:', error);
+    const geocoder = new google.maps.Geocoder();
+    const address = `${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`;
+    
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        setDestinationCoords({ lat: location.lat(), lng: location.lng() });
       }
-    };
-    geocodeAddress();
-  }, [order, tokenReady, destinationCoords]);
+    });
+  }, [order, apiReady, destinationCoords]);
 
   const handleStartNavigation = async () => {
     if (!order || !driverLocation) return;
@@ -416,8 +389,13 @@ export default function DriverDeliveryDetail() {
   if (isLoading) {
     return (
       <AppLayout title="Delivery" showBackButton>
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
+          <Skeleton className="h-32 w-full" />
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+          </div>
         </div>
       </AppLayout>
     );
@@ -449,14 +427,27 @@ export default function DriverDeliveryDetail() {
         >
           <div ref={mapContainerRef} className="w-full h-full" />
           
-          {(!mapLoaded) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          {/* Skeleton loader while map loads */}
+          {!mapLoaded && (
+            <div className="absolute inset-0 bg-muted">
+              <div className="w-full h-full relative overflow-hidden">
+                <Skeleton className="absolute inset-0 rounded-none" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 rounded-full border-2 border-muted-foreground/20 border-t-primary animate-spin" />
+                    <span className="text-xs text-muted-foreground">Loading map...</span>
+                  </div>
+                </div>
+                {/* Fake road lines */}
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-muted-foreground/10 transform -translate-y-1/2" />
+                <div className="absolute top-1/3 left-1/4 right-1/4 h-0.5 bg-muted-foreground/10" />
+                <div className="absolute bottom-1/3 left-1/3 right-1/3 h-0.5 bg-muted-foreground/10" />
+              </div>
             </div>
           )}
 
           {/* Order badge overlay */}
-          <div className="absolute top-3 left-3 flex items-center gap-2">
+          <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
             <div className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-bold shadow-lg">
               {orderNumber}
             </div>
@@ -464,14 +455,14 @@ export default function DriverDeliveryDetail() {
           </div>
 
           {/* Expand/collapse indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 text-xs text-muted-foreground z-10">
             {isMapExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {isMapExpanded ? 'Tap to collapse' : 'Tap to expand'}
           </div>
 
           {/* Route info overlay (when collapsed) */}
           {!isMapExpanded && routeInfo && (
-            <div className="absolute bottom-2 right-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
+            <div className="absolute bottom-2 right-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg z-10">
               <div className="flex items-center gap-3 text-xs">
                 <span className="font-semibold text-foreground">{routeInfo.distance}</span>
                 <span className="text-muted-foreground">•</span>
@@ -481,7 +472,7 @@ export default function DriverDeliveryDetail() {
           )}
         </div>
 
-        {/* Main Content - Single Unified Card */}
+        {/* Main Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
             {/* Route Stats (when map expanded) */}
@@ -505,12 +496,12 @@ export default function DriverDeliveryDetail() {
             {/* Progress Bar */}
             <div className="bg-card border rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">Progress</span>
-                <span className="text-xs font-medium text-foreground">{getProgress()}%</span>
+                <span className="text-sm font-medium text-foreground">Delivery Progress</span>
+                <span className="text-xs text-muted-foreground">{getProgress()}%</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  className="h-full bg-primary transition-all duration-500 rounded-full"
                   style={{ width: `${getProgress()}%` }}
                 />
               </div>
@@ -518,56 +509,70 @@ export default function DriverDeliveryDetail() {
 
             {/* Unified Info Card */}
             <div className="bg-card border rounded-xl overflow-hidden">
-              {/* Header */}
-              <div className="p-4 border-b bg-muted/30">
-                <div className="flex items-center justify-between">
-                  <div>
+              {/* Shipment Info */}
+              <div className="p-4 border-b">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
                     <p className="text-xs text-muted-foreground">Shipment</p>
-                    <p className="font-mono font-semibold text-foreground">{order.shipment_id || '—'}</p>
+                    <p className="font-semibold text-foreground">{order.shipment_id || 'N/A'}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Tracking</p>
-                    <p className="font-mono text-sm text-foreground">{order.tracking_id || '—'}</p>
+                    <p className="text-sm font-medium text-foreground">{order.tracking_id || 'N/A'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Customer & Address */}
-              <div className="p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Package className="w-4 h-4 text-primary" />
+              {/* Customer Info */}
+              <div className="p-4 border-b">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <span className="text-sm font-bold text-muted-foreground">
+                      {order.name?.charAt(0)?.toUpperCase() || '?'}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1">
                     <p className="font-medium text-foreground">{order.name || 'Customer'}</p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {order.address_1 || 'No address'}
-                      {order.address_2 && `, ${order.address_2}`}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{order.phone_number || 'No phone'}</p>
+                  </div>
+                  {order.phone_number && (
+                    <a href={`tel:${order.phone_number}`} onClick={(e) => e.stopPropagation()}>
+                      <Button size="icon" variant="outline" className="rounded-full">
+                        <Phone className="w-4 h-4" />
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Delivery Address</p>
+                    <p className="font-medium text-foreground">{order.address_1}</p>
+                    {order.address_2 && <p className="text-sm text-muted-foreground">{order.address_2}</p>}
                     <p className="text-sm text-muted-foreground">
                       {[order.city, order.province, order.postal].filter(Boolean).join(', ')}
                     </p>
                   </div>
                 </div>
-
-                {order.phone_number && (
-                  <a 
-                    href={`tel:${order.phone_number}`}
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Phone className="w-4 h-4" />
-                    {order.phone_number}
-                  </a>
-                )}
               </div>
             </div>
 
-            {/* Completed Status */}
+            {/* Completed Status Card */}
             {isCompleted && (
               <div className={cn(
-                "rounded-xl p-4 flex items-center gap-3",
-                order.timeline_status === 'COMPLETED_DELIVERED' ? "bg-green-500/10 border border-green-500/20" : "bg-destructive/10 border border-destructive/20"
+                'rounded-xl p-4 flex items-center gap-3',
+                order.timeline_status === 'COMPLETED_DELIVERED' 
+                  ? 'bg-green-500/10 border border-green-500/20' 
+                  : 'bg-destructive/10 border border-destructive/20'
               )}>
                 {order.timeline_status === 'COMPLETED_DELIVERED' ? (
                   <CheckCircle className="w-6 h-6 text-green-500" />
@@ -576,30 +581,28 @@ export default function DriverDeliveryDetail() {
                 )}
                 <div>
                   <p className="font-medium text-foreground">
-                    {order.timeline_status === 'COMPLETED_DELIVERED' ? 'Successfully Delivered' : 'Delivery Incomplete'}
+                    {order.timeline_status === 'COMPLETED_DELIVERED' ? 'Delivery Complete' : 'Delivery Incomplete'}
                   </p>
-                  {order.delivery_status && (
-                    <p className="text-sm text-muted-foreground">{order.delivery_status.replace(/_/g, ' ')}</p>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {order.delivery_status?.replace(/_/g, ' ') || 'Status recorded'}
+                  </p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Bottom Action Area - Swipe Buttons */}
+        {/* Bottom Action Bar */}
         {!isCompleted && (
-          <div className="sticky bottom-0 p-4 bg-background border-t space-y-3">
+          <div className="p-4 border-t bg-background safe-area-bottom">
             {canStartNavigation && (
               <SwipeButton
                 onSwipeComplete={handleStartNavigation}
                 disabled={isUpdating || !driverLocation}
-                variant="primary"
                 label="Swipe to Start Navigation"
                 icon={<Navigation className="w-5 h-5" />}
               />
             )}
-            
             {canDropOff && (
               <SwipeButton
                 onSwipeComplete={handleDropOff}
@@ -611,101 +614,59 @@ export default function DriverDeliveryDetail() {
             )}
           </div>
         )}
-
-        {/* Back button for completed orders */}
-        {isCompleted && (
-          <div className="sticky bottom-0 p-4 bg-background border-t">
-            <Button 
-              onClick={() => navigate(-1)} 
-              className="w-full"
-              variant="outline"
-            >
-              Back to Deliveries
-            </Button>
-          </div>
-        )}
       </div>
 
-      {/* Outcome Selection Sheet */}
+      {/* Delivery Outcome Sheet */}
       <Sheet open={showOutcomeSheet} onOpenChange={setShowOutcomeSheet}>
-        <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-2xl">
-          <SheetHeader>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader className="pb-4">
             <SheetTitle className="text-center">
-              {outcomeType === null && 'Mark Delivery Outcome'}
-              {outcomeType === 'delivered' && 'Delivery Successful'}
-              {outcomeType === 'incomplete' && 'Delivery Incomplete'}
+              {outcomeType === null ? 'Select Delivery Outcome' : outcomeType === 'delivered' ? 'Delivery Successful' : 'Delivery Issue'}
             </SheetTitle>
           </SheetHeader>
-          
-          <div className="py-4 space-y-3">
-            {outcomeType === null && (
-              <>
-                <Button 
-                  onClick={() => setOutcomeType('delivered')}
-                  className="w-full h-14 text-lg bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Delivered
-                </Button>
-                <Button 
-                  onClick={() => setOutcomeType('incomplete')}
-                  variant="destructive"
-                  className="w-full h-14 text-lg"
-                >
-                  <XCircle className="w-5 h-5 mr-2" />
-                  Delivery Delayed
-                </Button>
-              </>
-            )}
 
-            {outcomeType === 'delivered' && (
-              <div className="space-y-2">
-                {DELIVERED_OUTCOMES.map((outcome) => (
-                  <Button
-                    key={outcome.value}
-                    onClick={() => handleOutcomeSelect(outcome.value, true)}
-                    disabled={isUpdating}
-                    variant="outline"
-                    className="w-full h-12 justify-start"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-3 text-green-500" />
-                    {outcome.label}
-                  </Button>
-                ))}
-                <Button 
-                  onClick={() => setOutcomeType(null)}
-                  variant="ghost"
-                  className="w-full mt-2"
+          {outcomeType === null ? (
+            <div className="grid grid-cols-2 gap-3 pb-6">
+              <Button
+                size="lg"
+                className="h-24 flex-col gap-2 bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => setOutcomeType('delivered')}
+              >
+                <CheckCircle className="w-8 h-8" />
+                <span>Delivered</span>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-24 flex-col gap-2 border-destructive text-destructive hover:bg-destructive/10"
+                onClick={() => setOutcomeType('incomplete')}
+              >
+                <XCircle className="w-8 h-8" />
+                <span>Issue</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2 pb-6">
+              {(outcomeType === 'delivered' ? DELIVERED_OUTCOMES : INCOMPLETE_OUTCOMES).map((outcome) => (
+                <Button
+                  key={outcome.value}
+                  variant="outline"
+                  className="w-full justify-start h-14 text-left"
+                  onClick={() => handleOutcomeSelect(outcome.value, outcomeType === 'delivered')}
+                  disabled={isUpdating}
                 >
-                  Back
+                  {outcome.label}
                 </Button>
-              </div>
-            )}
-
-            {outcomeType === 'incomplete' && (
-              <div className="space-y-2">
-                {INCOMPLETE_OUTCOMES.map((outcome) => (
-                  <Button
-                    key={outcome.value}
-                    onClick={() => handleOutcomeSelect(outcome.value, false)}
-                    disabled={isUpdating}
-                    variant="outline"
-                    className="w-full h-12 justify-start"
-                  >
-                    <XCircle className="w-4 h-4 mr-3 text-destructive" />
-                    {outcome.label}
-                  </Button>
-                ))}
-                <Button 
-                  onClick={() => setOutcomeType(null)}
-                  variant="ghost"
-                  className="w-full mt-2"
-                >
-                  Back
-                </Button>
-              </div>
-            )}
-          </div>
+              ))}
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => setOutcomeType(null)}
+              >
+                Back
+              </Button>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </AppLayout>

@@ -425,34 +425,58 @@ export default function DriverDeliveryDetail() {
             {isMapExpanded ? 'Tap to collapse' : 'Tap to expand'}
           </div>
 
-          {/* Route info overlay (when collapsed) */}
-          {!isMapExpanded && routeInfo && <div className="absolute bottom-2 right-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-semibold text-foreground">{routeInfo.distance}</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="font-semibold text-foreground">{routeInfo.duration}</span>
+          {/* ETA Modal - Collapsed Version (compact overlay) */}
+          {!isMapExpanded && routeInfo && (
+            <div className="absolute bottom-2 right-3 bg-background/95 backdrop-blur-md rounded-xl px-4 py-2.5 shadow-xl border border-border/50 z-[1000]">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-sm font-bold text-foreground">{routeInfo.arrivalTime}</span>
+                </div>
+                <div className="h-4 w-px bg-border" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{routeInfo.distance}</span>
+                  <span>•</span>
+                  <span>{routeInfo.duration}</span>
+                </div>
               </div>
-            </div>}
+            </div>
+          )}
+
+          {/* ETA Modal - Expanded Version (full card at bottom of map) */}
+          {isMapExpanded && routeInfo && (
+            <div className="absolute bottom-12 left-3 right-3 bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 z-[1000] overflow-hidden">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Estimated Arrival</p>
+                      <p className="text-xl font-bold text-foreground">{routeInfo.arrivalTime}</p>
+                    </div>
+                  </div>
+                  <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-muted/50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Distance</p>
+                    <p className="text-lg font-semibold text-foreground">{routeInfo.distance}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                    <p className="text-lg font-semibold text-foreground">{routeInfo.duration}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
-            {/* Route Stats (when map expanded) */}
-            {isMapExpanded && routeInfo && <div className="grid grid-cols-3 gap-2">
-                <div className="bg-card border rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Distance</p>
-                  <p className="font-semibold text-foreground">{routeInfo.distance}</p>
-                </div>
-                <div className="bg-card border rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Duration</p>
-                  <p className="font-semibold text-foreground">{routeInfo.duration}</p>
-                </div>
-                <div className="bg-card border rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground">ETA</p>
-                  <p className="font-semibold text-foreground">{routeInfo.arrivalTime}</p>
-                </div>
-              </div>}
 
             {/* Progress Bar */}
             <div className="bg-card border rounded-xl p-4">

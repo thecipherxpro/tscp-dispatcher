@@ -135,8 +135,8 @@ export default function DriverDeliveryDetail() {
         await importLibrary('maps');
         await importLibrary('routes');
         
-        // Default center (Toronto) until we get driver location
-        const defaultCenter = driverLocation || { lat: 43.6532, lng: -79.3832 };
+        // Default center (Toronto) - don't wait for driver location
+        const defaultCenter = { lat: 43.6532, lng: -79.3832 };
         
         const map = new google.maps.Map(mapContainerRef.current!, {
           center: defaultCenter,
@@ -178,7 +178,7 @@ export default function DriverDeliveryDetail() {
     };
 
     initMap();
-  }, [apiKeyReady, driverLocation]);
+  }, [apiKeyReady]);
 
   // Update map with route when driver location and destination are available
   useEffect(() => {

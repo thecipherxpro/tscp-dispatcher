@@ -23,19 +23,49 @@ Deno.serve(async (req) => {
   let body: RouteSnapshotRequest | null = null;
 
   try {
+    // Get the authorization header - required for JWT verification
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
     if (!GOOGLE_MAPS_API_KEY) {
       console.error('GOOGLE_MAPS_API_KEY not configured');
       throw new Error('Google Maps API key not configured');
     }
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
       console.error('Supabase credentials not configured');
       throw new Error('Supabase credentials not configured');
     }
+
+    // Create a client with the user's JWT to verify their identity
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
+
+    // Get the authenticated user
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      console.error('Failed to get user:', userError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
 
     // Parse body with error handling
     const rawBody = await req.text();
@@ -52,12 +82,38 @@ Deno.serve(async (req) => {
       throw new Error(`Missing required fields. Got: orderId=${orderId}, driverLat=${driverLat}, driverLng=${driverLng}, destLat=${destinationLat}, destLng=${destinationLng}`);
     }
 
+    // Create service role client for privileged operations
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Verify the user is the assigned driver for this order
+    const { data: order, error: orderCheckError } = await supabaseClient
+      .from('orders')
+      .select('assigned_driver_id')
+      .eq('id', orderId)
+      .single();
+
+    if (orderCheckError || !order) {
+      console.error('Order not found:', orderCheckError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Order not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (order.assigned_driver_id !== user.id) {
+      console.error('User is not the assigned driver for this order. User:', user.id, 'Assigned:', order.assigned_driver_id);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - not the assigned driver' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('User authorized as assigned driver, proceeding with snapshot generation...');
     console.log(`Generating route snapshot for order: ${orderId}`);
     console.log(`Driver start location: ${driverLat}, ${driverLng}`);
     console.log(`Destination: ${destinationLat}, ${destinationLng}`);
 
     // Set status to PENDING while generating
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     await supabaseClient
       .from('orders')
       .update({ delivery_route_snapshot_status: 'PENDING' })

@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { Truck, Mail, Lock, User, Shield, Package } from 'lucide-react';
+import { Truck, Mail, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { AppRole } from '@/types/auth';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -16,7 +15,6 @@ const authSchema = z.object({
 
 const signUpSchema = authSchema.extend({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  role: z.enum(['pharmacy_admin', 'driver']),
 });
 
 export default function Auth() {
@@ -29,7 +27,6 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<AppRole>('driver');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +34,7 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        const validation = signUpSchema.safeParse({ email, password, fullName, role: selectedRole });
+        const validation = signUpSchema.safeParse({ email, password, fullName });
         if (!validation.success) {
           toast({
             title: "Validation Error",
@@ -48,7 +45,7 @@ export default function Auth() {
           return;
         }
 
-        const { error } = await signUp(email, password, fullName, selectedRole);
+        const { error } = await signUp(email, password, fullName);
         if (error) {
           toast({
             title: "Sign Up Failed",
@@ -157,53 +154,8 @@ export default function Auth() {
                 className="pl-10"
                 required
               />
-            </div>
           </div>
-
-          {isSignUp && (
-            <div className="space-y-3">
-              <Label>Select Your Role</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('pharmacy_admin')}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    selectedRole === 'pharmacy_admin'
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <Shield className={`w-8 h-8 mx-auto mb-2 ${
-                    selectedRole === 'pharmacy_admin' ? 'text-primary' : 'text-muted-foreground'
-                  }`} />
-                  <p className={`text-sm font-medium ${
-                    selectedRole === 'pharmacy_admin' ? 'text-primary' : 'text-foreground'
-                  }`}>
-                    Pharmacy Admin
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('driver')}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    selectedRole === 'driver'
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <Package className={`w-8 h-8 mx-auto mb-2 ${
-                    selectedRole === 'driver' ? 'text-primary' : 'text-muted-foreground'
-                  }`} />
-                  <p className={`text-sm font-medium ${
-                    selectedRole === 'driver' ? 'text-primary' : 'text-foreground'
-                  }`}>
-                    Driver
-                  </p>
-                </button>
-              </div>
-            </div>
-          )}
+        </div>
 
           <Button
             type="submit"

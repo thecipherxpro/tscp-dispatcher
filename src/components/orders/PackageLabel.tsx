@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { FileDown, Printer } from 'lucide-react';
-import JsBarcode from 'jsbarcode';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { Button } from '@/components/ui/button';
-import { Order } from '@/types/auth';
-import { useToast } from '@/hooks/use-toast';
+import { useEffect, useRef, useState } from "react";
+import { FileDown, Printer } from "lucide-react";
+import JsBarcode from "jsbarcode";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { Button } from "@/components/ui/button";
+import type { Order } from "@/types/auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface PackageLabelProps {
   order: Order;
@@ -21,62 +21,62 @@ export function PackageLabel({ order }: PackageLabelProps) {
     if (barcodeRef.current && order.tracking_id) {
       try {
         JsBarcode(barcodeRef.current, order.tracking_id, {
-          format: 'CODE128',
+          format: "CODE128",
           width: 2,
           height: 60,
           displayValue: true,
           fontSize: 14,
           margin: 10,
-          background: '#ffffff',
-          lineColor: '#000000',
+          background: "#ffffff",
+          lineColor: "#000000",
         });
       } catch (error) {
-        console.error('Barcode generation error:', error);
+        console.error("Barcode generation error:", error);
       }
     }
   }, [order.tracking_id]);
 
   const formatDate = (date: string | null) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-CA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("en-CA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const generatePDF = async () => {
     if (!labelRef.current) return;
-    
+
     setIsGenerating(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const canvas = await html2canvas(labelRef.current, {
         scale: 3,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         useCORS: true,
-      });
-      
-      // Create PDF with 4x6 inch label size (standard shipping label)
+      } as any);
+
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'in',
-        format: [4, 6]
+        orientation: "portrait",
+        unit: "in",
+        format: [4, 6],
       });
-      
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, 4, 6);
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, 4, 6);
       pdf.save(`label-${order.shipment_id || order.id}.pdf`);
-      
+
       toast({
         title: "Label Downloaded",
-        description: "Package label PDF has been downloaded"
+        description: "Package label PDF has been downloaded",
       });
     } catch (error) {
-      console.error('PDF generation error:', error);
+      console.error("PDF generation error:", error);
       toast({
         title: "Error",
         description: "Failed to generate label PDF",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
@@ -85,16 +85,17 @@ export function PackageLabel({ order }: PackageLabelProps) {
 
   const printLabel = async () => {
     if (!labelRef.current) return;
-    
+
     setIsGenerating(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const canvas = await html2canvas(labelRef.current, {
         scale: 3,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         useCORS: true,
-      });
-      
-      const printWindow = window.open('', '_blank');
+      } as any);
+
+      const printWindow = window.open("", "_blank");
       if (printWindow) {
         printWindow.document.write(`
           <html>
@@ -107,7 +108,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
               </style>
             </head>
             <body>
-              <img src="${canvas.toDataURL('image/png')}" />
+              <img src="${canvas.toDataURL("image/png")}" />
             </body>
           </html>
         `);
@@ -117,18 +118,17 @@ export function PackageLabel({ order }: PackageLabelProps) {
         printWindow.close();
       }
     } catch (error) {
-      console.error('Print error:', error);
+      console.error("Print error:", error);
       toast({
         title: "Error",
         description: "Failed to print label",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Check if we have required data for label
   const canGenerateLabel = order.tracking_id && order.shipment_id;
 
   if (!canGenerateLabel) {
@@ -138,7 +138,9 @@ export function PackageLabel({ order }: PackageLabelProps) {
           <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
             <FileDown className="w-6 h-6 text-muted-foreground/50" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground mb-2">Label Not Available</p>
+          <p className="text-sm font-medium text-muted-foreground mb-2">
+            Label Not Available
+          </p>
           <p className="text-xs text-muted-foreground/70">
             Assign a driver to generate tracking & shipment IDs
           </p>
@@ -149,53 +151,65 @@ export function PackageLabel({ order }: PackageLabelProps) {
 
   return (
     <div className="space-y-4">
-      {/* Label Preview */}
       <div className="bg-background rounded-xl border border-border overflow-hidden">
-        <div 
-          ref={labelRef} 
+        <div
+          ref={labelRef}
           className="bg-white p-4"
-          style={{ width: '100%', aspectRatio: '4/6' }}
+          style={{ width: "100%", aspectRatio: "4/6" }}
         >
-          {/* Header with green accent */}
           <div className="bg-primary h-3 -mx-4 -mt-4 mb-3" />
-          
-          {/* Pharmacy / From Section */}
+
           <div className="border-b border-border pb-3 mb-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">FROM</p>
-            <p className="text-sm font-semibold text-foreground">{order.pharmacy_name || 'PharmaNet Pharmacy'}</p>
-            <p className="text-xs text-muted-foreground">Healthcare Delivery Service</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+              FROM
+            </p>
+            <p className="text-sm font-semibold text-foreground">
+              {order.pharmacy_name || "PharmaNet Pharmacy"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Healthcare Delivery Service
+            </p>
           </div>
 
-          {/* Shipment Info Row */}
           <div className="flex justify-between items-center border-b border-border pb-3 mb-3">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Shipment ID</p>
-              <p className="text-base font-mono font-bold text-foreground">{order.shipment_id}</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                Shipment ID
+              </p>
+              <p className="text-base font-mono font-bold text-foreground">
+                {order.shipment_id}
+              </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Ship Date</p>
-              <p className="text-sm font-medium text-foreground">{formatDate(order.ship_date)}</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                Ship Date
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                {formatDate(order.ship_date)}
+              </p>
             </div>
           </div>
-          
-          {/* Ship To Section */}
+
           <div className="mb-4">
             <div className="flex items-start gap-2 mb-2">
               <div className="bg-foreground text-background text-[10px] font-bold px-2 py-0.5 rounded">
                 SHIP TO
               </div>
             </div>
-            <p className="text-lg font-bold text-foreground">{order.name || 'Customer'}</p>
-            <p className="text-sm text-foreground">{order.address_1 || ''}</p>
+            <p className="text-lg font-bold text-foreground">
+              {order.name || "Customer"}
+            </p>
+            <p className="text-sm text-foreground">{order.address_1 || ""}</p>
             {order.address_2 && (
               <p className="text-sm text-foreground">{order.address_2}</p>
             )}
             <p className="text-sm text-foreground">
-              {[order.city, order.province, order.postal].filter(Boolean).join(', ')}
+              {[order.city, order.province, order.postal]
+                .filter(Boolean)
+                .join(", ")}
             </p>
           </div>
 
-          {/* Tracking Barcode Section */}
           <div className="border-t border-border pt-3 mt-auto">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide text-center mb-2">
               TRACKING #
@@ -207,11 +221,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={printLabel}
           disabled={isGenerating}
           className="gap-2"
@@ -219,8 +232,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
           <Printer className="w-4 h-4" />
           Print
         </Button>
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           onClick={generatePDF}
           disabled={isGenerating}
           className="gap-2"

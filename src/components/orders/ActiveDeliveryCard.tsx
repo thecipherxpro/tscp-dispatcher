@@ -1,5 +1,5 @@
-import { MapPin, ChevronRight, Navigation } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { MapPin, ChevronRight, Package, Clock, Truck } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Order } from '@/types/auth';
@@ -12,17 +12,17 @@ interface ActiveDeliveryCardProps {
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'PICKED_UP_AND_ASSIGNED':
-      return { label: 'Assigned', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
+      return { label: 'Assigned', variant: 'secondary' as const, icon: Package };
     case 'CONFIRMED':
-      return { label: 'Confirmed', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
+      return { label: 'Confirmed', variant: 'secondary' as const, icon: Package };
     case 'IN_ROUTE':
-      return { label: 'In Transit', className: 'bg-primary/10 text-primary border-primary/20' };
+      return { label: 'In Transit', variant: 'default' as const, icon: Truck };
     case 'COMPLETED_DELIVERED':
-      return { label: 'Delivered', className: 'bg-green-500/10 text-green-600 border-green-500/20' };
+      return { label: 'Delivered', variant: 'default' as const, icon: Package };
     case 'COMPLETED_INCOMPLETE':
-      return { label: 'Incomplete', className: 'bg-destructive/10 text-destructive border-destructive/20' };
+      return { label: 'Incomplete', variant: 'destructive' as const, icon: Package };
     default:
-      return { label: 'Pending', className: 'bg-muted text-muted-foreground' };
+      return { label: 'Pending', variant: 'outline' as const, icon: Clock };
   }
 };
 
@@ -41,86 +41,103 @@ const getTimelineProgress = (status: string): number => {
 export function ActiveDeliveryCard({ order, onClick }: ActiveDeliveryCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
   const progress = getTimelineProgress(order.timeline_status);
-  const steps = 4;
-
-  const fullAddress = [
-    order.address_1,
-    order.address_2,
-    order.city,
-    order.province,
-    order.postal
-  ].filter(Boolean).join(', ');
+  const steps = ['Pending', 'Picked Up', 'Confirmed', 'In Route', 'Delivered'];
+  const StatusIcon = statusConfig.icon;
 
   return (
-    <Card 
-      className="bg-card border-border overflow-hidden"
-    >
-      <CardContent className="p-0">
-        {/* Header */}
-        <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Navigation className="w-4 h-4 text-primary" />
+    <Card className="bg-card border-border overflow-hidden">
+      {/* Header with gradient accent */}
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+              <StatusIcon className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-sm font-semibold text-foreground">Current Delivery</span>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Active Delivery</p>
+              <p className="text-sm font-semibold text-foreground">{order.name || 'Customer'}</p>
+            </div>
           </div>
-          <Badge variant="outline" className={statusConfig.className}>
+          <Badge variant={statusConfig.variant}>
             {statusConfig.label}
           </Badge>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-4">
-          {/* Address Section - Primary Focus */}
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Destination</p>
-              <p className="text-sm font-medium text-foreground leading-snug">
-                {fullAddress || 'Address not available'}
-              </p>
-            </div>
+      <div className="p-4 space-y-4">
+        {/* Destination */}
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
           </div>
-
-          {/* IDs Row */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="font-mono">{order.shipment_id || '—'}</span>
-            <span>•</span>
-            <span className="font-mono">{order.tracking_id || '—'}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground font-medium mb-0.5">Destination</p>
+            <p className="text-sm font-medium text-foreground leading-relaxed">
+              {order.address_1 || 'Address not available'}
+            </p>
+            {order.address_2 && (
+              <p className="text-sm text-muted-foreground">{order.address_2}</p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {[order.city, order.province, order.postal].filter(Boolean).join(', ')}
+            </p>
           </div>
+        </div>
 
-          {/* Timeline Progress - Compact */}
-          <div className="pt-1">
-            <div className="flex items-center gap-1">
-              {Array.from({ length: steps }).map((_, index) => (
+        {/* IDs in structured layout */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-muted/50 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Shipment</p>
+            <p className="text-xs font-mono font-medium text-foreground truncate">{order.shipment_id || '—'}</p>
+          </div>
+          <div className="bg-muted/50 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Tracking</p>
+            <p className="text-xs font-mono font-medium text-foreground truncate">{order.tracking_id || '—'}</p>
+          </div>
+        </div>
+
+        {/* Timeline Progress */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div 
+                key={step}
+                className={`flex flex-col items-center ${index <= progress ? 'opacity-100' : 'opacity-40'}`}
+              >
                 <div 
-                  key={index} 
-                  className={`flex-1 h-1.5 rounded-full transition-all ${
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${
                     index < progress 
                       ? 'bg-primary' 
                       : index === progress 
-                        ? 'bg-primary/50' 
-                        : 'bg-muted'
+                        ? 'bg-primary ring-4 ring-primary/20' 
+                        : 'bg-muted-foreground/30'
                   }`}
                 />
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-
-          {/* Navigate Button */}
-          <Button 
-            onClick={onClick}
-            className="w-full"
-            size="lg"
-          >
-            <Navigation className="w-4 h-4 mr-2" />
-            View Delivery Details
-            <ChevronRight className="w-4 h-4 ml-auto" />
-          </Button>
+          <div className="flex items-center gap-0.5">
+            {steps.slice(0, -1).map((_, index) => (
+              <div 
+                key={index}
+                className={`flex-1 h-1 rounded-full transition-all ${
+                  index < progress ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
         </div>
-      </CardContent>
+
+        {/* Action Button */}
+        <Button 
+          onClick={onClick}
+          className="w-full"
+          size="lg"
+        >
+          View Details
+          <ChevronRight className="w-4 h-4 ml-2" />
+        </Button>
+      </div>
     </Card>
   );
 }

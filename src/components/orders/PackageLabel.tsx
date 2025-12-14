@@ -170,7 +170,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
 
           <div className="mb-4">
             <div className="flex items-start gap-2 mb-2">
-              <div className="bg-foreground text-background text-[10px] font-bold px-2 py-1 rounded">SHIP TO</div>
+              <div className="bg-foreground text-background text-[10px] font-bold px-1 py-1 rounded">SHIP TO</div>
             </div>
             <p className="text-lg font-bold text-foreground">{order.name || "Customer"}</p>
             <p className="text-sm text-foreground">{order.address_1 || ""}</p>

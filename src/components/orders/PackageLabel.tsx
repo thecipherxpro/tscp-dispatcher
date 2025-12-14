@@ -174,28 +174,32 @@ export function PackageLabel({ order }: PackageLabelProps) {
             </div>
           </div>
 
-          {/* Stickers and Ship To Row - Aligned */}
-          <div style={{ marginBottom: "12px" }}>
-            {/* Stickers */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-              <div style={{ backgroundColor: "#dc2626", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #b91c1c", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                ⚠️ FRAGILE
-              </div>
-              <div style={{ backgroundColor: "#0ea5e9", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #0284c7", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                ✚ MEDICAL SUPPLIES
-              </div>
-            </div>
+          {/* Stickers as inline SVG images for consistent PDF export */}
+          <div style={{ marginBottom: "10px" }}>
+            <svg width="200" height="24" viewBox="0 0 200 24" style={{ display: "block" }}>
+              {/* FRAGILE Sticker */}
+              <rect x="0" y="0" width="70" height="22" rx="4" fill="#dc2626" stroke="#b91c1c" strokeWidth="2"/>
+              <text x="35" y="15" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold" fontFamily="system-ui, sans-serif">⚠️ FRAGILE</text>
+              {/* MEDICAL SUPPLIES Sticker */}
+              <rect x="78" y="0" width="110" height="22" rx="4" fill="#0ea5e9" stroke="#0284c7" strokeWidth="2"/>
+              <text x="133" y="15" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold" fontFamily="system-ui, sans-serif">✚ MEDICAL SUPPLIES</text>
+            </svg>
+          </div>
 
-            {/* Ship To Badge */}
-            <div style={{ marginBottom: "8px" }}>
-              <span style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px" }}>SHIP TO</span>
-            </div>
+          {/* SHIP TO Badge as inline SVG for consistent PDF export */}
+          <div style={{ marginBottom: "8px" }}>
+            <svg width="60" height="20" viewBox="0 0 60 20" style={{ display: "block" }}>
+              <rect x="0" y="0" width="60" height="20" rx="4" fill="#000000"/>
+              <text x="30" y="14" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="system-ui, sans-serif" letterSpacing="0.5">SHIP TO</text>
+            </svg>
+          </div>
 
-            {/* Recipient Details */}
-            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000", marginTop: "0" }}>{order.name || "Customer"}</p>
-            <p style={{ fontSize: "13px", color: "#000000" }}>{order.address_1 || ""}</p>
-            {order.address_2 && <p style={{ fontSize: "13px", color: "#000000" }}>{order.address_2}</p>}
-            <p style={{ fontSize: "13px", color: "#000000" }}>{address}</p>
+          {/* Recipient Details */}
+          <div style={{ marginBottom: "4px" }}>
+            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000", margin: "0" }}>{order.name || "Customer"}</p>
+            <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.address_1 || ""}</p>
+            {order.address_2 && <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.address_2}</p>}
+            <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{address}</p>
           </div>
 
           {/* Barcode Section */}

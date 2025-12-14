@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Order, Profile } from '@/types/auth';
 import { DriverAssignmentModal } from './DriverAssignmentModal';
+import { PackageLabel } from './PackageLabel';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -269,25 +270,13 @@ export function OrderDetailSheet({
             </section>
 
 
-            {/* Package Label Section - Placeholder */}
+            {/* Package Label Section */}
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <FileDown className="w-4 h-4 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">Package Label</h3>
               </div>
-              <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-border">
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
-                    <FileDown className="w-6 h-6 text-muted-foreground/50" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Package Label Preview</p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">PDF label will appear here</p>
-                  <Button variant="outline" size="sm" disabled className="gap-2">
-                    <FileDown className="w-4 h-4" />
-                    Download Label
-                  </Button>
-                </div>
-              </div>
+              <PackageLabel order={order} />
             </section>
 
             </div>

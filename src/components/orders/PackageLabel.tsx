@@ -138,12 +138,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
           <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
             <FileDown className="w-6 h-6 text-muted-foreground/50" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            Label Not Available
-          </p>
-          <p className="text-xs text-muted-foreground/70">
-            Assign a driver to generate tracking & shipment IDs
-          </p>
+          <p className="text-sm font-medium text-muted-foreground mb-2">Label Not Available</p>
+          <p className="text-xs text-muted-foreground/70">Assign a driver to generate tracking & shipment IDs</p>
         </div>
       </div>
     );
@@ -152,61 +148,35 @@ export function PackageLabel({ order }: PackageLabelProps) {
   return (
     <div className="space-y-4">
       <div className="bg-background rounded-xl border border-border overflow-hidden">
-        <div
-          ref={labelRef}
-          className="bg-white p-4"
-          style={{ width: "100%", aspectRatio: "4/6" }}
-        >
+        <div ref={labelRef} className="bg-white p-4" style={{ width: "100%", aspectRatio: "4/6" }}>
           <div className="bg-primary h-3 -mx-4 -mt-4 mb-3" />
 
           <div className="border-b border-border pb-3 mb-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-              FROM
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {order.pharmacy_name || "PharmaNet Pharmacy"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Healthcare Delivery Service
-            </p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">FROM</p>
+            <p className="text-sm font-semibold text-foreground">{order.pharmacy_name || "PharmaNet Pharmacy"}</p>
+            <p className="text-xs text-muted-foreground">Healthcare Delivery Service</p>
           </div>
 
           <div className="flex justify-between items-center border-b border-border pb-3 mb-3">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                Shipment ID
-              </p>
-              <p className="text-base font-mono font-bold text-foreground">
-                {order.shipment_id}
-              </p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Shipment ID</p>
+              <p className="text-base font-mono font-bold text-foreground">{order.shipment_id}</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                Ship Date
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                {formatDate(order.ship_date)}
-              </p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Ship Date</p>
+              <p className="text-sm font-medium text-foreground">{formatDate(order.ship_date)}</p>
             </div>
           </div>
 
           <div className="mb-4">
             <div className="flex items-start gap-2 mb-2">
-              <div className="bg-foreground text-background text-[10px] font-bold px-2 py-0.5 rounded">
-                SHIP TO
-              </div>
+              <div className="bg-foreground text-background text-[10px] font-bold px-2 py-1 rounded">SHIP TO</div>
             </div>
-            <p className="text-lg font-bold text-foreground">
-              {order.name || "Customer"}
-            </p>
+            <p className="text-lg font-bold text-foreground">{order.name || "Customer"}</p>
             <p className="text-sm text-foreground">{order.address_1 || ""}</p>
-            {order.address_2 && (
-              <p className="text-sm text-foreground">{order.address_2}</p>
-            )}
+            {order.address_2 && <p className="text-sm text-foreground">{order.address_2}</p>}
             <p className="text-sm text-foreground">
-              {[order.city, order.province, order.postal]
-                .filter(Boolean)
-                .join(", ")}
+              {[order.city, order.province, order.postal].filter(Boolean).join(", ")}
             </p>
           </div>
 
@@ -222,22 +192,11 @@ export function PackageLabel({ order }: PackageLabelProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={printLabel}
-          disabled={isGenerating}
-          className="gap-2"
-        >
+        <Button variant="outline" size="sm" onClick={printLabel} disabled={isGenerating} className="gap-2">
           <Printer className="w-4 h-4" />
           Print
         </Button>
-        <Button
-          size="sm"
-          onClick={generatePDF}
-          disabled={isGenerating}
-          className="gap-2"
-        >
+        <Button size="sm" onClick={generatePDF} disabled={isGenerating} className="gap-2">
           <FileDown className="w-4 h-4" />
           Download PDF
         </Button>

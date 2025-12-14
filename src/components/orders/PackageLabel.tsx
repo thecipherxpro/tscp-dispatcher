@@ -169,7 +169,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
           </div>
 
           <div className="mb-4">
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#666666", letterSpacing: "0.5px", marginBottom: "4px" }}>SHIP TO</p>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginBottom: "8px", display: "inline-block" }}>SHIP TO</p>
             <p className="text-lg font-bold" style={{ color: "#000000" }}>{order.name || "Customer"}</p>
             <p className="text-sm" style={{ color: "#000000" }}>{order.address_1 || ""}</p>
             {order.address_2 && <p className="text-sm text-foreground">{order.address_2}</p>}

@@ -156,36 +156,46 @@ export function PackageLabel({ order }: PackageLabelProps) {
           <div style={{ height: "12px", backgroundColor: "#F97316", margin: "-16px -16px 12px -16px" }} />
 
           {/* From Section */}
-          <div style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: "12px", marginBottom: "12px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>FROM</p>
+          <div style={{ borderBottom: "1px solid #d1d5db", paddingBottom: "10px", marginBottom: "10px" }}>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>FROM</p>
             <p style={{ fontSize: "14px", fontWeight: "600", color: "#000000" }}>{order.pharmacy_name || "PharmaNet Pharmacy"}</p>
-            <p style={{ fontSize: "12px", color: "#6b7280" }}>Healthcare Delivery Service</p>
+            <p style={{ fontSize: "12px", color: "#374151" }}>Healthcare Delivery Service</p>
           </div>
 
           {/* Shipment Info Row */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", paddingBottom: "12px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #d1d5db", paddingBottom: "10px", marginBottom: "10px" }}>
             <div>
-              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>Shipment ID</p>
-              <p style={{ fontSize: "16px", fontFamily: "monospace", fontWeight: "bold", color: "#000000" }}>{order.shipment_id}</p>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Shipment ID</p>
+              <p style={{ fontSize: "14px", fontFamily: "monospace", fontWeight: "bold", color: "#000000" }}>{order.shipment_id}</p>
             </div>
             <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ship Date</p>
-              <p style={{ fontSize: "14px", fontWeight: "500", color: "#000000" }}>{formatDate(order.ship_date)}</p>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ship Date</p>
+              <p style={{ fontSize: "13px", fontWeight: "600", color: "#000000" }}>{formatDate(order.ship_date)}</p>
+            </div>
+          </div>
+
+          {/* Stickers Row */}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+            <div style={{ backgroundColor: "#dc2626", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #b91c1c", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              ⚠️ FRAGILE
+            </div>
+            <div style={{ backgroundColor: "#0ea5e9", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #0284c7", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              ✚ MEDICAL SUPPLIES
             </div>
           </div>
 
           {/* Ship To Section */}
-          <div style={{ marginBottom: "16px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginBottom: "8px", display: "inline-block" }}>SHIP TO</p>
-            <p style={{ fontSize: "18px", fontWeight: "bold", color: "#000000" }}>{order.name || "Customer"}</p>
-            <p style={{ fontSize: "14px", color: "#000000" }}>{order.address_1 || ""}</p>
-            {order.address_2 && <p style={{ fontSize: "14px", color: "#000000" }}>{order.address_2}</p>}
-            <p style={{ fontSize: "14px", color: "#000000" }}>{address}</p>
+          <div style={{ marginBottom: "12px" }}>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginBottom: "6px", display: "inline-block" }}>SHIP TO</p>
+            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000" }}>{order.name || "Customer"}</p>
+            <p style={{ fontSize: "13px", color: "#000000" }}>{order.address_1 || ""}</p>
+            {order.address_2 && <p style={{ fontSize: "13px", color: "#000000" }}>{order.address_2}</p>}
+            <p style={{ fontSize: "13px", color: "#000000" }}>{address}</p>
           </div>
 
           {/* Barcode Section */}
-          <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "12px", marginTop: "auto" }}>
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "8px" }}>TRACKING #</p>
+          <div style={{ borderTop: "1px solid #d1d5db", paddingTop: "10px", marginTop: "auto" }}>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "6px" }}>TRACKING #</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <svg ref={barcodeRef} style={{ maxWidth: "280px", width: "100%" }} />
             </div>

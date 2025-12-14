@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Order, TimelineStatus } from '@/types/auth';
 import { updateOrderStatus } from '@/hooks/useOrders';
 import { fetchDriverLocationData } from '@/hooks/useDriverLocation';
-import { generateRouteSnapshot } from '@/hooks/useRouteSnapshot';
+
 import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass, Play, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -154,10 +154,9 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const [showNextDeliveryCard, setShowNextDeliveryCard] = useState(false);
   const [nextDeliveryOrder, setNextDeliveryOrder] = useState<OrderWithCoords | null>(null);
 
+
   // Track when user leaves/returns to detect return from Google Maps
   const navigationStartedRef = useRef<string | null>(null);
-  // Store driver's start location when navigation begins for route snapshot
-  const driverStartLocationRef = useRef<{ lat: number; lng: number } | null>(null);
 
   // Fetch Google Maps API key
   const fetchApiKey = useCallback(async () => {
@@ -530,11 +529,6 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       return;
     }
 
-    // Store driver's current location for route snapshot when delivery completes
-    if (driverLocation) {
-      driverStartLocationRef.current = { ...driverLocation };
-      console.log('Stored driver start location for snapshot:', driverStartLocationRef.current);
-    }
 
     // Set confirmed and shipped status
     await setConfirmedAndShippedStatus(order);
@@ -584,44 +578,6 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       if (result.success) {
         toast.success(outcomeType === 'delivered' ? 'Delivery completed!' : 'Delivery marked as incomplete');
         
-        // Generate route snapshot in background (non-blocking)
-        if (pendingDeliveryOrder.latitude && pendingDeliveryOrder.longitude) {
-          (async () => {
-            try {
-              // Use stored driver start location from when navigation began
-              const startLat = driverStartLocationRef.current?.lat || driverLocation?.lat;
-              const startLng = driverStartLocationRef.current?.lng || driverLocation?.lng;
-              
-              if (startLat && startLng) {
-                console.log('Generating route snapshot from navigation start to destination...');
-                console.log('Start:', startLat, startLng);
-                console.log('End:', pendingDeliveryOrder.latitude, pendingDeliveryOrder.longitude);
-                
-                const snapshotResult = await generateRouteSnapshot({
-                  orderId: pendingDeliveryOrder.id,
-                  driverLat: startLat,
-                  driverLng: startLng,
-                  destinationLat: pendingDeliveryOrder.latitude!,
-                  destinationLng: pendingDeliveryOrder.longitude!,
-                  trackingId: pendingDeliveryOrder.tracking_id || undefined,
-                });
-                
-                if (snapshotResult.success) {
-                  console.log('Route snapshot generated successfully:', snapshotResult.snapshotUrl);
-                } else {
-                  console.error('Route snapshot failed:', snapshotResult.error);
-                }
-              } else {
-                console.warn('No driver start location available for snapshot');
-              }
-            } catch (err) {
-              console.error('Route snapshot error:', err);
-            } finally {
-              // Clear stored start location
-              driverStartLocationRef.current = null;
-            }
-          })();
-        }
         
         // Remove completed order from lists
         const remainingOrders = filteredOrders.filter(o => o.id !== pendingDeliveryOrder.id);

@@ -532,36 +532,6 @@ export default function AdminTracking() {
                 </div>
               </section>}
 
-            {/* Delivery Route Snapshot - Only show when delivery is finished */}
-            {(order.timeline_status === 'COMPLETED_DELIVERED' || order.timeline_status === 'COMPLETED_INCOMPLETE') && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">Delivery Route Snapshot</h3>
-                </div>
-                {order.delivery_route_snapshot_url ? (
-                  <div className="rounded-xl overflow-hidden border border-border">
-                    <img 
-                      src={order.delivery_route_snapshot_url} 
-                      alt="Delivery route snapshot" 
-                      className="w-full h-56 object-cover"
-                    />
-                    <div className="p-3 bg-muted/30">
-                      <p className="text-xs text-muted-foreground text-center">
-                        Route captured at {order.completed_at ? new Date(order.completed_at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'completion'}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-border text-center">
-                    <MapPin className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      {order.delivery_route_snapshot_status === 'FAILED' ? 'Snapshot generation failed' : 'Route snapshot pending...'}
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
 
             {/* Notes Section */}
             {order.call_notes && <section>

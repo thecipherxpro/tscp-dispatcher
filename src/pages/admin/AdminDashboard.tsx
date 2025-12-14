@@ -5,8 +5,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Order } from '@/types/auth';
-import { ActiveDeliveryCard } from '@/components/orders/ActiveDeliveryCard';
 
 interface DashboardStats {
   totalOrders: number;
@@ -28,7 +26,6 @@ export default function AdminDashboard() {
     assignedOrders: 0,
     totalDrivers: 0,
   });
-  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -41,15 +38,6 @@ export default function AdminDashboard() {
 
         if (ordersResult.data) {
           const orders = ordersResult.data;
-          
-          // Find most recent active order (IN_ROUTE first, then CONFIRMED)
-          const activeOrders = orders.filter(o => 
-            o.timeline_status === 'IN_ROUTE' || 
-            o.timeline_status === 'CONFIRMED' ||
-            o.timeline_status === 'PICKED_UP_AND_ASSIGNED'
-          ).sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
-          
-          setActiveOrder(activeOrders[0] as Order || null);
           
           setStats({
             totalOrders: orders.length,
@@ -91,14 +79,6 @@ export default function AdminDashboard() {
             </h2>
           </CardContent>
         </Card>
-
-        {/* Active Delivery Card */}
-        {activeOrder && (
-          <ActiveDeliveryCard 
-            order={activeOrder} 
-            onClick={() => navigate('/orders')}
-          />
-        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">

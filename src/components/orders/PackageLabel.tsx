@@ -169,11 +169,9 @@ export function PackageLabel({ order }: PackageLabelProps) {
           </div>
 
           <div className="mb-4">
-            <div className="flex items-start gap-2 mb-2">
-              <div style={{ backgroundColor: "#000000", color: "#ffffff", fontSize: "10px", fontWeight: "bold", padding: "4px 6px", borderRadius: "4px" }}>SHIP TO</div>
-            </div>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#666666", letterSpacing: "0.5px", marginBottom: "4px" }}>SHIP TO</p>
             <p className="text-lg font-bold" style={{ color: "#000000" }}>{order.name || "Customer"}</p>
-            <p className="text-sm text-foreground">{order.address_1 || ""}</p>
+            <p className="text-sm" style={{ color: "#000000" }}>{order.address_1 || ""}</p>
             {order.address_2 && <p className="text-sm text-foreground">{order.address_2}</p>}
             <p className="text-sm text-foreground">
               {[order.city, order.province, order.postal].filter(Boolean).join(", ")}

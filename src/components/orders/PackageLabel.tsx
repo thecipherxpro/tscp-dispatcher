@@ -174,20 +174,25 @@ export function PackageLabel({ order }: PackageLabelProps) {
             </div>
           </div>
 
-          {/* Stickers Row */}
-          <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-            <div style={{ backgroundColor: "#dc2626", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #b91c1c", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              ⚠️ FRAGILE
-            </div>
-            <div style={{ backgroundColor: "#0ea5e9", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #0284c7", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              ✚ MEDICAL SUPPLIES
-            </div>
-          </div>
-
-          {/* Ship To Section */}
+          {/* Stickers and Ship To Row - Aligned */}
           <div style={{ marginBottom: "12px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginBottom: "6px", display: "inline-block" }}>SHIP TO</p>
-            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000" }}>{order.name || "Customer"}</p>
+            {/* Stickers */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+              <div style={{ backgroundColor: "#dc2626", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #b91c1c", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                ⚠️ FRAGILE
+              </div>
+              <div style={{ backgroundColor: "#0ea5e9", color: "#ffffff", fontSize: "9px", fontWeight: "bold", padding: "4px 8px", borderRadius: "4px", border: "2px solid #0284c7", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                ✚ MEDICAL SUPPLIES
+              </div>
+            </div>
+
+            {/* Ship To Badge */}
+            <div style={{ marginBottom: "8px" }}>
+              <span style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px" }}>SHIP TO</span>
+            </div>
+
+            {/* Recipient Details */}
+            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000", marginTop: "0" }}>{order.name || "Customer"}</p>
             <p style={{ fontSize: "13px", color: "#000000" }}>{order.address_1 || ""}</p>
             {order.address_2 && <p style={{ fontSize: "13px", color: "#000000" }}>{order.address_2}</p>}
             <p style={{ fontSize: "13px", color: "#000000" }}>{address}</p>

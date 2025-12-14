@@ -1,4 +1,4 @@
-import { MapPin, User, Map, Clock, Package } from 'lucide-react';
+import { MapPin, User, Clock, Package } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Order } from '@/types/auth';
@@ -138,23 +138,6 @@ export function DriverOrderCard({ order, onClick, actionButton }: DriverOrderCar
               </p>
             )}
 
-            {/* Route Snapshot Image */}
-            {order.delivery_route_snapshot_url && (
-              <div className="mt-2 rounded-lg overflow-hidden border border-border">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/50 border-b border-border">
-                  <Map className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                    Delivery Route
-                  </span>
-                </div>
-                <img 
-                  src={order.delivery_route_snapshot_url} 
-                  alt="Delivery route map"
-                  className="w-full h-32 object-cover"
-                  loading="lazy"
-                />
-              </div>
-            )}
           </div>
         )}
 

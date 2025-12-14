@@ -241,21 +241,6 @@ export default function DriverDeliveryDetail() {
     try {
       const newStatus = isDelivered ? 'COMPLETED_DELIVERED' : 'COMPLETED_INCOMPLETE';
       await updateOrderStatus(order.id, order.tracking_id || null, newStatus as any, outcome, locationData || undefined);
-      if (driverStartLocationRef.current && destinationCoords) {
-        try {
-          await supabase.functions.invoke('generate-route-snapshot', {
-            body: {
-              orderId: order.id,
-              startLat: driverStartLocationRef.current.lat,
-              startLng: driverStartLocationRef.current.lng,
-              endLat: destinationCoords.lat,
-              endLng: destinationCoords.lng
-            }
-          });
-        } catch (snapshotError) {
-          console.error('Snapshot generation error:', snapshotError);
-        }
-      }
       toast({
         title: isDelivered ? 'Delivery Complete' : 'Delivery Incomplete',
         description: 'Order status updated successfully.'

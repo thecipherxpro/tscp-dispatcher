@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, MapPin } from 'lucide-react';
+import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -268,36 +268,6 @@ export function OrderDetailSheet({
               </div>
             </section>
 
-            {/* Delivery Route Snapshot - Only show when delivery is finished */}
-            {(order.timeline_status === 'COMPLETED_DELIVERED' || order.timeline_status === 'COMPLETED_INCOMPLETE') && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">Delivery Route</h3>
-                </div>
-                {order.delivery_route_snapshot_url ? (
-                  <div className="rounded-xl overflow-hidden border border-border">
-                    <img 
-                      src={order.delivery_route_snapshot_url} 
-                      alt="Delivery route snapshot" 
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="p-3 bg-muted/30 text-center">
-                      <p className="text-xs text-muted-foreground">
-                        Route captured at {order.completed_at ? new Date(order.completed_at).toLocaleString('en-CA', { timeZone: 'America/Toronto' }) : 'completion'}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-muted/30 rounded-xl p-4 border border-dashed border-border text-center">
-                    <MapPin className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      {order.delivery_route_snapshot_status === 'FAILED' ? 'Snapshot generation failed' : 'Route snapshot pending...'}
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
 
             {/* Package Label Section - Placeholder */}
             <section>

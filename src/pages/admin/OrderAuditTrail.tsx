@@ -1140,50 +1140,6 @@ export default function OrderAuditTrail() {
             </CardContent>
           </Card>
 
-          {/* Route Snapshot Card */}
-          {(order.timeline_status === 'COMPLETED_DELIVERED' || order.timeline_status === 'COMPLETED_INCOMPLETE') && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Delivery Route Snapshot
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {order.delivery_route_snapshot_url ? (
-                  <div className="space-y-2">
-                    <div className="rounded-lg overflow-hidden border border-border">
-                      <img 
-                        src={order.delivery_route_snapshot_url} 
-                        alt="Delivery route map"
-                        className="w-full h-48 object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Route captured at delivery completion
-                    </p>
-                  </div>
-                ) : order.delivery_route_snapshot_status === 'FAILED' ? (
-                  <div className="text-center py-4">
-                    <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Snapshot capture failed</p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      Route image could not be generated
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <MapPin className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Snapshot pending</p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      Route image will be captured at delivery completion
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* PHIPA Compliance Notice */}
           <Card className="border-primary/20 bg-primary/5">

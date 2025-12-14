@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { FileDown, Printer } from "lucide-react";
 import JsBarcode from "jsbarcode";
 import html2canvas from "html2canvas";
@@ -11,51 +11,61 @@ interface PackageLabelProps {
   order: Order;
 }
 
+const formatDate = (date: string | null): string => {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleDateString("en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const BARCODE_CONFIG = {
+  format: "CODE128",
+  width: 2,
+  height: 60,
+  displayValue: true,
+  fontSize: 14,
+  margin: 10,
+  background: "#ffffff",
+  lineColor: "#000000",
+} as const;
+
+const CANVAS_OPTIONS = {
+  scale: 3,
+  backgroundColor: "#ffffff",
+  useCORS: true,
+  logging: false,
+};
+
 export function PackageLabel({ order }: PackageLabelProps) {
   const barcodeRef = useRef<SVGSVGElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
+  const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
+
   useEffect(() => {
     if (barcodeRef.current && order.tracking_id) {
       try {
-        JsBarcode(barcodeRef.current, order.tracking_id, {
-          format: "CODE128",
-          width: 2,
-          height: 60,
-          displayValue: true,
-          fontSize: 14,
-          margin: 10,
-          background: "#ffffff",
-          lineColor: "#000000",
-        });
+        JsBarcode(barcodeRef.current, order.tracking_id, BARCODE_CONFIG);
       } catch (error) {
         console.error("Barcode generation error:", error);
       }
     }
   }, [order.tracking_id]);
 
-  const formatDate = (date: string | null) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-CA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const generateCanvas = useCallback(async () => {
+    if (!labelRef.current) return null;
+    return html2canvas(labelRef.current, CANVAS_OPTIONS);
+  }, []);
 
-  const generatePDF = async () => {
-    if (!labelRef.current) return;
-
+  const generatePDF = useCallback(async () => {
     setIsGenerating(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const canvas = await html2canvas(labelRef.current, {
-        scale: 3,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-      } as any);
+      const canvas = await generateCanvas();
+      if (!canvas) throw new Error("Failed to generate canvas");
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -63,73 +73,54 @@ export function PackageLabel({ order }: PackageLabelProps) {
         format: [4, 6],
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      pdf.addImage(imgData, "PNG", 0, 0, 4, 6);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 4, 6);
       pdf.save(`label-${order.shipment_id || order.id}.pdf`);
 
-      toast({
-        title: "Label Downloaded",
-        description: "Package label PDF has been downloaded",
-      });
+      toast({ title: "Label Downloaded", description: "Package label PDF has been downloaded" });
     } catch (error) {
       console.error("PDF generation error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate label PDF",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to generate label PDF", variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [generateCanvas, order.shipment_id, order.id, toast]);
 
-  const printLabel = async () => {
-    if (!labelRef.current) return;
-
+  const printLabel = useCallback(async () => {
     setIsGenerating(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const canvas = await html2canvas(labelRef.current, {
-        scale: 3,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-      } as any);
+      const canvas = await generateCanvas();
+      if (!canvas) throw new Error("Failed to generate canvas");
 
       const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Package Label - ${order.shipment_id || order.id}</title>
-              <style>
-                @page { size: 4in 6in; margin: 0; }
-                body { margin: 0; padding: 0; }
-                img { width: 4in; height: 6in; }
-              </style>
-            </head>
-            <body>
-              <img src="${canvas.toDataURL("image/png")}" />
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }
+      if (!printWindow) throw new Error("Failed to open print window");
+
+      const imageData = canvas.toDataURL("image/png");
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Package Label - ${order.shipment_id || order.id}</title>
+            <style>
+              @page { size: 4in 6in; margin: 0; }
+              * { margin: 0; padding: 0; }
+              body { display: flex; justify-content: center; align-items: center; }
+              img { width: 4in; height: 6in; object-fit: contain; }
+            </style>
+          </head>
+          <body><img src="${imageData}" /></body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
     } catch (error) {
       console.error("Print error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to print label",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to print label", variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const canGenerateLabel = order.tracking_id && order.shipment_id;
+  }, [generateCanvas, order.shipment_id, order.id, toast]);
 
   if (!canGenerateLabel) {
     return (
@@ -145,50 +136,64 @@ export function PackageLabel({ order }: PackageLabelProps) {
     );
   }
 
+  const address = [order.city, order.province, order.postal].filter(Boolean).join(", ");
+
   return (
     <div className="space-y-4">
       <div className="bg-background rounded-xl border border-border overflow-hidden">
-        <div ref={labelRef} className="bg-white p-4" style={{ width: "100%", aspectRatio: "4/6" }}>
-          <div className="bg-primary h-3 -mx-4 -mt-4 mb-3" />
+        {/* Label Container - Uses inline styles for PDF compatibility */}
+        <div
+          ref={labelRef}
+          style={{
+            width: "100%",
+            aspectRatio: "4/6",
+            padding: "16px",
+            backgroundColor: "#ffffff",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+          }}
+        >
+          {/* Header Bar */}
+          <div style={{ height: "12px", backgroundColor: "#F97316", margin: "-16px -16px 12px -16px" }} />
 
-          <div className="border-b border-border pb-3 mb-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">FROM</p>
-            <p className="text-sm font-semibold text-foreground">{order.pharmacy_name || "PharmaNet Pharmacy"}</p>
-            <p className="text-xs text-muted-foreground">Healthcare Delivery Service</p>
+          {/* From Section */}
+          <div style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: "12px", marginBottom: "12px" }}>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>FROM</p>
+            <p style={{ fontSize: "14px", fontWeight: "600", color: "#000000" }}>{order.pharmacy_name || "PharmaNet Pharmacy"}</p>
+            <p style={{ fontSize: "12px", color: "#6b7280" }}>Healthcare Delivery Service</p>
           </div>
 
-          <div className="flex justify-between items-center border-b border-border pb-3 mb-3">
+          {/* Shipment Info Row */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", paddingBottom: "12px", marginBottom: "12px" }}>
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Shipment ID</p>
-              <p className="text-base font-mono font-bold text-foreground">{order.shipment_id}</p>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>Shipment ID</p>
+              <p style={{ fontSize: "16px", fontFamily: "monospace", fontWeight: "bold", color: "#000000" }}>{order.shipment_id}</p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Ship Date</p>
-              <p className="text-sm font-medium text-foreground">{formatDate(order.ship_date)}</p>
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ship Date</p>
+              <p style={{ fontSize: "14px", fontWeight: "500", color: "#000000" }}>{formatDate(order.ship_date)}</p>
             </div>
           </div>
 
-          <div className="mb-4">
+          {/* Ship To Section */}
+          <div style={{ marginBottom: "16px" }}>
             <p style={{ fontSize: "10px", fontWeight: "bold", color: "#ffffff", backgroundColor: "#000000", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginBottom: "8px", display: "inline-block" }}>SHIP TO</p>
-            <p className="text-lg font-bold" style={{ color: "#000000" }}>{order.name || "Customer"}</p>
-            <p className="text-sm" style={{ color: "#000000" }}>{order.address_1 || ""}</p>
-            {order.address_2 && <p className="text-sm text-foreground">{order.address_2}</p>}
-            <p className="text-sm text-foreground">
-              {[order.city, order.province, order.postal].filter(Boolean).join(", ")}
-            </p>
+            <p style={{ fontSize: "18px", fontWeight: "bold", color: "#000000" }}>{order.name || "Customer"}</p>
+            <p style={{ fontSize: "14px", color: "#000000" }}>{order.address_1 || ""}</p>
+            {order.address_2 && <p style={{ fontSize: "14px", color: "#000000" }}>{order.address_2}</p>}
+            <p style={{ fontSize: "14px", color: "#000000" }}>{address}</p>
           </div>
 
-          <div className="border-t border-border pt-3 mt-auto">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide text-center mb-2">
-              TRACKING #
-            </p>
-            <div className="flex justify-center">
-              <svg ref={barcodeRef} className="w-full max-w-[280px]" />
+          {/* Barcode Section */}
+          <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "12px", marginTop: "auto" }}>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "8px" }}>TRACKING #</p>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <svg ref={barcodeRef} style={{ maxWidth: "280px", width: "100%" }} />
             </div>
           </div>
         </div>
       </div>
 
+      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3">
         <Button variant="outline" size="sm" onClick={printLabel} disabled={isGenerating} className="gap-2">
           <Printer className="w-4 h-4" />

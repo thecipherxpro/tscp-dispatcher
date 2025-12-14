@@ -169,10 +169,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
           </div>
 
           <div className="mb-4">
-            <div className="flex items-start gap-2 mb-1">
-              <div className="bg-foreground text-background text-[10px] font-bold px-1 py-1 rounded">SHIP TO</div>
+            <div className="flex items-start gap-2 mb-2">
+              <div style={{ backgroundColor: "#000000", color: "#ffffff", fontSize: "10px", fontWeight: "bold", padding: "4px 6px", borderRadius: "4px" }}>SHIP TO</div>
             </div>
-            <p className="text-lg font-bold text-foreground">{order.name || "Customer"}</p>
+            <p className="text-lg font-bold" style={{ color: "#000000" }}>{order.name || "Customer"}</p>
             <p className="text-sm text-foreground">{order.address_1 || ""}</p>
             {order.address_2 && <p className="text-sm text-foreground">{order.address_2}</p>}
             <p className="text-sm text-foreground">

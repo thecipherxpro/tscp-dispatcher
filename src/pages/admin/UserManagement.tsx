@@ -189,19 +189,88 @@ export default function UserManagement() {
       )
     : [];
 
+  // Mobile card view for users
+  const UserCard = ({ user }: { user: UserWithRoles }) => (
+    <Card className="border-border">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <Avatar className="h-12 w-12 shrink-0">
+            <AvatarImage src={user.avatar_url || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+              {getInitials(user.full_name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium text-foreground truncate">
+                  {user.full_name || 'Unnamed User'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {user.phone || 'No phone'}
+                </p>
+                {user.driver_id && (
+                  <p className="text-xs text-muted-foreground">
+                    {user.driver_id}
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 h-8 px-2"
+                onClick={() => openRoleDialog(user)}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only sm:ml-1">Add</span>
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {user.roles.length === 0 ? (
+                <span className="text-xs text-muted-foreground">No roles assigned</span>
+              ) : (
+                user.roles.map(role => {
+                  const config = ROLE_CONFIG[role];
+                  const Icon = config.icon;
+                  return (
+                    <Badge
+                      key={role}
+                      variant={config.variant}
+                      className="gap-1 text-xs py-0.5"
+                    >
+                      <Icon className="h-3 w-3" />
+                      {config.label}
+                      <button
+                        onClick={() => handleRemoveRole(user.id, role)}
+                        className="ml-0.5 hover:text-destructive transition-colors"
+                        disabled={isUpdating}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <AppLayout title="User Management" showBackButton>
-      <div className="space-y-4 pb-20">
+      <div className="p-4 space-y-4 pb-24">
         {/* Header */}
         <Card className="border-0 shadow-sm bg-gradient-to-r from-primary/10 to-primary/5">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
-                <UserCog className="h-6 w-6 text-primary" />
+                <UserCog className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">User Management</h2>
-                <p className="text-sm text-muted-foreground">
+                <h2 className="font-semibold text-foreground text-sm sm:text-base">User Management</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {users.length} registered users
                 </p>
               </div>
@@ -213,125 +282,149 @@ export default function UserManagement() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, phone, or driver ID..."
+            placeholder="Search users..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10"
           />
         </div>
 
-        {/* Users Table */}
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-4 space-y-4">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2 flex-1">
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map(i => (
+              <Card key={i} className="border-border">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="h-12 w-12 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-2">
                       <Skeleton className="h-4 w-32" />
                       <Skeleton className="h-3 w-24" />
+                      <div className="flex gap-1">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-14" />
+                      </div>
                     </div>
-                    <Skeleton className="h-6 w-16" />
                   </div>
-                ))}
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                No users found
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Roles</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map(user => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={user.avatar_url || undefined} />
-                              <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                                {getInitials(user.full_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-foreground">
-                                {user.full_name || 'Unnamed User'}
-                              </p>
-                              {user.driver_id && (
-                                <p className="text-xs text-muted-foreground">
-                                  {user.driver_id}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <Card className="border-border">
+            <CardContent className="p-8 text-center">
+              <UserCog className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground">No users found</p>
+              {searchQuery && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Try a different search term
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Mobile Card View */}
+            <div className="space-y-3 md:hidden">
+              {filteredUsers.map(user => (
+                <UserCard key={user.id} user={user} />
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <Card className="hidden md:block">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Roles</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map(user => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={user.avatar_url || undefined} />
+                                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                                  {getInitials(user.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {user.full_name || 'Unnamed User'}
                                 </p>
+                                {user.driver_id && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {user.driver_id}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm text-muted-foreground">
+                              {user.phone || 'No phone'}
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {user.roles.length === 0 ? (
+                                <span className="text-xs text-muted-foreground">No roles</span>
+                              ) : (
+                                user.roles.map(role => {
+                                  const config = ROLE_CONFIG[role];
+                                  const Icon = config.icon;
+                                  return (
+                                    <Badge
+                                      key={role}
+                                      variant={config.variant}
+                                      className="gap-1 text-xs"
+                                    >
+                                      <Icon className="h-3 w-3" />
+                                      {config.label}
+                                      <button
+                                        onClick={() => handleRemoveRole(user.id, role)}
+                                        className="ml-1 hover:text-destructive"
+                                        disabled={isUpdating}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </button>
+                                    </Badge>
+                                  );
+                                })
                               )}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-sm text-muted-foreground">
-                            {user.phone || 'No phone'}
-                          </p>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {user.roles.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">No roles</span>
-                            ) : (
-                              user.roles.map(role => {
-                                const config = ROLE_CONFIG[role];
-                                const Icon = config.icon;
-                                return (
-                                  <Badge
-                                    key={role}
-                                    variant={config.variant}
-                                    className="gap-1 text-xs"
-                                  >
-                                    <Icon className="h-3 w-3" />
-                                    {config.label}
-                                    <button
-                                      onClick={() => handleRemoveRole(user.id, role)}
-                                      className="ml-1 hover:text-destructive"
-                                      disabled={isUpdating}
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </button>
-                                  </Badge>
-                                );
-                              })
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openRoleDialog(user)}
-                            disabled={availableRoles.length === 0 && selectedUser?.id === user.id}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Role
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openRoleDialog(user)}
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add Role
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Add Role Dialog */}
       <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle>Add Role</DialogTitle>
             <DialogDescription>
@@ -343,10 +436,10 @@ export default function UserManagement() {
               value={selectedRole}
               onValueChange={value => setSelectedRole(value as AppRole)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover z-50">
                 {availableRoles.map(role => {
                   const config = ROLE_CONFIG[role];
                   const Icon = config.icon;
@@ -367,13 +460,14 @@ export default function UserManagement() {
               </p>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               onClick={handleAddRole}
               disabled={!selectedRole || isUpdating}
+              className="w-full sm:w-auto"
             >
               {isUpdating ? 'Adding...' : 'Add Role'}
             </Button>

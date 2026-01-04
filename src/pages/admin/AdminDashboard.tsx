@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, Clock, CheckCircle, AlertCircle, Users } from 'lucide-react';
+import { Package, Truck, Clock, CheckCircle, AlertCircle, Users, UserCog } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -115,6 +115,24 @@ export default function AdminDashboard() {
               <CardContent className="p-4 text-center">
                 <Truck className="w-6 h-6 mx-auto mb-2" />
                 <p className="text-sm font-medium">Track Shipment</p>
+              </CardContent>
+            </Card>
+            <Card 
+              className="bg-card border-border cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate('/users')}
+            >
+              <CardContent className="p-4 text-center">
+                <UserCog className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm font-medium text-foreground">User Management</p>
+              </CardContent>
+            </Card>
+            <Card 
+              className="bg-card border-border cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate('/drivers')}
+            >
+              <CardContent className="p-4 text-center">
+                <Users className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm font-medium text-foreground">View Drivers</p>
               </CardContent>
             </Card>
           </div>

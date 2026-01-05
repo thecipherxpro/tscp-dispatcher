@@ -21,6 +21,7 @@ import OrderAuditTrail from "./pages/admin/OrderAuditTrail";
 import TrackingList from "./pages/admin/TrackingList";
 import Drivers from "./pages/admin/Drivers";
 import UserManagement from "./pages/admin/UserManagement";
+import PackageLabels from "./pages/admin/PackageLabels";
 import MyOrders from "./pages/driver/MyOrders";
 import TrackShipment from "./pages/TrackShipment";
 import NotFound from "./pages/NotFound";
@@ -182,6 +183,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <UserManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/package-labels"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <PackageLabels />
           </ProtectedRoute>
         }
       />

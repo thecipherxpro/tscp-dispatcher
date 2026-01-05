@@ -176,13 +176,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
 
           {/* Stickers as inline SVG images for consistent PDF export */}
           <div style={{ marginBottom: "10px" }}>
-            <svg width="200" height="24" viewBox="0 0 200 24" style={{ display: "block" }}>
+            <svg width="70" height="24" viewBox="0 0 70 24" style={{ display: "block" }}>
               {/* FRAGILE Sticker */}
               <rect x="0" y="0" width="70" height="22" rx="4" fill="#dc2626" stroke="#b91c1c" strokeWidth="2"/>
               <text x="35" y="15" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold" fontFamily="system-ui, sans-serif">⚠️ FRAGILE</text>
-              {/* MEDICAL SUPPLIES Sticker */}
-              <rect x="78" y="0" width="110" height="22" rx="4" fill="#0ea5e9" stroke="#0284c7" strokeWidth="2"/>
-              <text x="133" y="15" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold" fontFamily="system-ui, sans-serif">✚ MEDICAL SUPPLIES</text>
             </svg>
           </div>
 

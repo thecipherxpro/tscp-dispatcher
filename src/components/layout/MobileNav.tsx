@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink } from 'react-router-dom';
-import { Home, Package, Users, Truck, User, Tags } from 'lucide-react';
+import { Home, Package, Users, Tags, Settings, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function MobileNav() {
@@ -10,7 +10,7 @@ export function MobileNav() {
     { to: '/orders', icon: Package, label: 'Orders' },
     { to: '/package-labels', icon: Tags, label: 'Labels' },
     { to: '/drivers', icon: Users, label: 'Drivers' },
-    { to: '/profile', icon: User, label: 'Profile' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const driverLinks = [

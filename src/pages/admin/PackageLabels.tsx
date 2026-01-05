@@ -17,6 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useOrders } from "@/hooks/useOrders";
+import { useLabelSettings, type PackageLabelSettings } from "@/hooks/useLabelSettings";
 import type { Order } from "@/types/auth";
 import { cn } from "@/lib/utils";
 
@@ -207,6 +208,7 @@ function LabelCard({
 
 export default function PackageLabels() {
   const { orders, isLoading } = useOrders();
+  const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState("orders");
@@ -345,7 +347,7 @@ export default function PackageLabels() {
     setIsGenerating(true);
     
     try {
-      await downloadLabelsPDF(selectedOrders);
+      await downloadLabelsPDF(selectedOrders, labelSettings);
       
       // Also add to generated labels
       const newLabels: GeneratedLabel[] = selectedOrders.map(order => ({
@@ -375,7 +377,7 @@ export default function PackageLabels() {
     } finally {
       setIsGenerating(false);
     }
-  }, [orders, selectedOrderIds, toast]);
+  }, [orders, selectedOrderIds, labelSettings, toast]);
 
   // Download selected labels from Labels tab
   const downloadSelectedLabels = useCallback(async () => {
@@ -385,7 +387,7 @@ export default function PackageLabels() {
     setIsGenerating(true);
     
     try {
-      await downloadLabelsPDF(selectedLabels.map(l => l.order));
+      await downloadLabelsPDF(selectedLabels.map(l => l.order), labelSettings);
       setSelectedLabelIds(new Set());
       
       toast({
@@ -402,7 +404,7 @@ export default function PackageLabels() {
     } finally {
       setIsGenerating(false);
     }
-  }, [generatedLabels, selectedLabelIds, toast]);
+  }, [generatedLabels, selectedLabelIds, labelSettings, toast]);
 
   // Clear filters
   const clearFilters = useCallback(() => {
@@ -696,7 +698,7 @@ export default function PackageLabels() {
 }
 
 // Helper function to generate PDF for multiple orders
-async function downloadLabelsPDF(orders: Order[]) {
+async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSettings) {
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "in",
@@ -735,15 +737,15 @@ async function downloadLabelsPDF(orders: Order[]) {
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #d1d5db; padding-bottom: 10px; margin-bottom: 10px;">
           <div>
             <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">FROM</p>
-            <p style="font-size: 14px; font-weight: 600; color: #000000; margin-bottom: 1px;">PharmaDocs+</p>
-            <p style="font-size: 11px; color: #374151; margin-bottom: 1px;">Healthcare Delivery Service</p>
-            <p style="font-size: 9px; color: #6b7280;">www.endoverdose.ca</p>
+            <p style="font-size: 14px; font-weight: 600; color: #000000; margin-bottom: 1px;">${labelSettings.from_company}</p>
+            <p style="font-size: 11px; color: #374151; margin-bottom: 1px;">${labelSettings.from_tagline}</p>
+            <p style="font-size: 9px; color: #6b7280;">${labelSettings.from_website}</p>
           </div>
           <div style="text-align: right;">
             <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">CONTACT</p>
-            <p style="font-size: 11px; color: #000000; margin-bottom: 1px;">3426 Lake Shore Blvd W</p>
-            <p style="font-size: 11px; color: #000000; margin-bottom: 1px;">(844) 722-8829</p>
-            <p style="font-size: 10px; color: #374151;">info@tscp.ca</p>
+            <p style="font-size: 11px; color: #000000; margin-bottom: 1px;">${labelSettings.contact_address}</p>
+            <p style="font-size: 11px; color: #000000; margin-bottom: 1px;">${labelSettings.contact_phone}</p>
+            <p style="font-size: 10px; color: #374151;">${labelSettings.contact_email}</p>
           </div>
         </div>
 

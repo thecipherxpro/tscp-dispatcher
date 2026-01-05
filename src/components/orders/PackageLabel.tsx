@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLabelSettings } from "@/hooks/useLabelSettings";
 
 interface PackageLabelProps {
   order: Order;
@@ -43,6 +44,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
   const labelRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
 
   const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
 
@@ -136,6 +138,14 @@ export function PackageLabel({ order }: PackageLabelProps) {
     );
   }
 
+  if (isLoadingSettings) {
+    return (
+      <div className="bg-muted/30 rounded-xl p-6 border border-border flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   const address = [order.city, order.province, order.postal].filter(Boolean).join(", ");
 
   return (
@@ -160,16 +170,16 @@ export function PackageLabel({ order }: PackageLabelProps) {
             {/* Left Side - FROM */}
             <div>
               <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2px" }}>FROM</p>
-              <p style={{ fontSize: "14px", fontWeight: "600", color: "#000000", marginBottom: "1px" }}>PharmaDocs+</p>
-              <p style={{ fontSize: "11px", color: "#374151", marginBottom: "1px" }}>Healthcare Delivery Service</p>
-              <p style={{ fontSize: "9px", color: "#6b7280" }}>www.endoverdose.ca</p>
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "#000000", marginBottom: "1px" }}>{labelSettings.from_company}</p>
+              <p style={{ fontSize: "11px", color: "#374151", marginBottom: "1px" }}>{labelSettings.from_tagline}</p>
+              <p style={{ fontSize: "9px", color: "#6b7280" }}>{labelSettings.from_website}</p>
             </div>
             {/* Right Side - CONTACT */}
             <div style={{ textAlign: "right" }}>
               <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2px" }}>CONTACT</p>
-              <p style={{ fontSize: "11px", color: "#000000", marginBottom: "1px" }}>3426 Lake Shore Blvd W</p>
-              <p style={{ fontSize: "11px", color: "#000000", marginBottom: "1px" }}>(844) 722-8829</p>
-              <p style={{ fontSize: "10px", color: "#374151" }}>info@tscp.ca</p>
+              <p style={{ fontSize: "11px", color: "#000000", marginBottom: "1px" }}>{labelSettings.contact_address}</p>
+              <p style={{ fontSize: "11px", color: "#000000", marginBottom: "1px" }}>{labelSettings.contact_phone}</p>
+              <p style={{ fontSize: "10px", color: "#374151" }}>{labelSettings.contact_email}</p>
             </div>
           </div>
 

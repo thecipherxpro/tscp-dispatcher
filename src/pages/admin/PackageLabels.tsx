@@ -730,6 +730,9 @@ async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSet
       });
     };
 
+    // Use tracking_id for barcode, with fallback to shipment_id if tracking_id is empty
+    const barcodeValue = order.tracking_id || order.shipment_id || `ORD-${order.id.slice(0, 8)}`;
+
     container.innerHTML = `
       <div style="width: 384px; height: 576px; padding: 16px; background-color: #ffffff; font-family: system-ui, -apple-system, sans-serif;">
         <div style="height: 12px; background-color: #F97316; margin: -16px -16px 12px -16px;"></div>
@@ -779,18 +782,33 @@ async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSet
 
         <div style="border-top: 1px solid #d1d5db; padding-top: 10px; margin-top: auto;">
           <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 6px;">TRACKING #</p>
-          <div style="display: flex; justify-content: center;">
-            <svg id="barcode-${i}" style="max-width: 280px; width: 100%;"></svg>
-          </div>
+          <div id="barcode-container-${i}" style="display: flex; justify-content: center;"></div>
         </div>
       </div>
     `;
 
-    // Generate barcode
-    const barcodeSvg = container.querySelector(`#barcode-${i}`);
-    if (barcodeSvg && order.tracking_id) {
-      JsBarcode(barcodeSvg, order.tracking_id, BARCODE_CONFIG);
+    // Generate barcode - create SVG element properly with namespace
+    const barcodeContainer = container.querySelector(`#barcode-container-${i}`);
+    if (barcodeContainer && barcodeValue) {
+      try {
+        // Create SVG element with proper namespace
+        const svgNS = "http://www.w3.org/2000/svg";
+        const barcodeSvg = document.createElementNS(svgNS, "svg");
+        barcodeSvg.style.maxWidth = "280px";
+        barcodeSvg.style.width = "100%";
+        barcodeContainer.appendChild(barcodeSvg);
+        
+        // Generate barcode
+        JsBarcode(barcodeSvg, barcodeValue, BARCODE_CONFIG);
+      } catch (error) {
+        console.error("Barcode generation error for order:", order.id, error);
+        // Add fallback text if barcode fails
+        barcodeContainer.innerHTML = `<p style="font-size: 14px; font-family: monospace; font-weight: bold; color: #000000; text-align: center;">${barcodeValue}</p>`;
+      }
     }
+
+    // Wait for DOM to update before capturing
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     // Render to canvas and add to PDF
     const canvas = await html2canvas(container.firstElementChild as HTMLElement, CANVAS_OPTIONS);

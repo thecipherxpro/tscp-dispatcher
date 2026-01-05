@@ -3,49 +3,76 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Order } from '@/types/auth';
-
 interface ActiveDeliveryCardProps {
   order: Order;
   onClick?: () => void;
 }
-
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'PICKED_UP_AND_ASSIGNED':
-      return { label: 'Assigned', variant: 'secondary' as const, icon: Package };
+      return {
+        label: 'Assigned',
+        variant: 'secondary' as const,
+        icon: Package
+      };
     case 'CONFIRMED':
-      return { label: 'Confirmed', variant: 'secondary' as const, icon: Package };
+      return {
+        label: 'Confirmed',
+        variant: 'secondary' as const,
+        icon: Package
+      };
     case 'IN_ROUTE':
-      return { label: 'In Transit', variant: 'default' as const, icon: Truck };
+      return {
+        label: 'In Transit',
+        variant: 'default' as const,
+        icon: Truck
+      };
     case 'COMPLETED_DELIVERED':
-      return { label: 'Delivered', variant: 'default' as const, icon: Package };
+      return {
+        label: 'Delivered',
+        variant: 'default' as const,
+        icon: Package
+      };
     case 'COMPLETED_INCOMPLETE':
-      return { label: 'Incomplete', variant: 'destructive' as const, icon: Package };
+      return {
+        label: 'Incomplete',
+        variant: 'destructive' as const,
+        icon: Package
+      };
     default:
-      return { label: 'Pending', variant: 'outline' as const, icon: Clock };
+      return {
+        label: 'Pending',
+        variant: 'outline' as const,
+        icon: Clock
+      };
   }
 };
-
 const getTimelineProgress = (status: string): number => {
   switch (status) {
-    case 'PENDING': return 0;
-    case 'PICKED_UP_AND_ASSIGNED': return 1;
-    case 'CONFIRMED': return 2;
-    case 'IN_ROUTE': return 3;
+    case 'PENDING':
+      return 0;
+    case 'PICKED_UP_AND_ASSIGNED':
+      return 1;
+    case 'CONFIRMED':
+      return 2;
+    case 'IN_ROUTE':
+      return 3;
     case 'COMPLETED_DELIVERED':
-    case 'COMPLETED_INCOMPLETE': return 4;
-    default: return 0;
+    case 'COMPLETED_INCOMPLETE':
+      return 4;
+    default:
+      return 0;
   }
 };
-
-export function ActiveDeliveryCard({ order, onClick }: ActiveDeliveryCardProps) {
+export function ActiveDeliveryCard({
+  order,
+  onClick
+}: ActiveDeliveryCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
   const progress = getTimelineProgress(order.timeline_status);
   const steps = ['Pending', 'Picked Up', 'Confirmed', 'In Route', 'Delivered'];
   const StatusIcon = statusConfig.icon;
-
-  return (
-    <Card className="bg-card border-border overflow-hidden">
+  return <Card className="bg-card border-border overflow-hidden">
       {/* Header with gradient accent */}
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/50">
         <div className="flex items-center justify-between">
@@ -75,9 +102,7 @@ export function ActiveDeliveryCard({ order, onClick }: ActiveDeliveryCardProps) 
             <p className="text-sm font-medium text-foreground leading-relaxed">
               {order.address_1 || 'Address not available'}
             </p>
-            {order.address_2 && (
-              <p className="text-sm text-muted-foreground">{order.address_2}</p>
-            )}
+            {order.address_2 && <p className="text-sm text-muted-foreground">{order.address_2}</p>}
             <p className="text-sm text-muted-foreground">
               {[order.city, order.province, order.postal].filter(Boolean).join(', ')}
             </p>
@@ -97,47 +122,13 @@ export function ActiveDeliveryCard({ order, onClick }: ActiveDeliveryCardProps) 
         </div>
 
         {/* Timeline Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div 
-                key={step}
-                className={`flex flex-col items-center ${index <= progress ? 'opacity-100' : 'opacity-40'}`}
-              >
-                <div 
-                  className={`w-2.5 h-2.5 rounded-full transition-all ${
-                    index < progress 
-                      ? 'bg-primary' 
-                      : index === progress 
-                        ? 'bg-primary ring-4 ring-primary/20' 
-                        : 'bg-muted-foreground/30'
-                  }`}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-0.5">
-            {steps.slice(0, -1).map((_, index) => (
-              <div 
-                key={index}
-                className={`flex-1 h-1 rounded-full transition-all ${
-                  index < progress ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+        
 
         {/* Action Button */}
-        <Button 
-          onClick={onClick}
-          className="w-full"
-          size="lg"
-        >
+        <Button onClick={onClick} className="w-full" size="lg">
           View Details
           <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
-    </Card>
-  );
+    </Card>;
 }

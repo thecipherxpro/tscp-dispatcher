@@ -9,68 +9,70 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import endoverdoseLogo from '@/assets/endoverdose-logo.png';
-
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
 });
-
 const signUpSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   phone: z.string().min(10, 'Please enter a valid phone number'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
-  agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms'),
+  agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms')
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
-
 type AuthStep = 'login' | 'signup' | 'success';
-
 export default function Auth() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { signIn, signUp } = useAuth();
-  
+  const {
+    toast
+  } = useToast();
+  const {
+    signIn,
+    signUp
+  } = useAuth();
   const [step, setStep] = useState<AuthStep>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Login fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // Signup fields
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const validation = authSchema.safeParse({ email, password });
+      const validation = authSchema.safeParse({
+        email,
+        password
+      });
       if (!validation.success) {
         toast({
           title: "Validation Error",
           description: validation.error.errors[0].message,
-          variant: "destructive",
+          variant: "destructive"
         });
         setIsLoading(false);
         return;
       }
-
-      const { error } = await signIn(email, password);
+      const {
+        error
+      } = await signIn(email, password);
       if (error) {
         toast({
           title: "Sign In Failed",
           description: error.message,
-          variant: "destructive",
+          variant: "destructive"
         });
       } else {
         navigate('/');
@@ -79,43 +81,41 @@ export default function Auth() {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const validation = signUpSchema.safeParse({ 
-        fullName, 
-        email, 
-        phone, 
-        password, 
-        confirmPassword, 
-        agreeToTerms 
+      const validation = signUpSchema.safeParse({
+        fullName,
+        email,
+        phone,
+        password,
+        confirmPassword,
+        agreeToTerms
       });
-      
       if (!validation.success) {
         toast({
           title: "Validation Error",
           description: validation.error.errors[0].message,
-          variant: "destructive",
+          variant: "destructive"
         });
         setIsLoading(false);
         return;
       }
-
-      const { error } = await signUp(email, password, fullName);
+      const {
+        error
+      } = await signUp(email, password, fullName);
       if (error) {
         toast({
           title: "Sign Up Failed",
           description: error.message,
-          variant: "destructive",
+          variant: "destructive"
         });
       } else {
         setStep('success');
@@ -124,7 +124,7 @@ export default function Auth() {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -133,8 +133,7 @@ export default function Auth() {
 
   // Success confirmation screen
   if (step === 'success') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
+    return <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
         <div className="flex-1 flex flex-col justify-center px-6 py-12">
           <div className="text-center space-y-6">
             <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
@@ -169,36 +168,28 @@ export default function Auth() {
               </div>
             </div>
 
-            <Button
-              onClick={() => {
-                setStep('login');
-                setEmail('');
-                setPassword('');
-                setFullName('');
-                setPhone('');
-                setConfirmPassword('');
-                setAgreeToTerms(false);
-              }}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-xl font-semibold"
-            >
+            <Button onClick={() => {
+            setStep('login');
+            setEmail('');
+            setPassword('');
+            setFullName('');
+            setPhone('');
+            setConfirmPassword('');
+            setAgreeToTerms(false);
+          }} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-xl font-semibold">
               Back to Sign In
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Signup screen
   if (step === 'signup') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
+    return <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
         <div className="px-6 pt-12">
-          <button
-            onClick={() => setStep('login')}
-            className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={() => setStep('login')} className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </button>
         </div>
@@ -216,15 +207,7 @@ export default function Auth() {
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-gray-300 text-sm font-medium">Full Name</Label>
               <div className="relative">
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Dr. John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500"
-                  required
-                />
+                <Input id="fullName" type="text" placeholder="Dr. John Doe" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
                 <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
               </div>
             </div>
@@ -233,15 +216,7 @@ export default function Auth() {
             <div className="space-y-2">
               <Label htmlFor="signupEmail" className="text-gray-300 text-sm font-medium">Email</Label>
               <div className="relative">
-                <Input
-                  id="signupEmail"
-                  type="email"
-                  placeholder="john@hospital.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500"
-                  required
-                />
+                <Input id="signupEmail" type="email" placeholder="john@hospital.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
                 <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
               </div>
             </div>
@@ -253,15 +228,7 @@ export default function Auth() {
                 <div className="flex items-center px-4 bg-[#0d3535]/50 border border-[#1a4a4a] border-r-0 rounded-l-xl text-gray-400">
                   +1
                 </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="(555) 000-0000"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-l-none rounded-r-xl focus:border-emerald-500"
-                  required
-                />
+                <Input id="phone" type="tel" placeholder="(555) 000-0000" value={phone} onChange={e => setPhone(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-l-none rounded-r-xl focus:border-emerald-500" required />
                 <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
               </div>
             </div>
@@ -270,20 +237,8 @@ export default function Auth() {
             <div className="space-y-2">
               <Label htmlFor="signupPassword" className="text-gray-300 text-sm font-medium">Password</Label>
               <div className="relative">
-                <Input
-                  id="signupPassword"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                >
+                <Input id="signupPassword" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
                   {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                 </button>
               </div>
@@ -293,20 +248,8 @@ export default function Auth() {
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-gray-300 text-sm font-medium">Confirm Password</Label>
               <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                >
+                <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
                   {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                 </button>
               </div>
@@ -314,12 +257,7 @@ export default function Auth() {
 
             {/* Terms Agreement */}
             <div className="flex items-start gap-3 pt-2">
-              <Checkbox
-                id="terms"
-                checked={agreeToTerms}
-                onCheckedChange={(checked) => setAgreeToTerms(checked === true)}
-                className="mt-0.5 border-[#1a4a4a] data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-              />
+              <Checkbox id="terms" checked={agreeToTerms} onCheckedChange={checked => setAgreeToTerms(checked === true)} className="mt-0.5 border-[#1a4a4a] data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
               <Label htmlFor="terms" className="text-sm text-gray-400 leading-relaxed">
                 I agree to the{' '}
                 <span className="text-emerald-400 hover:underline cursor-pointer">Terms of Service</span>
@@ -328,11 +266,7 @@ export default function Auth() {
               </Label>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-xl font-semibold mt-4"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-xl font-semibold mt-4" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Create Account'}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
@@ -341,30 +275,24 @@ export default function Auth() {
           <div className="mt-6 text-center pb-6">
             <p className="text-gray-400">
               Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => setStep('login')}
-                className="text-emerald-400 hover:underline font-medium"
-              >
+              <button type="button" onClick={() => setStep('login')} className="text-emerald-400 hover:underline font-medium">
                 Log In
               </button>
             </p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Login screen (default)
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
+  return <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
       <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <div className="mb-8">
           <div className="w-48 h-12 mb-6">
             <img src={endoverdoseLogo} alt="EndOverdose" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight">
-            Welcome<br />Back
+            Welcome Back <br />​
           </h1>
           <p className="text-gray-400 mt-3">
             Sign in securely to access your medical delivery dashboard.
@@ -378,15 +306,7 @@ export default function Auth() {
               Email Address
             </Label>
             <div className="relative">
-              <Input
-                id="email"
-                type="email"
-                placeholder="nurse@hospital.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500"
-                required
-              />
+              <Input id="email" type="email" placeholder="nurse@hospital.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
               <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             </div>
           </div>
@@ -402,30 +322,14 @@ export default function Auth() {
               </button>
             </div>
             <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-              >
+              <Input id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
                 {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
               </button>
             </div>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full bg-white hover:bg-gray-100 text-[#0a1f1f] py-6 rounded-xl font-semibold mt-6"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full bg-white hover:bg-gray-100 text-[#0a1f1f] py-6 rounded-xl font-semibold mt-6" disabled={isLoading}>
             {isLoading ? 'Signing In...' : 'Sign In'}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
@@ -439,16 +343,11 @@ export default function Auth() {
           </div>
           <p className="text-gray-400 mt-6">
             New to the platform?{' '}
-            <button
-              type="button"
-              onClick={() => setStep('signup')}
-              className="text-emerald-400 hover:underline font-medium"
-            >
+            <button type="button" onClick={() => setStep('signup')} className="text-emerald-400 hover:underline font-medium">
               Create Account
             </button>
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

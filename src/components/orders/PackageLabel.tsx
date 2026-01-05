@@ -155,11 +155,22 @@ export function PackageLabel({ order }: PackageLabelProps) {
           {/* Header Bar */}
           <div style={{ height: "12px", backgroundColor: "#F97316", margin: "-16px -16px 12px -16px" }} />
 
-          {/* From Section */}
-          <div style={{ borderBottom: "1px solid #d1d5db", paddingBottom: "10px", marginBottom: "10px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>FROM</p>
-            <p style={{ fontSize: "14px", fontWeight: "600", color: "#000000" }}>{order.pharmacy_name || "PharmaNet Pharmacy"}</p>
-            <p style={{ fontSize: "12px", color: "#374151" }}>Healthcare Delivery Service</p>
+          {/* From Section - Two Column Layout */}
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #d1d5db", paddingBottom: "10px", marginBottom: "10px" }}>
+            {/* Left Side - FROM */}
+            <div>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2px" }}>FROM</p>
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "#000000", marginBottom: "1px" }}>PharmaDocs+</p>
+              <p style={{ fontSize: "11px", color: "#374151", marginBottom: "1px" }}>Healthcare Delivery Service</p>
+              <p style={{ fontSize: "9px", color: "#6b7280" }}>www.endoverdose.ca</p>
+            </div>
+            {/* Right Side - CONTACT */}
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2px" }}>CONTACT</p>
+              <p style={{ fontSize: "11px", color: "#000000", marginBottom: "1px" }}>3426 Lake Shore Blvd W</p>
+              <p style={{ fontSize: "11px", color: "#000000", marginBottom: "1px" }}>(844) 722-8829</p>
+              <p style={{ fontSize: "10px", color: "#374151" }}>info@tscp.ca</p>
+            </div>
           </div>
 
           {/* Shipment Info Row */}

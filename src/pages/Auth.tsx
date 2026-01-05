@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import pharmanetLogo from '@/assets/pharmanet-logo.png';
+import endoverdoseLogo from '@/assets/endoverdose-logo.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -360,8 +360,8 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
       <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <div className="mb-8">
-          <div className="w-16 h-16 mb-6 rounded-lg bg-white flex items-center justify-center overflow-hidden">
-            <img src={pharmanetLogo} alt="PharmaDocs" className="w-full h-full object-cover" />
+          <div className="w-48 h-12 mb-6">
+            <img src={endoverdoseLogo} alt="EndOverdose" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight">
             Welcome<br />Back

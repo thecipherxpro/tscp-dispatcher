@@ -288,8 +288,8 @@ export default function Auth() {
   return <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
       <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <div className="mb-8">
-          <div className="w-48 h-12 mb-6">
-            <img src={endoverdoseLogo} alt="EndOverdose" className="w-full h-full object-contain item-center" />
+          <div className="w-48 h-12 mb-6 mx-auto">
+            <img src={endoverdoseLogo} alt="EndOverdose" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight text-center">Welcome Back​<br />​
           </h1>

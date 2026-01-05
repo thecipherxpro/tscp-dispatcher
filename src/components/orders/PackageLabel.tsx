@@ -43,20 +43,31 @@ export function PackageLabel({ order }: PackageLabelProps) {
   const barcodeRef = useRef<SVGSVGElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [barcodeError, setBarcodeError] = useState(false);
   const { toast } = useToast();
   const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
 
   const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
 
+  const barcodeValue = (order.tracking_id || "").trim();
+
   useEffect(() => {
-    if (barcodeRef.current && order.tracking_id) {
-      try {
-        JsBarcode(barcodeRef.current, order.tracking_id, BARCODE_CONFIG);
-      } catch (error) {
-        console.error("Barcode generation error:", error);
-      }
+    // Important: label UI waits for settings; without including isLoadingSettings,
+    // the effect can run while the SVG isn't mounted yet, resulting in a blank barcode.
+    if (isLoadingSettings) return;
+    if (!barcodeRef.current) return;
+    if (!barcodeValue) return;
+
+    try {
+      // Clear any previous barcode content
+      barcodeRef.current.innerHTML = "";
+      JsBarcode(barcodeRef.current, barcodeValue, BARCODE_CONFIG);
+      setBarcodeError(false);
+    } catch (error) {
+      setBarcodeError(true);
+      console.error("Barcode generation error:", { barcodeValue, error });
     }
-  }, [order.tracking_id]);
+  }, [barcodeValue, isLoadingSettings]);
 
   const generateCanvas = useCallback(async () => {
     if (!labelRef.current) return null;
@@ -224,7 +235,11 @@ export function PackageLabel({ order }: PackageLabelProps) {
           <div style={{ borderTop: "1px solid #d1d5db", paddingTop: "10px", marginTop: "auto" }}>
             <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "6px" }}>TRACKING #</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <svg ref={barcodeRef} style={{ maxWidth: "280px", width: "100%" }} />
+              {barcodeError ? (
+                <p style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 700, color: "#000000", margin: 0 }}>{barcodeValue}</p>
+              ) : (
+                <svg ref={barcodeRef} style={{ maxWidth: "280px", width: "100%", height: "80px" }} />
+              )}
             </div>
           </div>
         </div>

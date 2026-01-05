@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink } from 'react-router-dom';
-import { Home, Package, Users, Truck, User } from 'lucide-react';
+import { Home, Package, Users, Truck, User, Tags } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function MobileNav() {
@@ -8,8 +8,8 @@ export function MobileNav() {
   const adminLinks = [
     { to: '/dashboard', icon: Home, label: 'Home' },
     { to: '/orders', icon: Package, label: 'Orders' },
+    { to: '/package-labels', icon: Tags, label: 'Labels' },
     { to: '/drivers', icon: Users, label: 'Drivers' },
-    { to: '/track', icon: Truck, label: 'Track' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 

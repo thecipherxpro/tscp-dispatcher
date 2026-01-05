@@ -291,8 +291,8 @@ export default function Auth() {
           <div className="w-48 h-12 mb-6">
             <img src={endoverdoseLogo} alt="EndOverdose" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-4xl font-bold text-white leading-tight">
-            Welcome Back <br />​
+          <h1 className="text-4xl font-bold text-white leading-tight">Welcome Back
+          <br />​
           </h1>
           <p className="text-gray-400 mt-3">
             Sign in securely to access your medical delivery dashboard.

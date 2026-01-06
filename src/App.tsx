@@ -24,6 +24,7 @@ import UserManagement from "./pages/admin/UserManagement";
 import PackageLabels from "./pages/admin/PackageLabels";
 import Settings from "./pages/admin/Settings";
 import MyOrders from "./pages/driver/MyOrders";
+import DriverScan from "./pages/driver/DriverScan";
 import TrackShipment from "./pages/TrackShipment";
 import NotFound from "./pages/NotFound";
 
@@ -234,6 +235,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['driver']}>
             <DriverDeliveryDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/scan"
+        element={
+          <ProtectedRoute allowedRoles={['driver']}>
+            <DriverScan />
           </ProtectedRoute>
         }
       />

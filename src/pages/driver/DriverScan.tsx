@@ -126,33 +126,42 @@ export default function DriverScan() {
 
   // Handle barcode scanning via camera
   const startScanning = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment'
+    setIsScanning(true);
+    
+    // Small delay to ensure video element is rendered
+    setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        streamRef.current = stream;
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          // Wait for video metadata to load before playing
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(console.error);
+          };
         }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setIsScanning(true);
 
-      // Note: For actual barcode detection, you'd use a library like @aspect/barcode
-      // For now, we'll simulate by allowing manual entry after opening camera
-      toast({
-        title: 'Camera Active',
-        description: 'Point camera at barcode or enter tracking number manually'
-      });
-    } catch (error) {
-      console.error('Camera access error:', error);
-      toast({
-        title: 'Camera Error',
-        description: 'Unable to access camera. Please enter tracking number manually.',
-        variant: 'destructive'
-      });
-    }
+        toast({
+          title: 'Camera Active',
+          description: 'Point camera at barcode or enter tracking number manually'
+        });
+      } catch (error) {
+        console.error('Camera access error:', error);
+        setIsScanning(false);
+        toast({
+          title: 'Camera Error',
+          description: 'Unable to access camera. Please check permissions.',
+          variant: 'destructive'
+        });
+      }
+    }, 100);
   };
   const stopScanning = useCallback(() => {
     if (streamRef.current) {
@@ -224,7 +233,13 @@ export default function DriverScan() {
 
         {/* Scanner View */}
         {isScanning && <div className="relative bg-black">
-            <video ref={videoRef} className="w-full h-64 object-cover" playsInline muted />
+            <video 
+              ref={videoRef} 
+              className="w-full h-64 object-cover" 
+              playsInline 
+              muted 
+              autoPlay
+            />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-64 h-32 border-2 border-primary rounded-lg relative">
                 <div className="absolute -top-1 left-4 right-4 h-0.5 bg-primary animate-pulse" />

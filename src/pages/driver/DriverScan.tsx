@@ -347,8 +347,8 @@ export default function DriverScan() {
           )}
         </div>
 
-        {/* Sticky Scan Button */}
-        <div className="fixed bottom-20 left-0 right-0 px-4 pb-4 z-20">
+        {/* Sticky Scan Button - attached to bottom nav */}
+        <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 z-20 bg-gradient-to-t from-background via-background to-transparent pt-4">
           <Button
             size="lg"
             className="w-full h-14 text-base font-semibold gap-3 shadow-lg"

@@ -138,119 +138,106 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
         const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-
-        const mapped = jsonData.map((row: Record<string, unknown>) => {
-          const order: ParsedOrder = {};
-          const headers = Object.keys(row);
-          
-          // Track which drug type section we're in
-          let currentDrugType: 'injection' | 'nasal' | null = null;
-          
-          for (let i = 0; i < headers.length; i++) {
-            const key = headers[i];
-            const value = row[key];
-            const normalizedKey = key.toLowerCase().trim();
-            
-            // Check if this is a Drug Type indicator
-            if (normalizedKey === 'drug type') {
-              const typeValue = String(value || '').toLowerCase();
-              if (typeValue.includes('inj') || typeValue.includes('injection')) {
-                currentDrugType = 'injection';
-              } else if (typeValue.includes('nasal')) {
-                currentDrugType = 'nasal';
-              }
-              continue;
-            }
-            
-            // Map standard columns
-            const mappedKey = COLUMN_MAPPING[normalizedKey];
-            if (mappedKey) {
-            if (mappedKey === 'order_date' || mappedKey === 'shipping_date') {
-                (order as any)[mappedKey] = parseDate(value);
-              } else {
-                (order as any)[mappedKey] = String(value || '').trim() || undefined;
-              }
-              continue;
-            }
-            
-            // Check for injection-specific columns
-            if (INJECTION_COLUMNS[normalizedKey]) {
-              order.injection_rx_number = String(value || '').trim() || undefined;
-              continue;
-            }
-            
-            // Check for nasal-specific columns
-            if (NASAL_COLUMNS[normalizedKey]) {
-              order.nasal_rx_number = String(value || '').trim() || undefined;
-              continue;
-            }
-            
-            // Handle drug-related columns based on context
-            if (normalizedKey === 'billing date') {
-              const dateValue = parseDate(value);
-              if (currentDrugType === 'injection') {
-                order.injection_billing_date = dateValue;
-              } else if (currentDrugType === 'nasal') {
-                order.nasal_billing_date = dateValue;
-              }
-              continue;
-            }
-            
-            if (normalizedKey === 'din') {
-              const dinValue = String(value || '').trim();
-              if (currentDrugType === 'injection') {
-                order.injection_din = dinValue;
-              } else if (currentDrugType === 'nasal') {
-                order.nasal_din = dinValue;
-              }
-              continue;
-            }
-            
-            if (normalizedKey === 'drug name') {
-              const nameValue = String(value || '').trim();
-              if (currentDrugType === 'injection') {
-                order.injection_drug_name = nameValue;
-              } else if (currentDrugType === 'nasal') {
-                order.nasal_drug_name = nameValue;
-              }
-              continue;
-            }
-            
-            if (normalizedKey === 'strength') {
-              if (currentDrugType === 'injection') {
-                order.injection_strength = String(value || '').trim() || undefined;
-              }
-              continue;
-            }
-            
-            if (normalizedKey === 'form') {
-              if (currentDrugType === 'injection') {
-                order.injection_form = String(value || '').trim() || undefined;
-              }
-              continue;
-            }
-            
-            if (normalizedKey === 'package') {
-              const packageValue = String(value || '').trim();
-              if (currentDrugType === 'injection') {
-                order.injection_package = packageValue;
-              } else if (currentDrugType === 'nasal') {
-                order.nasal_package = packageValue;
-              }
-              continue;
-            }
-            
-            if (normalizedKey === 'qty') {
-              const qtyValue = Number(value) || undefined;
-              if (currentDrugType === 'injection') {
-                order.injection_qty = qtyValue;
-              } else if (currentDrugType === 'nasal') {
-                order.nasal_qty = qtyValue;
-              }
-              continue;
-            }
+        
+        // Get raw data as array of arrays to preserve column positions
+        const rawData: unknown[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' });
+        
+        if (rawData.length < 2) {
+          setParsedData([]);
+          return;
+        }
+        
+        // First row is headers
+        const headers = (rawData[0] as string[]).map(h => String(h || '').toLowerCase().trim());
+        
+        // Find column indices - handle duplicate column names by position
+        const findColumnIndex = (name: string, startFrom = 0): number => {
+          for (let i = startFrom; i < headers.length; i++) {
+            if (headers[i] === name) return i;
           }
+          return -1;
+        };
+        
+        // Standard columns (unique)
+        const colOrderDate = findColumnIndex('order date');
+        const colShippingDate = findColumnIndex('shipping date');
+        const colClientName = findColumnIndex('client name');
+        const colEmail = findColumnIndex('email');
+        const colAddress1 = findColumnIndex('address line 1');
+        const colAddress2 = findColumnIndex('address line 2');
+        const colHealthCard = findColumnIndex('health card no.');
+        const colNotes = findColumnIndex('notes');
+        const colWarehouse = findColumnIndex('warehouse address');
+        const colDoctor = findColumnIndex('authorizing doctor name');
+        
+        // Find injection section by NALOXONE-INJ Rx# column
+        const colInjRx = headers.findIndex(h => h.includes('naloxone-inj'));
+        
+        // Find nasal section by NALOXONE-NASAL Rx# column  
+        const colNasalRx = headers.findIndex(h => h.includes('naloxone-nasal'));
+        
+        // Injection columns (around injection rx#)
+        // Expected order: Drug Type, Billing Date, NALOXONE-INJ Rx#, DIN, Drug Name, Strength, Form, Package, Qty
+        const colInjBillingDate = colInjRx > 0 ? colInjRx - 1 : -1;
+        const colInjDin = colInjRx >= 0 ? colInjRx + 1 : -1;
+        const colInjDrugName = colInjRx >= 0 ? colInjRx + 2 : -1;
+        const colInjStrength = colInjRx >= 0 ? colInjRx + 3 : -1;
+        const colInjForm = colInjRx >= 0 ? colInjRx + 4 : -1;
+        const colInjPackage = colInjRx >= 0 ? colInjRx + 5 : -1;
+        const colInjQty = colInjRx >= 0 ? colInjRx + 6 : -1;
+        
+        // Nasal columns (around nasal rx#)
+        // Expected order: Drug Type, Billing Date, NALOXONE-NASAL Rx#, DIN, Drug Name, Package, Qty
+        const colNasalBillingDate = colNasalRx > 0 ? colNasalRx - 1 : -1;
+        const colNasalDin = colNasalRx >= 0 ? colNasalRx + 1 : -1;
+        const colNasalDrugName = colNasalRx >= 0 ? colNasalRx + 2 : -1;
+        const colNasalPackage = colNasalRx >= 0 ? colNasalRx + 3 : -1;
+        const colNasalQty = colNasalRx >= 0 ? colNasalRx + 4 : -1;
+        
+        // Parse data rows
+        const mapped = rawData.slice(1).map((row: unknown[]) => {
+          const getValue = (idx: number): string => idx >= 0 && idx < row.length ? String(row[idx] || '').trim() : '';
+          const getNumber = (idx: number): number | undefined => {
+            const val = getValue(idx);
+            const num = Number(val);
+            return !isNaN(num) && val !== '' ? num : undefined;
+          };
+          const getDate = (idx: number): string | null => {
+            const val = getValue(idx);
+            return parseDate(val);
+          };
+          
+          const order: ParsedOrder = {
+            // Customer & Order
+            order_date: getDate(colOrderDate),
+            shipping_date: getDate(colShippingDate),
+            client_name: getValue(colClientName) || undefined,
+            email: getValue(colEmail) || undefined,
+            health_card_no: getValue(colHealthCard) || undefined,
+            notes: getValue(colNotes) || undefined,
+            // Address
+            address_line_1: getValue(colAddress1) || undefined,
+            address_line_2: getValue(colAddress2) || undefined,
+            warehouse_address: getValue(colWarehouse) || undefined,
+            // Doctor
+            authorizing_doctor_name: getValue(colDoctor) || undefined,
+            // Injection data
+            injection_rx_number: getValue(colInjRx) || undefined,
+            injection_din: getValue(colInjDin) || undefined,
+            injection_drug_name: getValue(colInjDrugName) || undefined,
+            injection_strength: getValue(colInjStrength) || undefined,
+            injection_form: getValue(colInjForm) || undefined,
+            injection_package: getValue(colInjPackage) || undefined,
+            injection_qty: getNumber(colInjQty),
+            injection_billing_date: getDate(colInjBillingDate),
+            // Nasal data
+            nasal_rx_number: getValue(colNasalRx) || undefined,
+            nasal_din: getValue(colNasalDin) || undefined,
+            nasal_drug_name: getValue(colNasalDrugName) || undefined,
+            nasal_package: getValue(colNasalPackage) || undefined,
+            nasal_qty: getNumber(colNasalQty),
+            nasal_billing_date: getDate(colNasalBillingDate),
+          };
           
           return order;
         });

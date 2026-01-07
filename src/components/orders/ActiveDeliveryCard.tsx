@@ -3,10 +3,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Order } from '@/types/auth';
+
 interface ActiveDeliveryCardProps {
   order: Order;
   onClick?: () => void;
 }
+
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'PICKED_UP_AND_ASSIGNED':
@@ -47,32 +49,16 @@ const getStatusConfig = (status: string) => {
       };
   }
 };
-const getTimelineProgress = (status: string): number => {
-  switch (status) {
-    case 'PENDING':
-      return 0;
-    case 'PICKED_UP_AND_ASSIGNED':
-      return 1;
-    case 'CONFIRMED':
-      return 2;
-    case 'IN_ROUTE':
-      return 3;
-    case 'COMPLETED_DELIVERED':
-    case 'COMPLETED_INCOMPLETE':
-      return 4;
-    default:
-      return 0;
-  }
-};
+
 export function ActiveDeliveryCard({
   order,
   onClick
 }: ActiveDeliveryCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
-  const progress = getTimelineProgress(order.timeline_status);
-  const steps = ['Pending', 'Picked Up', 'Confirmed', 'In Route', 'Delivered'];
   const StatusIcon = statusConfig.icon;
-  return <Card className="bg-card border-border overflow-hidden">
+
+  return (
+    <Card className="bg-card border-border overflow-hidden">
       {/* Header with gradient accent */}
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/50">
         <div className="flex items-center justify-between">
@@ -82,7 +68,7 @@ export function ActiveDeliveryCard({
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium">Active Delivery</p>
-              <p className="text-sm font-semibold text-foreground">{order.name || 'Customer'}</p>
+              <p className="text-sm font-semibold text-foreground">{order.client_name || 'Customer'}</p>
             </div>
           </div>
           <Badge variant={statusConfig.variant}>
@@ -100,12 +86,9 @@ export function ActiveDeliveryCard({
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground font-medium mb-0.5">Destination</p>
             <p className="text-sm font-medium text-foreground leading-relaxed">
-              {order.address_1 || 'Address not available'}
+              {order.address_line_1 || 'Address not available'}
             </p>
-            {order.address_2 && <p className="text-sm text-muted-foreground">{order.address_2}</p>}
-            <p className="text-sm text-muted-foreground">
-              {[order.city, order.province, order.postal].filter(Boolean).join(', ')}
-            </p>
+            {order.address_line_2 && <p className="text-sm text-muted-foreground">{order.address_line_2}</p>}
           </div>
         </div>
 
@@ -121,14 +104,12 @@ export function ActiveDeliveryCard({
           </div>
         </div>
 
-        {/* Timeline Progress */}
-        
-
         {/* Action Button */}
         <Button onClick={onClick} className="w-full" size="lg">
           View Details
           <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
-    </Card>;
+    </Card>
+  );
 }

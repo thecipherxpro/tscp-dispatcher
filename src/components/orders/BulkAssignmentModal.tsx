@@ -45,15 +45,11 @@ export function BulkAssignmentModal({ orders, isOpen, onClose, onSuccess }: Bulk
       const result = await assignDriverToOrder(
         order.id,
         selectedDriverId,
-        order.name,
+        order.client_name,
         {
-          doses_nasal: order.doses_nasal,
-          nasal_rx: order.nasal_rx,
-          doses_injectable: order.doses_injectable,
-          injection_rx: order.injection_rx,
-          city: order.city,
-          province: order.province,
-          postal: order.postal,
+          injection_qty: order.injection_qty,
+          nasal_qty: order.nasal_qty,
+          warehouse_address: order.warehouse_address,
           country: order.country,
           pending_at: order.pending_at,
         }
@@ -108,7 +104,7 @@ export function BulkAssignmentModal({ orders, isOpen, onClose, onSuccess }: Bulk
             <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
               {orders.slice(0, 10).map((order) => (
                 <Badge key={order.id} variant="secondary" className="text-xs">
-                  {order.name?.split(' ')[0] || 'Unknown'}
+                  {order.client_name?.split(' ')[0] || 'Unknown'}
                 </Badge>
               ))}
               {orders.length > 10 && (

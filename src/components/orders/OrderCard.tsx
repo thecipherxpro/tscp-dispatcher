@@ -65,14 +65,23 @@ const getStatusConfig = (status: string) => {
 };
 
 const getFullAddress = (order: Order) => {
-  const parts = [order.address_1, order.address_2, order.city, order.province, order.postal].filter(Boolean);
+  const parts = [order.address_line_1, order.address_line_2].filter(Boolean);
   return parts.join(', ');
+};
+
+// Extract city from warehouse_address for display
+const getCityFromWarehouse = (warehouseAddress: string | null) => {
+  if (!warehouseAddress) return null;
+  // Warehouse address format might be: "123 Street, City, Province"
+  const parts = warehouseAddress.split(',').map(p => p.trim());
+  return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
 };
 
 export function OrderCard({ order, onClick, isDriver = false, actionButton }: OrderCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
-  const hasLocation = order.city || order.province;
+  const hasAddress = order.address_line_1 || order.warehouse_address;
   const shippedDate = order.shipped_at ? new Date(order.shipped_at) : null;
+  const displayCity = getCityFromWarehouse(order.warehouse_address);
 
   return (
     <Card 
@@ -88,12 +97,12 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-foreground truncate leading-tight">
-                {order.name || 'Unknown Client'}
+                {order.client_name || 'Unknown Client'}
               </p>
-              {/* Phone only for admin, not for driver */}
-              {!isDriver && order.phone_number && (
+              {/* Email only for admin, not for driver */}
+              {!isDriver && order.email && (
                 <p className="text-xs text-muted-foreground truncate">
-                  {order.phone_number}
+                  {order.email}
                 </p>
               )}
             </div>
@@ -106,11 +115,11 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
         {/* Details Grid */}
         <div className="space-y-2 pl-[46px]">
           {/* Location - Full address for drivers, partial for admin */}
-          {hasLocation && (
+          {hasAddress && (
             <div className="flex items-start gap-2 text-sm">
               <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
               <span className="text-muted-foreground">
-                {isDriver ? getFullAddress(order) : [order.address_1, order.city, order.province].filter(Boolean).join(', ')}
+                {isDriver ? getFullAddress(order) : (order.address_line_1 || displayCity)}
               </span>
             </div>
           )}
@@ -149,13 +158,13 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
           </div>
         )}
 
-        {/* Bottom Row - Pharmacy & Arrow (Admin only) */}
+        {/* Bottom Row - Doctor & Arrow (Admin only) */}
         {!isDriver && (
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50 pl-[46px]">
             <div className="flex-1 min-w-0">
-              {order.pharmacy_name && (
+              {order.authorizing_doctor_name && (
                 <p className="text-xs text-muted-foreground truncate">
-                  {order.pharmacy_name}
+                  Dr. {order.authorizing_doctor_name}
                 </p>
               )}
             </div>

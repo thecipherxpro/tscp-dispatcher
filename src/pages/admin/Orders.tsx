@@ -53,10 +53,10 @@ export default function Orders() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(order =>
-        order.name?.toLowerCase().includes(query) ||
+        order.client_name?.toLowerCase().includes(query) ||
         order.shipment_id?.toLowerCase().includes(query) ||
-        order.city?.toLowerCase().includes(query) ||
-        order.phone_number?.includes(query)
+        order.address_line_1?.toLowerCase().includes(query) ||
+        order.email?.toLowerCase().includes(query)
       );
     }
 

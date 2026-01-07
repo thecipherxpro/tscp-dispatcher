@@ -211,7 +211,7 @@ export default function DriverDashboard() {
                       {order.shipment_id || 'No ID'}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {order.city || 'Unknown'}{order.province && ` • ${order.province}`}
+                      {order.geo_zone || order.address_line_1 || 'Unknown'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

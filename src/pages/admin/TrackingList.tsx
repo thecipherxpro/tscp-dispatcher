@@ -19,10 +19,10 @@ export default function TrackingList() {
   const filteredOrders = assignedOrders.filter(order => {
     const query = searchQuery.toLowerCase();
     return (
-      order.name?.toLowerCase().includes(query) ||
+      order.client_name?.toLowerCase().includes(query) ||
       order.tracking_id?.toLowerCase().includes(query) ||
       order.shipment_id?.toLowerCase().includes(query) ||
-      order.city?.toLowerCase().includes(query)
+      order.geo_zone?.toLowerCase().includes(query)
     );
   });
 
@@ -74,7 +74,7 @@ export default function TrackingList() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium truncate">{order.name || 'Unknown'}</span>
+                      <span className="font-medium truncate">{order.client_name || 'Unknown'}</span>
                       <Badge className={getStatusColor(order.timeline_status)}>
                         {order.timeline_status.replace(/_/g, ' ')}
                       </Badge>
@@ -89,7 +89,7 @@ export default function TrackingList() {
                     <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
                       <MapPin className="w-3 h-3" />
                       <span className="truncate">
-                        {[order.city, order.province].filter(Boolean).join(', ') || 'No address'}
+                        {order.geo_zone || order.address_line_1 || 'No address'}
                       </span>
                     </div>
                     

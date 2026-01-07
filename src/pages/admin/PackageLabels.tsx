@@ -85,13 +85,13 @@ function OrderSelectCard({
             <button className="flex-1 flex items-center justify-between text-left">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm truncate">{order.name || "Unknown"}</span>
+                  <span className="font-medium text-sm truncate">{order.client_name || "Unknown"}</span>
                   {!canGenerateLabel && (
                     <Badge variant="outline" className="text-xs shrink-0">No Label</Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>{formatOrderDate(order.ship_date || order.created_at)}</span>
+                  <span>{formatOrderDate(order.shipping_date || order.created_at)}</span>
                   {order.shipment_id && (
                     <span className="font-mono">{order.shipment_id}</span>
                   )}
@@ -111,12 +111,12 @@ function OrderSelectCard({
             <div className="grid grid-cols-2 gap-3 text-xs mt-3">
               <div>
                 <p className="text-muted-foreground mb-1">Address</p>
-                <p className="text-foreground">{order.address_1 || "N/A"}</p>
-                {order.city && <p className="text-foreground">{order.city}, {order.province}</p>}
+                <p className="text-foreground">{order.address_line_1 || "N/A"}</p>
+                {order.geo_zone && <p className="text-foreground">{order.geo_zone}</p>}
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Postal</p>
-                <p className="text-foreground">{order.postal || "N/A"}</p>
+                <p className="text-muted-foreground mb-1">Warehouse</p>
+                <p className="text-foreground">{order.warehouse_address || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-1">Tracking ID</p>
@@ -125,15 +125,15 @@ function OrderSelectCard({
               <div>
                 <p className="text-muted-foreground mb-1">RX</p>
                 <p className="text-foreground">
-                  {order.nasal_rx || order.injection_rx || "N/A"}
+                  {order.nasal_rx_number || order.injection_rx_number || "N/A"}
                 </p>
               </div>
-              {(order.doses_nasal || order.doses_injectable) && (
+              {(order.nasal_qty || order.injection_qty) && (
                 <div className="col-span-2">
-                  <p className="text-muted-foreground mb-1">Doses</p>
+                  <p className="text-muted-foreground mb-1">Quantities</p>
                   <div className="flex gap-2">
-                    {order.doses_nasal && <Badge variant="secondary">Nasal: {order.doses_nasal}</Badge>}
-                    {order.doses_injectable && <Badge variant="secondary">Injectable: {order.doses_injectable}</Badge>}
+                    {order.nasal_qty && <Badge variant="secondary">Nasal: {order.nasal_qty}</Badge>}
+                    {order.injection_qty && <Badge variant="secondary">Injectable: {order.injection_qty}</Badge>}
                   </div>
                 </div>
               )}
@@ -171,7 +171,7 @@ function LabelCard({
     }
   }, [label.order.tracking_id]);
 
-  const address = [label.order.city, label.order.province, label.order.postal].filter(Boolean).join(", ");
+  const address = label.order.geo_zone || label.order.address_line_1 || "";
 
   return (
     <div className={cn(
@@ -188,8 +188,8 @@ function LabelCard({
           {/* Mini Label Preview */}
           <div className="bg-white rounded border p-2 mb-2">
             <div className="text-xs">
-              <p className="font-bold text-black truncate">{label.order.name}</p>
-              <p className="text-gray-600 truncate">{label.order.address_1}</p>
+              <p className="font-bold text-black truncate">{label.order.client_name}</p>
+              <p className="text-gray-600 truncate">{label.order.address_line_1}</p>
               <p className="text-gray-600 truncate">{address}</p>
             </div>
             <div className="flex justify-center mt-2">
@@ -233,7 +233,7 @@ export default function PackageLabels() {
     return orders.filter(order => {
       // Date filter - single date
       if (singleDate) {
-        const orderDate = order.ship_date || order.created_at;
+        const orderDate = order.shipping_date || order.created_at;
         if (orderDate) {
           const orderDateParsed = parseISO(orderDate);
           if (!isWithinInterval(orderDateParsed, {
@@ -247,7 +247,7 @@ export default function PackageLabels() {
 
       // Date filter - range
       if (dateRange.from && dateRange.to) {
-        const orderDate = order.ship_date || order.created_at;
+        const orderDate = order.shipping_date || order.created_at;
         if (orderDate) {
           const orderDateParsed = parseISO(orderDate);
           if (!isWithinInterval(orderDateParsed, {
@@ -262,8 +262,8 @@ export default function PackageLabels() {
       // RX filter
       if (rxFilter.trim()) {
         const rx = rxFilter.toLowerCase();
-        const nasalMatch = order.nasal_rx?.toLowerCase().includes(rx);
-        const injectionMatch = order.injection_rx?.toLowerCase().includes(rx);
+        const nasalMatch = order.nasal_rx_number?.toLowerCase().includes(rx);
+        const injectionMatch = order.injection_rx_number?.toLowerCase().includes(rx);
         if (!nasalMatch && !injectionMatch) {
           return false;
         }
@@ -720,7 +720,7 @@ async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSet
     document.body.appendChild(container);
 
     // Create the label HTML
-    const address = [order.city, order.province, order.postal].filter(Boolean).join(", ");
+    const address = order.geo_zone || order.address_line_1 || "";
     const formatDate = (date: string | null): string => {
       if (!date) return "N/A";
       return new Date(date).toLocaleDateString("en-CA", {
@@ -759,7 +759,7 @@ async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSet
           </div>
           <div style="text-align: right;">
             <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Ship Date</p>
-            <p style="font-size: 13px; font-weight: 600; color: #000000;">${formatDate(order.ship_date)}</p>
+            <p style="font-size: 13px; font-weight: 600; color: #000000;">${formatDate(order.shipping_date)}</p>
           </div>
         </div>
 
@@ -774,9 +774,9 @@ async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSet
         </div>
 
         <div style="margin-bottom: 4px;">
-          <p style="font-size: 16px; font-weight: bold; color: #000000; margin: 0;">${order.name || "Customer"}</p>
-          <p style="font-size: 13px; color: #000000; margin: 2px 0;">${order.address_1 || ""}</p>
-          ${order.address_2 ? `<p style="font-size: 13px; color: #000000; margin: 2px 0;">${order.address_2}</p>` : ""}
+          <p style="font-size: 16px; font-weight: bold; color: #000000; margin: 0;">${order.client_name || "Customer"}</p>
+          <p style="font-size: 13px; color: #000000; margin: 2px 0;">${order.address_line_1 || ""}</p>
+          ${order.address_line_2 ? `<p style="font-size: 13px; color: #000000; margin: 2px 0;">${order.address_line_2}</p>` : ""}
           <p style="font-size: 13px; color: #000000; margin: 2px 0;">${address}</p>
         </div>
 

@@ -348,7 +348,7 @@ export default function DriverZoneDeliveryList() {
                           <div className="flex-1 p-3 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-semibold text-foreground truncate">
-                                {order.name || 'Unknown Client'}
+                                {order.client_name || 'Unknown Client'}
                               </span>
                               <Badge variant={status.variant} className="text-xs flex-shrink-0">
                                 {status.label}
@@ -359,7 +359,7 @@ export default function DriverZoneDeliveryList() {
                             <div className="flex items-start gap-1.5 text-muted-foreground mb-2">
                               <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                               <span className="text-sm line-clamp-2">
-                                {order.address_1}{order.address_2 ? `, ${order.address_2}` : ''}, {order.city}
+                                {order.address_line_1}{order.address_line_2 ? `, ${order.address_line_2}` : ''}, {order.geo_zone || 'N/A'}
                               </span>
                             </div>
 

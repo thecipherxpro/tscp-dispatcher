@@ -166,10 +166,10 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
             // Map standard columns
             const mappedKey = COLUMN_MAPPING[normalizedKey];
             if (mappedKey) {
-              if (mappedKey === 'order_date' || mappedKey === 'shipping_date') {
-                order[mappedKey] = parseDate(value);
+            if (mappedKey === 'order_date' || mappedKey === 'shipping_date') {
+                (order as any)[mappedKey] = parseDate(value);
               } else {
-                order[mappedKey] = String(value || '').trim() || undefined;
+                (order as any)[mappedKey] = String(value || '').trim() || undefined;
               }
               continue;
             }

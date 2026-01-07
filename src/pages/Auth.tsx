@@ -40,8 +40,9 @@ export default function Auth() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Login fields
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('rememberedEmail') || '');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberedEmail'));
 
   // Signup fields
   const [fullName, setFullName] = useState('');
@@ -75,6 +76,12 @@ export default function Auth() {
           variant: "destructive"
         });
       } else {
+        // Handle Remember Me
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+        }
         navigate('/');
       }
     } catch (err) {
@@ -328,7 +335,20 @@ export default function Auth() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-white hover:bg-gray-100 text-[#0a1f1f] py-6 rounded-xl font-semibold mt-6" disabled={isLoading}>
+          {/* Remember Me */}
+          <div className="flex items-center gap-3 pt-1">
+            <Checkbox 
+              id="rememberMe" 
+              checked={rememberMe} 
+              onCheckedChange={(checked) => setRememberMe(checked === true)} 
+              className="border-[#1a4a4a] data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" 
+            />
+            <Label htmlFor="rememberMe" className="text-sm text-gray-400 cursor-pointer">
+              Remember me
+            </Label>
+          </div>
+
+          <Button type="submit" className="w-full bg-white hover:bg-gray-100 text-[#0a1f1f] py-6 rounded-xl font-semibold mt-4" disabled={isLoading}>
             {isLoading ? 'Signing In...' : 'Sign In'}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>

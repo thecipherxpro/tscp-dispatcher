@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import { FileDown, Printer } from "lucide-react";
-import JsBarcode from "jsbarcode";
+import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
@@ -21,17 +21,6 @@ const formatDate = (date: string | null): string => {
   });
 };
 
-const BARCODE_CONFIG = {
-  format: "CODE128",
-  width: 2,
-  height: 60,
-  displayValue: true,
-  fontSize: 14,
-  margin: 10,
-  background: "#ffffff",
-  lineColor: "#000000",
-} as const;
-
 const CANVAS_OPTIONS = {
   scale: 3,
   backgroundColor: "#ffffff",
@@ -40,34 +29,13 @@ const CANVAS_OPTIONS = {
 };
 
 export function PackageLabel({ order }: PackageLabelProps) {
-  const barcodeRef = useRef<SVGSVGElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [barcodeError, setBarcodeError] = useState(false);
   const { toast } = useToast();
   const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
 
   const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
-
-  const barcodeValue = (order.tracking_id || "").trim();
-
-  useEffect(() => {
-    // Important: label UI waits for settings; without including isLoadingSettings,
-    // the effect can run while the SVG isn't mounted yet, resulting in a blank barcode.
-    if (isLoadingSettings) return;
-    if (!barcodeRef.current) return;
-    if (!barcodeValue) return;
-
-    try {
-      // Clear any previous barcode content
-      barcodeRef.current.innerHTML = "";
-      JsBarcode(barcodeRef.current, barcodeValue, BARCODE_CONFIG);
-      setBarcodeError(false);
-    } catch (error) {
-      setBarcodeError(true);
-      console.error("Barcode generation error:", { barcodeValue, error });
-    }
-  }, [barcodeValue, isLoadingSettings]);
+  const qrValue = order.tracking_id || order.id;
 
   const generateCanvas = useCallback(async () => {
     if (!labelRef.current) return null;
@@ -231,15 +199,23 @@ export function PackageLabel({ order }: PackageLabelProps) {
             <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{address}</p>
           </div>
 
-          {/* Barcode Section */}
-          <div style={{ borderTop: "1px solid #d1d5db", paddingTop: "10px", marginTop: "auto" }}>
-            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "6px" }}>TRACKING #</p>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              {barcodeError ? (
-                <p style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 700, color: "#000000", margin: 0 }}>{barcodeValue}</p>
-              ) : (
-                <svg ref={barcodeRef} style={{ maxWidth: "280px", width: "100%", height: "80px" }} />
-              )}
+          {/* QR Code Section */}
+          <div style={{ borderTop: "1px solid #d1d5db", paddingTop: "12px", marginTop: "auto" }}>
+            <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "8px" }}>
+              SCAN TO TRACK
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+              <QRCodeSVG 
+                value={qrValue}
+                size={120}
+                level="M"
+                includeMargin={false}
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
+              <p style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 600, color: "#374151", marginTop: "8px" }}>
+                {order.tracking_id}
+              </p>
             </div>
           </div>
         </div>

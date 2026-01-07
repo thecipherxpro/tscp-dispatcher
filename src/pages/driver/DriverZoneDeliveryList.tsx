@@ -10,6 +10,7 @@ import { Order } from '@/types/auth';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { setGoogleMapsOptions } from '@/lib/googleMapsConfig';
+import { getOrderGeoZone } from '@/lib/geoZone';
 
 type GeoZone = 'north' | 'east' | 'west' | 'south';
 
@@ -68,22 +69,33 @@ export default function DriverZoneDeliveryList() {
         .from('orders')
         .select('*')
         .eq('assigned_driver_id', user.id)
-        .eq('geo_zone', zone.toUpperCase())
-        .not('timeline_status', 'in', '(COMPLETED_DELIVERED,COMPLETED_INCOMPLETE)');
+        .not('timeline_status', 'in', '(COMPLETED_DELIVERED,COMPLETED_INCOMPLETE)')
+        .order('created_at', { ascending: false });
 
       if (data) {
-        let ordersWithDistance = data as OrderWithDistance[];
-        
+        const targetZone = zone.toUpperCase() as 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+        let ordersWithDistance = (data as OrderWithDistance[]).filter(
+          (o) => getOrderGeoZone(o) === targetZone
+        );
+
         if (driverLocation) {
-          ordersWithDistance = ordersWithDistance.map(order => ({
+          ordersWithDistance = ordersWithDistance.map((order) => ({
             ...order,
-            distance: order.latitude && order.longitude 
-              ? calculateDistance(driverLocation.lat, driverLocation.lng, order.latitude, order.longitude)
-              : Infinity
+            distance:
+              order.latitude && order.longitude
+                ? calculateDistance(
+                    driverLocation.lat,
+                    driverLocation.lng,
+                    order.latitude,
+                    order.longitude
+                  )
+                : Infinity,
           }));
-          ordersWithDistance.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+          ordersWithDistance.sort(
+            (a, b) => (a.distance || Infinity) - (b.distance || Infinity)
+          );
         }
-        
+
         setOrders(ordersWithDistance);
       }
     } catch (error) {
@@ -359,7 +371,9 @@ export default function DriverZoneDeliveryList() {
                             <div className="flex items-start gap-1.5 text-muted-foreground mb-2">
                               <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                               <span className="text-sm line-clamp-2">
-                                {order.address_line_1}{order.address_line_2 ? `, ${order.address_line_2}` : ''}, {order.geo_zone || 'N/A'}
+                                {order.address_line_1}
+                                {order.address_line_2 ? `, ${order.address_line_2}` : ''}
+                                {getOrderGeoZone(order) ? `, ${getOrderGeoZone(order)}` : ''}
                               </span>
                             </div>
 

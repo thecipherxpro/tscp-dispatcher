@@ -6,9 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SplashScreen } from "@/components/SplashScreen";
+import { InstallPromptBanner } from "@/components/pwa/InstallPromptBanner";
+import { OfflineReadyToast } from "@/components/pwa/OfflineReadyToast";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import Install from "./pages/Install";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import DriverDashboard from "./pages/driver/DriverDashboard";
 import DriverOnboarding from "./pages/driver/DriverOnboarding";
@@ -100,9 +103,10 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public tracking routes */}
+      {/* Public routes */}
       <Route path="/track/:trackingId" element={<TrackShipment />} />
       <Route path="/TrackShipment" element={<TrackShipment />} />
+      <Route path="/install" element={<Install />} />
 
       {/* Auth routes */}
       <Route
@@ -271,6 +275,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <InstallPromptBanner />
+          <OfflineReadyToast />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

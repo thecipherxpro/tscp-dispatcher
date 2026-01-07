@@ -14,14 +14,14 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
+      registerType: "prompt",
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png", "offline.html"],
       manifest: {
-        name: "TSCP Dispatch",
-        short_name: "TSCP",
+        name: "EndOverdose",
+        short_name: "EndOverdose",
         description: "Pharmaceutical Delivery Dispatch System",
-        theme_color: "#5b5bd6",
-        background_color: "#f5f5f5",
+        theme_color: "#0d4f5c",
+        background_color: "#0d4f5c",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
@@ -46,8 +46,10 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/track\//, /^\/api\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/oitsksrfgchqqjksqpnc\.supabase\.co\/rest\/v1\/.*/i,
@@ -56,7 +58,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "supabase-api-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 5, // 5 minutes
+                maxAgeSeconds: 60 * 5,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -70,10 +72,32 @@ export default defineConfig(({ mode }) => ({
               cacheName: "mapbox-api-cache",
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                maxAgeSeconds: 60 * 60 * 24,
               },
               cacheableResponse: {
                 statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:woff|woff2|ttf|eot)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "font-cache",
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import pharmanetLogo from '@/assets/pharmanet-logo.png';
+import endoverdoseLogo from '@/assets/endoverdose-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -32,8 +32,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         }}
       >
         <img 
-          src={pharmanetLogo} 
-          alt="EndOverdose Delivery Service" 
+          src={endoverdoseLogo} 
+          alt="EndOverdose" 
           className="w-64 h-64 object-contain"
         />
       </div>

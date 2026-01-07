@@ -80,7 +80,7 @@ const getCityFromWarehouse = (warehouseAddress: string | null) => {
 export function OrderCard({ order, onClick, isDriver = false, actionButton }: OrderCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
   const hasAddress = order.address_line_1 || order.warehouse_address;
-  const shippedDate = order.shipped_at ? new Date(order.shipped_at) : null;
+  const orderDate = order.order_date ? new Date(order.order_date) : null;
   const displayCity = getCityFromWarehouse(order.warehouse_address);
 
   return (
@@ -124,12 +124,12 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
             </div>
           )}
 
-          {/* Shipped Date - Admin only */}
-          {!isDriver && shippedDate && (
+          {/* Order Date - Admin only */}
+          {!isDriver && orderDate && (
             <div className="flex items-center gap-2 text-sm">
               <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">
-                Shipped: {format(shippedDate, 'MMM d, yyyy')}
+                Order: {format(orderDate, 'MMM d, yyyy')}
               </span>
             </div>
           )}

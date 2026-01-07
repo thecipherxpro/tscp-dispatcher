@@ -210,15 +210,15 @@ export function OrderDetailSheet({
                 <div className="bg-muted/30 rounded-xl p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Shipped Date</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Order Date</p>
                       <p className="text-sm font-medium text-foreground">
-                        {order.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}
+                        {order.order_date ? formatDate(order.order_date) : 'Not set'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Shipping Date</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Created</p>
                       <p className="text-sm font-medium text-foreground">
-                        {order.shipping_date ? formatDate(order.shipping_date) : 'Not set'}
+                        {order.created_at ? formatDateTime(order.created_at) : 'Unknown'}
                       </p>
                     </div>
                   </div>

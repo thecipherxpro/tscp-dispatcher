@@ -505,12 +505,12 @@ export default function OrderAuditTrail() {
                   <div class="field-value mono">${order?.tracking_id || 'Not assigned'}</div>
                 </div>
                 <div>
-                  <div class="field-label">Shipped Date</div>
-                  <div class="field-value">${order?.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</div>
+                  <div class="field-label">Ordered Date</div>
+                  <div class="field-value">${formatDate(order?.order_date || null)}</div>
                 </div>
                 <div>
-                  <div class="field-label">Billing Date</div>
-                  <div class="field-value">${formatDate(order?.injection_billing_date || order?.nasal_billing_date || null)}</div>
+                  <div class="field-label">Shipped Date</div>
+                  <div class="field-value">${order?.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</div>
                 </div>
               </div>
             </div>
@@ -560,24 +560,63 @@ export default function OrderAuditTrail() {
                 </div>
               </div>
               <div class="separator"></div>
-              <div class="grid-2">
-                <div>
-                  <div class="field-label">Nasal RX</div>
-                  <div class="field-value mono">${order?.nasal_rx_number || '—'}</div>
-                </div>
-                <div>
-                  <div class="field-label">Injection RX</div>
-                  <div class="field-value mono">${order?.injection_rx_number || '—'}</div>
-                </div>
-                <div>
-                  <div class="field-label">Nasal Qty</div>
-                  <div class="field-value">${order?.nasal_qty ?? '—'}</div>
-                </div>
-                <div>
-                  <div class="field-label">Injection Qty</div>
-                  <div class="field-value">${order?.injection_qty ?? '—'}</div>
+              ${order?.nasal_rx_number || order?.nasal_qty ? `
+              <div style="background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: 600; color: #2563eb; margin-bottom: 8px;">Nasal Spray</div>
+                <div class="grid-2">
+                  <div>
+                    <div class="field-label">RX#</div>
+                    <div class="field-value mono">${order?.nasal_rx_number || '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Qty</div>
+                    <div class="field-value">${order?.nasal_qty ?? '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">DIN</div>
+                    <div class="field-value mono">${order?.nasal_din || '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Billing Date</div>
+                    <div class="field-value">${formatDate(order?.nasal_billing_date || null)}</div>
+                  </div>
+                  <div style="grid-column: span 2;">
+                    <div class="field-label">Drug Name</div>
+                    <div class="field-value">${order?.nasal_drug_name || '—'}</div>
+                  </div>
                 </div>
               </div>
+              ` : ''}
+              ${order?.injection_rx_number || order?.injection_qty ? `
+              <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                <div style="font-size: 11px; font-weight: 600; color: #2563eb; margin-bottom: 8px;">Injectable</div>
+                <div class="grid-2">
+                  <div>
+                    <div class="field-label">RX#</div>
+                    <div class="field-value mono">${order?.injection_rx_number || '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Qty</div>
+                    <div class="field-value">${order?.injection_qty ?? '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">DIN</div>
+                    <div class="field-value mono">${order?.injection_din || '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Billing Date</div>
+                    <div class="field-value">${formatDate(order?.injection_billing_date || null)}</div>
+                  </div>
+                  <div style="grid-column: span 2;">
+                    <div class="field-label">Drug Name</div>
+                    <div class="field-value">${order?.injection_drug_name || '—'} ${order?.injection_strength || ''} ${order?.injection_form || ''}</div>
+                  </div>
+                </div>
+              </div>
+              ` : ''}
+              ${!order?.nasal_rx_number && !order?.nasal_qty && !order?.injection_rx_number && !order?.injection_qty ? `
+              <div style="text-align: center; padding: 12px; color: #9ca3af;">No drug information available</div>
+              ` : ''}
             </div>
           </div>
 
@@ -861,12 +900,12 @@ export default function OrderAuditTrail() {
                   <p className="text-sm font-mono font-semibold">{order.tracking_id || <EmptyField label="Not assigned" />}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipped Date</p>
-                  <p className="text-sm font-medium">{order.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Ordered Date</p>
+                  <p className="text-sm font-medium">{formatDate(order.order_date)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Billing Date</p>
-                  <p className="text-sm font-medium">{formatDate(order.injection_billing_date || order.nasal_billing_date)}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Shipped Date</p>
+                  <p className="text-sm font-medium">{order.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</p>
                 </div>
               </div>
             </CardContent>
@@ -926,24 +965,65 @@ export default function OrderAuditTrail() {
                 </div>
               </div>
               <Separator />
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Nasal RX</p>
-                  <p className="text-sm font-mono">{order.nasal_rx_number || <EmptyField label="—" />}</p>
+              {/* Nasal Drug Section */}
+              {(order.nasal_rx_number || order.nasal_qty) && (
+                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-primary">Nasal Spray</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">RX#</p>
+                      <p className="text-sm font-mono">{order.nasal_rx_number || <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Qty</p>
+                      <p className="text-sm font-semibold">{order.nasal_qty ?? <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">DIN</p>
+                      <p className="text-sm font-mono">{order.nasal_din || <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Billing Date</p>
+                      <p className="text-sm font-medium">{formatDate(order.nasal_billing_date)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Drug Name</p>
+                      <p className="text-sm">{order.nasal_drug_name || <EmptyField label="—" />}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Injection RX</p>
-                  <p className="text-sm font-mono">{order.injection_rx_number || <EmptyField label="—" />}</p>
+              )}
+              {/* Injection Drug Section */}
+              {(order.injection_rx_number || order.injection_qty) && (
+                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-primary">Injectable</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">RX#</p>
+                      <p className="text-sm font-mono">{order.injection_rx_number || <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Qty</p>
+                      <p className="text-sm font-semibold">{order.injection_qty ?? <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">DIN</p>
+                      <p className="text-sm font-mono">{order.injection_din || <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Billing Date</p>
+                      <p className="text-sm font-medium">{formatDate(order.injection_billing_date)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Drug Name</p>
+                      <p className="text-sm">{order.injection_drug_name || <EmptyField label="—" />} {order.injection_strength} {order.injection_form}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Nasal Qty</p>
-                  <p className="text-sm font-semibold">{order.nasal_qty ?? <EmptyField label="—" />}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Injection Qty</p>
-                  <p className="text-sm font-semibold">{order.injection_qty ?? <EmptyField label="—" />}</p>
-                </div>
-              </div>
+              )}
+              {!order.nasal_rx_number && !order.nasal_qty && !order.injection_rx_number && !order.injection_qty && (
+                <p className="text-sm text-muted-foreground text-center py-2">No drug information available</p>
+              )}
             </CardContent>
           </Card>
 

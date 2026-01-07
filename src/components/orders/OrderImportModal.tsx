@@ -15,7 +15,6 @@ interface OrderImportModalProps {
 interface ParsedOrder {
   // Customer & Order
   order_date?: string | null;
-  shipping_date?: string | null;
   client_name?: string;
   email?: string;
   health_card_no?: string;
@@ -49,8 +48,6 @@ const COLUMN_MAPPING: Record<string, keyof ParsedOrder> = {
   // Customer & Order
   'order date': 'order_date',
   'order_date': 'order_date',
-  'shipping date': 'shipping_date',
-  'shipping_date': 'shipping_date',
   'client name': 'client_name',
   'client_name': 'client_name',
   'email': 'email',
@@ -160,7 +157,6 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
         
         // Standard columns (unique)
         const colOrderDate = findColumnIndex('order date');
-        const colShippingDate = findColumnIndex('shipping date');
         const colClientName = findColumnIndex('client name');
         const colEmail = findColumnIndex('email');
         const colAddress1 = findColumnIndex('address line 1');
@@ -210,7 +206,6 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
           const order: ParsedOrder = {
             // Customer & Order
             order_date: getDate(colOrderDate),
-            shipping_date: getDate(colShippingDate),
             client_name: getValue(colClientName) || undefined,
             email: getValue(colEmail) || undefined,
             health_card_no: getValue(colHealthCard) || undefined,
@@ -281,7 +276,6 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
         const { error } = await supabase.from('orders').insert({
           // Customer & Order
           order_date: order.order_date || null,
-          shipping_date: order.shipping_date || null,
           client_name: order.client_name || '',
           email: order.email || '',
           health_card_no: order.health_card_no || '',

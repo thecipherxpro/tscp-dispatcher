@@ -289,7 +289,7 @@ export default function Auth() {
       <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <div className="mb-8">
           <div className="w-48 h-12 mb-6 mx-auto">
-            <img src={endoverdoseLogo} alt="EndOverdose" className="w-full h-full object-contain" />
+            <img alt="EndOverdose" src="/lovable-uploads/e9b3aa87-4d9b-40f3-a2ca-eda1ac0b6119.png" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight text-center">Welcome Back​<br />​
           </h1>

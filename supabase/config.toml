@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.generate-route-snapshot]
 verify_jwt = true
+
+[functions.geocode-address]
+verify_jwt = true

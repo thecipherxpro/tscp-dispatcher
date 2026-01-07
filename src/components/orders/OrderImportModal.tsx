@@ -263,6 +263,37 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     return parsedData.slice(0, selectedCount);
   };
 
+  // Geocode address using edge function
+  const geocodeAddress = async (address: string): Promise<{ latitude: number | null; longitude: number | null; geo_zone: string | null; country: string | null }> => {
+    try {
+      if (!address || address.trim().length < 5) {
+        return { latitude: null, longitude: null, geo_zone: null, country: null };
+      }
+
+      // Add Canada to address for better geocoding
+      const fullAddress = address.includes('Canada') ? address : `${address}, Canada`;
+      
+      const { data, error } = await supabase.functions.invoke('geocode-address', {
+        body: { address: fullAddress }
+      });
+
+      if (error || !data) {
+        console.warn('Geocoding failed for address:', address, error);
+        return { latitude: null, longitude: null, geo_zone: null, country: null };
+      }
+
+      return {
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        geo_zone: data.geo_zone || null,
+        country: data.country || 'Canada'
+      };
+    } catch (error) {
+      console.warn('Geocoding error:', error);
+      return { latitude: null, longitude: null, geo_zone: null, country: null };
+    }
+  };
+
   const handleImport = async () => {
     const ordersToImport = getOrdersToImport();
     if (ordersToImport.length === 0) return;
@@ -273,6 +304,9 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
 
     for (const order of ordersToImport) {
       try {
+        // Geocode the address_line_1 to get lat/lng and geo_zone
+        const geoData = await geocodeAddress(order.address_line_1 || '');
+        
         const { error } = await supabase.from('orders').insert({
           // Customer & Order
           order_date: order.order_date || null,
@@ -280,10 +314,14 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
           email: order.email || '',
           health_card_no: order.health_card_no || '',
           notes: order.notes || '',
-          // Address
+          // Address with geocoded data
           address_line_1: order.address_line_1 || '',
           address_line_2: order.address_line_2 || '',
           warehouse_address: order.warehouse_address || '',
+          latitude: geoData.latitude,
+          longitude: geoData.longitude,
+          geo_zone: geoData.geo_zone,
+          country: geoData.country,
           // Doctor
           authorizing_doctor_name: order.authorizing_doctor_name || '',
           // Drug Data (Injection)

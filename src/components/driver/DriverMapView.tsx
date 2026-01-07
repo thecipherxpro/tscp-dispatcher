@@ -200,11 +200,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       return order;
     }
 
-    const address = [
-      order.address_line_1,
-      order.address_line_2,
-      order.country || 'Canada'
-    ].filter(Boolean).join(', ');
+    // Use address_line_1 only for geocoding
+    const address = order.address_line_1 
+      ? `${order.address_line_1}, Canada` 
+      : '';
 
     if (!address) return order;
 

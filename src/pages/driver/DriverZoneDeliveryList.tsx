@@ -69,7 +69,7 @@ export default function DriverZoneDeliveryList() {
         .select('*')
         .eq('assigned_driver_id', user.id)
         .eq('geo_zone', zone.toUpperCase())
-        .not('timeline_status', 'in', '("COMPLETED_DELIVERED","COMPLETED_INCOMPLETE")');
+        .not('timeline_status', 'in', '(COMPLETED_DELIVERED,COMPLETED_INCOMPLETE)');
 
       if (data) {
         let ordersWithDistance = data as OrderWithDistance[];

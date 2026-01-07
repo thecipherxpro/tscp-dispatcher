@@ -147,9 +147,54 @@ export default function DriverZoneDashboard() {
     };
   }, [user, fetchOrders]);
 
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const getZoneCount = (zone: ZoneCard) => {
     return orders.filter((o) => getOrderGeoZone(o) === zone).length;
   };
+
+  // Get minimum distance to any order in a zone
+  const getZoneMinDistance = (zone: ZoneCard): number | null => {
+    if (!driverLocation) return null;
+    
+    const zoneOrders = orders.filter((o) => getOrderGeoZone(o) === zone && o.latitude && o.longitude);
+    if (zoneOrders.length === 0) return null;
+    
+    const distances = zoneOrders.map(o => 
+      calculateDistance(driverLocation.lat, driverLocation.lng, o.latitude!, o.longitude!)
+    );
+    return Math.min(...distances);
+  };
+
+  // Find the zone with the closest order
+  const getClosestZone = (): GeoZone | null => {
+    if (!driverLocation || orders.length === 0) return null;
+    
+    let closestZone: GeoZone | null = null;
+    let minDistance = Infinity;
+    
+    ZONES.forEach(zone => {
+      const zoneMin = getZoneMinDistance(zone);
+      if (zoneMin !== null && zoneMin < minDistance) {
+        minDistance = zoneMin;
+        closestZone = zone;
+      }
+    });
+    
+    return closestZone;
+  };
+
+  const closestZone = getClosestZone();
 
   const handleZoneClick = (zone: GeoZone) => {
     haptic.light();
@@ -223,32 +268,54 @@ export default function DriverZoneDashboard() {
                 {ZONES.map((zone) => {
                   const count = getZoneCount(zone);
                   const hasDeliveries = count > 0;
+                  const isClosest = zone === closestZone;
+                  const minDist = getZoneMinDistance(zone);
                   
                   return (
                     <button 
                       key={zone}
                       className={cn(
-                        "w-full bg-card rounded-xl p-4 border border-border",
+                        "w-full rounded-xl p-4 border",
                         "flex items-center justify-between",
                         "transition-all active:scale-[0.98]",
-                        hasDeliveries && "border-primary/20"
+                        isClosest 
+                          ? "bg-primary/10 border-primary shadow-sm" 
+                          : hasDeliveries 
+                            ? "bg-card border-primary/20" 
+                            : "bg-card border-border"
                       )}
                       onClick={() => handleZoneClick(zone)}
                     >
                       <div className="flex items-center gap-3">
                         <div className={cn(
                           "w-10 h-10 rounded-full flex items-center justify-center",
-                          hasDeliveries ? "bg-primary/10" : "bg-muted"
+                          isClosest 
+                            ? "bg-primary text-primary-foreground" 
+                            : hasDeliveries 
+                              ? "bg-primary/10" 
+                              : "bg-muted"
                         )}>
                           <MapPin className={cn(
                             "w-5 h-5",
-                            hasDeliveries ? "text-primary" : "text-muted-foreground"
+                            isClosest 
+                              ? "text-primary-foreground" 
+                              : hasDeliveries 
+                                ? "text-primary" 
+                                : "text-muted-foreground"
                           )} />
                         </div>
                         <div className="text-left">
-                          <p className="font-semibold text-foreground">{zone}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-foreground">{zone}</p>
+                            {isClosest && (
+                              <span className="text-[10px] font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                                CLOSEST
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {count} {count === 1 ? 'delivery' : 'deliveries'}
+                            {minDist !== null && ` · ${minDist.toFixed(1)} km`}
                           </p>
                         </div>
                       </div>

@@ -230,26 +230,64 @@ export default function DriverScan() {
               </button>}
           </div>
         </div>
+        {/* Scanner Sheet from Top */}
+        <Sheet open={isScanning} onOpenChange={(open) => !open && stopScanning()}>
+          <SheetContent side="top" className="h-[50vh] rounded-b-3xl p-0">
+            <div className="relative h-full bg-black">
+              <video 
+                ref={videoRef} 
+                className="w-full h-full object-cover" 
+                playsInline 
+                muted 
+                autoPlay
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-64 h-40 border-2 border-primary rounded-lg relative">
+                  <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary animate-pulse" />
+                </div>
+              </div>
+              
+              {/* Header overlay */}
+              <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white">
+                    <Camera className="w-5 h-5" />
+                    <span className="font-medium">Scan Barcode</span>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={stopScanning} className="text-white hover:bg-white/20">
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
 
-        {/* Scanner View */}
-        {isScanning && <div className="relative bg-black">
-            <video 
-              ref={videoRef} 
-              className="w-full h-64 object-cover" 
-              playsInline 
-              muted 
-              autoPlay
-            />
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-64 h-32 border-2 border-primary rounded-lg relative">
-                <div className="absolute -top-1 left-4 right-4 h-0.5 bg-primary animate-pulse" />
+              {/* Manual entry section */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <p className="text-sm text-white/80 text-center mb-3">
+                  Point camera at barcode or enter manually
+                </p>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Enter tracking #..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleBarcodeSearch(searchQuery);
+                      }
+                    }}
+                    className="bg-white/10 border-white/30 text-white placeholder:text-white/50"
+                  />
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => handleBarcodeSearch(searchQuery)}
+                  >
+                    Search
+                  </Button>
+                </div>
               </div>
             </div>
-            <Button variant="secondary" size="sm" onClick={stopScanning} className="absolute top-2 right-2">
-              <X className="w-4 h-4 mr-1" />
-              Close
-            </Button>
-          </div>}
+          </SheetContent>
+        </Sheet>
 
         {/* Orders List */}
         <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-3">

@@ -122,10 +122,9 @@ export default function DriverScan() {
     const filtered = orders.filter(order => 
       order.tracking_id?.toLowerCase().includes(query) || 
       order.shipment_id?.toLowerCase().includes(query) || 
-      order.name?.toLowerCase().includes(query) || 
-      order.address_1?.toLowerCase().includes(query) || 
-      order.city?.toLowerCase().includes(query) || 
-      order.postal?.toLowerCase().includes(query)
+      order.client_name?.toLowerCase().includes(query) || 
+      order.address_line_1?.toLowerCase().includes(query) || 
+      order.geo_zone?.toLowerCase().includes(query)
     );
     setFilteredOrders(filtered);
   }, [searchQuery, orders]);
@@ -223,7 +222,7 @@ export default function DriverScan() {
       setShowOrderDetail(true);
       stopScanning();
       setSearchQuery('');
-      showSuccess('Order Found', `Found order for ${foundOrder.name || 'customer'}`);
+      showSuccess('Order Found', `Found order for ${foundOrder.client_name || 'customer'}`);
     } else {
       haptic.error();
       const searchedId = qrData.trackingId || qrData.shipmentId || qrData.orderId || qrValue;
@@ -297,7 +296,7 @@ export default function DriverScan() {
       setShowOrderDetail(true);
       stopScanning();
       setSearchQuery('');
-      showSuccess('Order Found', `Found order for ${foundOrder.name || 'customer'}`);
+      showSuccess('Order Found', `Found order for ${foundOrder.client_name || 'customer'}`);
     } else {
       showError('Order Not Found', `No order found with ID: ${trimmedValue}`);
     }
@@ -320,7 +319,7 @@ export default function DriverScan() {
   };
 
   const fullAddress = selectedOrder 
-    ? [selectedOrder.address_1, selectedOrder.address_2, selectedOrder.city, selectedOrder.province, selectedOrder.postal].filter(Boolean).join(', ') 
+    ? [selectedOrder.address_line_1, selectedOrder.address_line_2, selectedOrder.geo_zone].filter(Boolean).join(', ') 
     : '';
 
   return (
@@ -457,7 +456,7 @@ export default function DriverScan() {
           ) : (
             filteredOrders.map(order => {
               const statusConfig = getStatusConfig(order.timeline_status);
-              const address = [order.city, order.province].filter(Boolean).join(', ');
+              const address = order.geo_zone || order.address_line_1 || '';
               return (
                 <Card 
                   key={order.id} 
@@ -476,7 +475,7 @@ export default function DriverScan() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-foreground truncate leading-tight">
-                            {order.name || 'Unknown'}
+                            {order.client_name || 'Unknown'}
                           </p>
                           {order.tracking_id && (
                             <p className="text-xs text-muted-foreground font-mono">
@@ -557,7 +556,7 @@ export default function DriverScan() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Customer</p>
-                      <p className="font-semibold text-foreground truncate">{selectedOrder.name || 'Unknown'}</p>
+                      <p className="font-semibold text-foreground truncate">{selectedOrder.client_name || 'Unknown'}</p>
                     </div>
                   </div>
                   

@@ -210,7 +210,7 @@ export default function OrderAuditTrail() {
       return;
     }
 
-    const clientInitials = order?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA';
+    const clientInitials = order?.client_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA';
     const driverInitials = driver?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'DR';
 
     const styles = `
@@ -510,7 +510,7 @@ export default function OrderAuditTrail() {
                 </div>
                 <div>
                   <div class="field-label">Billing Date</div>
-                  <div class="field-value">${formatDate(order?.billing_date || null)}</div>
+                  <div class="field-value">${formatDate(order?.injection_billing_date || order?.nasal_billing_date || null)}</div>
                 </div>
               </div>
             </div>
@@ -526,60 +526,56 @@ export default function OrderAuditTrail() {
               <div class="user-card">
                 <div class="avatar avatar-primary">${clientInitials}</div>
                 <div class="user-info">
-                  <div class="user-name">${order?.name || 'No name'}</div>
-                  <div class="user-detail">DOB: ${formatDate(order?.dob || null)}</div>
+                  <div class="user-name">${order?.client_name || 'No name'}</div>
+                  <div class="user-detail">Health Card: ${order?.health_card_no || 'N/A'}</div>
                 </div>
               </div>
               <div class="separator"></div>
-              <div class="info-row">
-                <span class="info-icon">${icons.phone}</span>
-                ${order?.phone_number || 'No phone'}
-              </div>
               <div class="info-row">
                 <span class="info-icon">${icons.mail}</span>
                 ${order?.email || 'No email'}
               </div>
               <div class="info-row">
                 <span class="info-icon">${icons.mapPin}</span>
-                ${[order?.address_1, order?.city, order?.province, order?.postal].filter(Boolean).join(', ') || 'No address'}
+                ${order?.address_line_1 || 'No address'}
               </div>
             </div>
           </div>
 
-          <!-- Pharmacy Details Card -->
+          <!-- Drug Details Card -->
           <div class="card">
             <div class="card-header">
               <span class="card-icon">${icons.building}</span>
-              <span class="card-title">Pharmacy Details</span>
+              <span class="card-title">Drug Details</span>
             </div>
             <div class="card-content">
               <div class="grid-2">
                 <div>
-                  <div class="field-label">Pharmacy Name</div>
-                  <div class="field-value">${order?.pharmacy_name || 'Not provided'}</div>
+                  <div class="field-label">Authorizing Doctor</div>
+                  <div class="field-value">${order?.authorizing_doctor_name || 'Not provided'}</div>
                 </div>
                 <div>
-                  <div class="field-label">Authorizing Pharmacist</div>
-                  <div class="field-value">${order?.authorizing_pharmacist || 'Not provided'}</div>
+                  <div class="field-label">Warehouse</div>
+                  <div class="field-value">${order?.warehouse_address || 'Not provided'}</div>
                 </div>
               </div>
               <div class="separator"></div>
               <div class="grid-2">
                 <div>
                   <div class="field-label">Nasal RX</div>
-                  <div class="field-value mono">${order?.nasal_rx || '—'}</div>
+                  <div class="field-value mono">${order?.nasal_rx_number || '—'}</div>
                 </div>
                 <div>
                   <div class="field-label">Injection RX</div>
-                  <div class="field-value mono">${order?.injection_rx || '—'}</div>
+                  <div class="field-value mono">${order?.injection_rx_number || '—'}</div>
                 </div>
                 <div>
-                  <div class="field-label">Doses Nasal</div>
-                  <div class="field-value">${order?.doses_nasal ?? '—'}</div>
+                  <div class="field-label">Nasal Qty</div>
+                  <div class="field-value">${order?.nasal_qty ?? '—'}</div>
                 </div>
                 <div>
-                  <div class="field-label">Doses Injectable</div>
-                  <div class="field-value">${order?.doses_injectable ?? '—'}</div>
+                  <div class="field-label">Injection Qty</div>
+                  <div class="field-value">${order?.injection_qty ?? '—'}</div>
                 </div>
               </div>
             </div>
@@ -870,7 +866,7 @@ export default function OrderAuditTrail() {
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Billing Date</p>
-                  <p className="text-sm font-medium">{formatDate(order.billing_date)}</p>
+                  <p className="text-sm font-medium">{formatDate(order.injection_billing_date || order.nasal_billing_date)}</p>
                 </div>
               </div>
             </CardContent>
@@ -888,68 +884,64 @@ export default function OrderAuditTrail() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-sm font-semibold text-primary">
-                    {order.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
+                    {order.client_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
                   </span>
                 </div>
                 <div>
-                  <p className="font-bold text-foreground">{order.name || <EmptyField label="No name" />}</p>
-                  <p className="text-xs text-muted-foreground">DOB: {formatDate(order.dob)}</p>
+                  <p className="font-bold text-foreground">{order.client_name || <EmptyField label="No name" />}</p>
+                  <p className="text-xs text-muted-foreground">Health Card: {order.health_card_no || 'N/A'}</p>
                 </div>
               </div>
               <Separator />
               <div className="grid grid-cols-1 gap-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  {order.phone_number || <EmptyField label="No phone" />}
-                </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   {order.email || <EmptyField label="No email" />}
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  {[order.address_1, order.city, order.province, order.postal].filter(Boolean).join(', ') || <EmptyField label="No address" />}
+                  {order.address_line_1 || <EmptyField label="No address" />}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Pharmacy Details Card */}
+          {/* Drug Details Card */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Building className="w-4 h-4" />
-                Pharmacy Details
+                Drug Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Pharmacy Name</p>
-                  <p className="text-sm font-semibold">{order.pharmacy_name || <EmptyField label="Not provided" />}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Authorizing Doctor</p>
+                  <p className="text-sm font-semibold">{order.authorizing_doctor_name || <EmptyField label="Not provided" />}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Authorizing Pharmacist</p>
-                  <p className="text-sm font-semibold">{order.authorizing_pharmacist || <EmptyField label="Not provided" />}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Warehouse</p>
+                  <p className="text-sm font-semibold">{order.warehouse_address || <EmptyField label="Not provided" />}</p>
                 </div>
               </div>
               <Separator />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Nasal RX</p>
-                  <p className="text-sm font-mono">{order.nasal_rx || <EmptyField label="—" />}</p>
+                  <p className="text-sm font-mono">{order.nasal_rx_number || <EmptyField label="—" />}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Injection RX</p>
-                  <p className="text-sm font-mono">{order.injection_rx || <EmptyField label="—" />}</p>
+                  <p className="text-sm font-mono">{order.injection_rx_number || <EmptyField label="—" />}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Doses Nasal</p>
-                  <p className="text-sm font-semibold">{order.doses_nasal ?? <EmptyField label="—" />}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Nasal Qty</p>
+                  <p className="text-sm font-semibold">{order.nasal_qty ?? <EmptyField label="—" />}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Doses Injectable</p>
-                  <p className="text-sm font-semibold">{order.doses_injectable ?? <EmptyField label="—" />}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Injection Qty</p>
+                  <p className="text-sm font-semibold">{order.injection_qty ?? <EmptyField label="—" />}</p>
                 </div>
               </div>
             </CardContent>

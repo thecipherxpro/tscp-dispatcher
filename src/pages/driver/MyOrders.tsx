@@ -67,7 +67,7 @@ export default function MyOrders() {
             haptic.success();
             toast({
               title: 'New Order Assigned',
-              description: `Order for ${(payload.new as Order).name || 'a client'} has been assigned to you.`,
+              description: `Order for ${(payload.new as Order).client_name || 'a client'} has been assigned to you.`,
             });
           } else if (payload.eventType === 'UPDATE') {
             setOrders(prev => 

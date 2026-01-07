@@ -157,10 +157,10 @@ export default function DriverDeliveryDetail() {
   useEffect(() => {
     if (!order || destinationCoords) return;
     if (order.latitude && order.longitude) return;
-    if (!order.address_1) return;
+    if (!order.address_line_1) return;
     const geocodeAddress = async () => {
       try {
-        const address = `${order.address_1}, ${order.city || ''}, ${order.province || ''} ${order.postal || ''}, Canada`;
+        const address = `${order.address_line_1}, ${order.geo_zone || ''}, Canada`;
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
         const data = await response.json();
         if (data && data[0]) {
@@ -209,7 +209,7 @@ export default function DriverDeliveryDetail() {
       // Open native map app
       const destLat = destinationCoords?.lat || order.latitude;
       const destLng = destinationCoords?.lng || order.longitude;
-      const destAddress = `${order.address_1 || ''}, ${order.city || ''}`;
+      const destAddress = `${order.address_line_1 || ''}, ${order.geo_zone || ''}`;
       if (destLat && destLng) {
         openNativeMapApp(destLat, destLng, destAddress);
       }
@@ -442,14 +442,14 @@ export default function DriverDeliveryDetail() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                     <span className="text-sm font-bold text-muted-foreground">
-                      {order.name?.charAt(0)?.toUpperCase() || '?'}
+                      {order.client_name?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">{order.name || 'Customer'}</p>
-                    <p className="text-sm text-muted-foreground">{order.phone_number || 'No phone'}</p>
+                    <p className="font-medium text-foreground">{order.client_name || 'Customer'}</p>
+                    <p className="text-sm text-muted-foreground">{order.email || 'No email'}</p>
                   </div>
-                  {order.phone_number && <a href={`tel:${order.phone_number}`} onClick={e => e.stopPropagation()}>
+                  {order.email && <a href={`mailto:${order.email}`} onClick={e => e.stopPropagation()}>
                       <Button size="icon" variant="outline" className="rounded-full">
                         <Phone className="w-4 h-4" />
                       </Button>
@@ -465,10 +465,10 @@ export default function DriverDeliveryDetail() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Delivery Address</p>
-                    <p className="font-medium text-foreground">{order.address_1}</p>
-                    {order.address_2 && <p className="text-sm text-muted-foreground">{order.address_2}</p>}
+                    <p className="font-medium text-foreground">{order.address_line_1}</p>
+                    {order.address_line_2 && <p className="text-sm text-muted-foreground">{order.address_line_2}</p>}
                     <p className="text-sm text-muted-foreground">
-                      {[order.city, order.province, order.postal].filter(Boolean).join(', ')}
+                      {order.geo_zone || 'N/A'}
                     </p>
                   </div>
                 </div>

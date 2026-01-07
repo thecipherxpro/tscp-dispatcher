@@ -256,7 +256,7 @@ export default function TrackShipment() {
                 <div>
                   <p className="text-xs text-muted-foreground">Destination</p>
                   <p className="font-medium text-foreground">
-                    {tracking.city}, {tracking.province} {tracking.postal_code}
+                    {tracking.warehouse_city || tracking.country || 'N/A'}
                   </p>
                 </div>
 

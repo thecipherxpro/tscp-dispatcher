@@ -125,7 +125,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
     );
   }
 
-  const address = [order.city, order.province, order.postal].filter(Boolean).join(", ");
+  // Use address_line_1 and address_line_2 for the address display
+  const addressDisplay = [order.address_line_1, order.address_line_2].filter(Boolean).join(', ');
 
   return (
     <div className="space-y-4">
@@ -170,7 +171,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
             </div>
             <div style={{ textAlign: "right" }}>
               <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ship Date</p>
-              <p style={{ fontSize: "13px", fontWeight: "600", color: "#000000" }}>{formatDate(order.ship_date)}</p>
+              <p style={{ fontSize: "13px", fontWeight: "600", color: "#000000" }}>{formatDate(order.shipping_date)}</p>
             </div>
           </div>
 
@@ -193,10 +194,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
 
           {/* Recipient Details */}
           <div style={{ marginBottom: "4px" }}>
-            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000", margin: "0" }}>{order.name || "Customer"}</p>
-            <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.address_1 || ""}</p>
-            {order.address_2 && <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.address_2}</p>}
-            <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{address}</p>
+            <p style={{ fontSize: "16px", fontWeight: "bold", color: "#000000", margin: "0" }}>{order.client_name || "Customer"}</p>
+            <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.address_line_1 || ""}</p>
+            {order.address_line_2 && <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.address_line_2}</p>}
+            <p style={{ fontSize: "13px", color: "#000000", margin: "2px 0" }}>{order.country || "Canada"}</p>
           </div>
 
           {/* QR Code Section */}

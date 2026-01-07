@@ -201,10 +201,8 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     }
 
     const address = [
-      order.address_1,
-      order.city,
-      order.province,
-      order.postal,
+      order.address_line_1,
+      order.address_line_2,
       order.country || 'Canada'
     ].filter(Boolean).join(', ');
 
@@ -392,7 +390,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       const marker = new google.maps.Marker({
         map: mapRef.current!,
         position: { lat: order.latitude, lng: order.longitude },
-        title: order.name || 'Delivery',
+        title: order.client_name || 'Delivery',
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 14,
@@ -541,10 +539,8 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
     const destLat = order.latitude;
     const destLng = order.longitude;
     const address = encodeURIComponent([
-      order.address_1,
-      order.city,
-      order.province,
-      order.postal
+      order.address_line_1,
+      order.address_line_2
     ].filter(Boolean).join(', '));
 
     // Try Google Maps app first, fallback to web
@@ -703,58 +699,56 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
           ? { lat: position.coords.latitude, lng: position.coords.longitude }
           : { lat: CITY_CENTER_LAT, lng: CITY_CENTER_LNG };
 
-        if (!isMounted) return;
         setDriverLocation(initialLocation);
         setDriverZone(determineGeoZone(initialLocation.lat, initialLocation.lng));
 
-        // Create map with Uber-style styling
+        // Create map
         mapRef.current = new google.maps.Map(mapContainer.current, {
           center: initialLocation,
           zoom: 13,
           styles: UBER_MAP_STYLE,
           disableDefaultUI: true,
-          zoomControl: true,
+          zoomControl: false,
           mapTypeControl: false,
+          scaleControl: false,
           streetViewControl: false,
+          rotateControl: false,
           fullscreenControl: false,
-          gestureHandling: 'greedy',
+          clickableIcons: false,
         });
 
-        // Fetch and geocode orders
+        // Add driver marker
+        updateDriverMarker(initialLocation);
+
+        // Start location tracking
+        startLocationTracking();
+
+        // Fetch and display orders
         const fetchedOrders = await fetchOrders();
         if (!isMounted) return;
 
+        // Geocode orders that don't have coordinates
         const geocoder = new google.maps.Geocoder();
         const geocodedOrders = await Promise.all(
           fetchedOrders.map(order => geocodeAndSetZone(order, geocoder))
         );
 
-        if (!isMounted) return;
         setOrders(geocodedOrders);
 
         // Calculate zone counts
         const counts: Record<GeoZone, number> = { NORTH: 0, SOUTH: 0, EAST: 0, WEST: 0 };
         geocodedOrders.forEach(order => {
-          if (order.geo_zone && counts.hasOwnProperty(order.geo_zone)) {
+          if (order.geo_zone) {
             counts[order.geo_zone as GeoZone]++;
           }
         });
         setZoneCounts(counts);
 
-        // Auto-select driver's zone
-        const dZone = determineGeoZone(initialLocation.lat, initialLocation.lng);
-        if (counts[dZone] > 0) {
-          handleZoneSelect(dZone);
-        }
-
-        // Start tracking location
-        startLocationTracking();
-
         setIsLoading(false);
-
       } catch (err) {
+        console.error('Map initialization error:', err);
         if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load map');
+          setError('Failed to load map. Please try again.');
           setIsLoading(false);
         }
       }
@@ -767,137 +761,123 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
-      markersRef.current.forEach(marker => marker.setMap(null));
-      if (driverMarkerRef.current) {
-        driverMarkerRef.current.setMap(null);
-      }
     };
-  }, [fetchApiKey, fetchOrders, geocodeAndSetZone, startLocationTracking]);
+  }, [fetchApiKey, fetchOrders, geocodeAndSetZone, updateDriverMarker, startLocationTracking]);
 
-  // Recalculate route when driver location changes significantly
-  useEffect(() => {
-    if (activeDestination && driverLocation) {
-      // Only recalculate if driver moved more than 100 meters
-      const threshold = 0.001; // roughly 100m
-      const prevPos = directionsRendererRef.current?.getDirections()?.routes[0]?.legs[0]?.start_location;
-      if (prevPos) {
-        const latDiff = Math.abs(prevPos.lat() - driverLocation.lat);
-        const lngDiff = Math.abs(prevPos.lng() - driverLocation.lng);
-        if (latDiff > threshold || lngDiff > threshold) {
-          drawRoute(activeDestination);
-        }
-      }
-    }
-  }, [driverLocation, activeDestination, drawRoute]);
-
-  // Recenter map on driver
+  // Recenter on driver
   const recenterOnDriver = useCallback(() => {
     if (mapRef.current && driverLocation) {
       mapRef.current.panTo(driverLocation);
-      mapRef.current.setZoom(15);
+      mapRef.current.setZoom(14);
     }
   }, [driverLocation]);
 
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-muted">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground mt-2">Loading map...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">Map Error</h3>
-        <p className="text-muted-foreground mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
+      <div className="h-full flex items-center justify-center bg-muted p-4">
+        <Card className="max-w-sm w-full">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+            <p className="text-foreground font-medium">{error}</p>
+            <Button 
+              className="mt-4" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Loading map...</span>
-          </div>
+    <div className="h-full relative">
+      {/* Map container */}
+      <div ref={mapContainer} className="absolute inset-0" />
+
+      {/* Zone selection cards (when no zone selected) */}
+      {!selectedZone && (
+        <div className="absolute top-4 left-4 right-4 z-10">
+          <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Select Zone</h3>
+                {driverZone && (
+                  <Badge variant="outline" className="ml-auto">
+                    You're in {driverZone}
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {(['NORTH', 'SOUTH', 'EAST', 'WEST'] as GeoZone[]).map((zone) => (
+                  <Button
+                    key={zone}
+                    variant={driverZone === zone ? 'default' : 'outline'}
+                    className="h-16 flex-col"
+                    onClick={() => handleZoneSelect(zone)}
+                    disabled={zoneCounts[zone] === 0}
+                  >
+                    <span className="font-semibold">{zone}</span>
+                    <span className="text-xs opacity-70">
+                      {zoneCounts[zone]} delivery{zoneCounts[zone] !== 1 ? 'ies' : 'y'}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      <div ref={mapContainer} className="absolute inset-0" />
-
-      {/* Zone Selection */}
-      <div className="absolute top-4 left-4 right-4 z-10 space-y-2">
-        <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Compass className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Delivery Zones</span>
-              {driverZone && (
-                <Badge variant="outline" className="text-xs">
-                  You're in {driverZone}
-                </Badge>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {(['NORTH', 'SOUTH', 'EAST', 'WEST'] as GeoZone[]).map((zone) => (
-                <Button
-                  key={zone}
-                  variant={selectedZone === zone ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex flex-col h-auto py-2"
-                  onClick={() => handleZoneSelect(zone)}
-                  disabled={zoneCounts[zone] === 0}
-                >
-                  <span className="text-xs font-medium">{zone}</span>
-                  <span className="text-lg font-bold">{zoneCounts[zone]}</span>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Delivery count */}
-        {selectedZone && (
-          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-md">
-            <MapPin className="w-3 h-3 mr-1" />
-            {filteredOrders.length} {filteredOrders.length === 1 ? 'delivery' : 'deliveries'} in {selectedZone}
-          </Badge>
-        )}
-      </div>
-
-      {/* Route info + Directions panel */}
-      {(routeInfo || isLoadingRoute) && (
-        <div className="absolute top-36 left-4 right-4 z-10">
+      {/* Route info card */}
+      {(routeInfo || isLoadingRoute) && selectedOrder && (
+        <div className="absolute top-4 left-4 right-4 z-10">
           <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
-            <CardContent className="p-3">
-              {isLoadingRoute ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Calculating route...</span>
-                </div>
-              ) : routeInfo && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-semibold text-foreground">
-                        {routeInfo.duration}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Navigation className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        {routeInfo.distance}
-                      </span>
-                    </div>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                    <Navigation className="w-5 h-5 text-primary-foreground" />
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 px-2 text-xs"
-                    onClick={clearRoute}
-                  >
-                    Clear
-                  </Button>
+                  <div>
+                    {isLoadingRoute ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-muted-foreground">Calculating route...</span>
+                      </div>
+                    ) : routeInfo ? (
+                      <>
+                        <p className="text-2xl font-bold text-foreground">{routeInfo.duration}</p>
+                        <p className="text-sm text-muted-foreground">{routeInfo.distance}</p>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-              )}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    clearRoute();
+                    setSelectedZone(null);
+                    updateMarkers([]);
+                  }}
+                >
+                  Change Zone
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -936,10 +916,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {order.name || 'Unknown Client'}
+                      {order.client_name || 'Unknown Client'}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {order.address_1}, {order.city}
+                      {order.address_line_1}
                     </p>
                   </div>
                   {order.drivingDuration && (
@@ -962,13 +942,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="font-medium text-foreground">
-                    {selectedOrder.name || 'Unknown Client'}
+                    {selectedOrder.client_name || 'Unknown Client'}
                   </p>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {[selectedOrder.address_1, selectedOrder.address_2].filter(Boolean).join(', ')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {selectedOrder.city}, {selectedOrder.province} {selectedOrder.postal}
+                    {[selectedOrder.address_line_1, selectedOrder.address_line_2].filter(Boolean).join(', ')}
                   </p>
                 </div>
                 <Badge 
@@ -1031,13 +1008,10 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
               </div>
               <div className="mb-3">
                 <p className="font-medium text-foreground">
-                  {nextDeliveryOrder.name || 'Unknown Client'}
+                  {nextDeliveryOrder.client_name || 'Unknown Client'}
                 </p>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {[nextDeliveryOrder.address_1, nextDeliveryOrder.address_2].filter(Boolean).join(', ')}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {nextDeliveryOrder.city}, {nextDeliveryOrder.province} {nextDeliveryOrder.postal}
+                  {[nextDeliveryOrder.address_line_1, nextDeliveryOrder.address_line_2].filter(Boolean).join(', ')}
                 </p>
                 {nextDeliveryOrder.drivingDuration && (
                   <p className="text-xs text-primary mt-1">
@@ -1087,7 +1061,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
             <SheetDescription>
               {pendingDeliveryOrder && (
                 <span className="block mt-1">
-                  {pendingDeliveryOrder.city}, {pendingDeliveryOrder.province} {pendingDeliveryOrder.postal}
+                  {pendingDeliveryOrder.address_line_1}
                 </span>
               )}
             </SheetDescription>

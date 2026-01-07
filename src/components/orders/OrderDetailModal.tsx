@@ -143,25 +143,21 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Name</p>
-                    <p className="text-foreground">{order.name || 'N/A'}</p>
+                    <p className="text-foreground">{order.client_name || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">DOB</p>
-                    <p className="text-foreground">{formatDate(order.dob)}</p>
+                    <p className="text-xs text-muted-foreground">Health Card</p>
+                    <p className="text-foreground">{order.health_card_no || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Phone</p>
-                    <p className="text-foreground">{order.phone_number || 'N/A'}</p>
-                  </div>
-                  <div>
+                  <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Email</p>
                     <p className="text-foreground truncate">{order.email || 'N/A'}</p>
                   </div>
                 </div>
-                {order.call_notes && (
+                {order.notes && (
                   <div>
                     <p className="text-xs text-muted-foreground">Notes</p>
-                    <p className="text-foreground text-sm">{order.call_notes}</p>
+                    <p className="text-foreground text-sm">{order.notes}</p>
                   </div>
                 )}
               </CardContent>
@@ -175,9 +171,8 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                   Delivery Address
                 </h4>
                 <div className="text-sm text-foreground">
-                  <p>{order.address_1}</p>
-                  {order.address_2 && <p>{order.address_2}</p>}
-                  <p>{order.city}, {order.province} {order.postal}</p>
+                  <p>{order.address_line_1 || 'N/A'}</p>
+                  {order.address_line_2 && <p>{order.address_line_2}</p>}
                   <p>{order.country || 'Canada'}</p>
                 </div>
               </CardContent>
@@ -191,21 +186,21 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                   Medication
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  {(order.doses_nasal || order.nasal_rx) && (
+                  {(order.nasal_qty || order.nasal_rx_number) && (
                     <div>
                       <p className="text-xs text-muted-foreground">Nasal</p>
                       <p className="text-foreground">
-                        {order.doses_nasal || 0} doses
-                        {order.nasal_rx && <span className="text-muted-foreground"> ({order.nasal_rx})</span>}
+                        {order.nasal_qty || 0} qty
+                        {order.nasal_rx_number && <span className="text-muted-foreground"> ({order.nasal_rx_number})</span>}
                       </p>
                     </div>
                   )}
-                  {(order.doses_injectable || order.injection_rx) && (
+                  {(order.injection_qty || order.injection_rx_number) && (
                     <div>
                       <p className="text-xs text-muted-foreground">Injectable</p>
                       <p className="text-foreground">
-                        {order.doses_injectable || 0} doses
-                        {order.injection_rx && <span className="text-muted-foreground"> ({order.injection_rx})</span>}
+                        {order.injection_qty || 0} qty
+                        {order.injection_rx_number && <span className="text-muted-foreground"> ({order.injection_rx_number})</span>}
                       </p>
                     </div>
                   )}

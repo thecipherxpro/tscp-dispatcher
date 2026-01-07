@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Search, Upload, CheckSquare, X, Users } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,11 @@ import { OrderCard } from '@/components/orders/OrderCard';
 import { BulkAssignmentModal } from '@/components/orders/BulkAssignmentModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Order } from '@/types/auth';
 
-type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'delivered' | 'incomplete' | 'review';
+type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'delivered' | 'incomplete' | 'review' | 'no_geo';
 
 export default function Orders() {
   const { orders, isLoading, refetch } = useOrders(true);
@@ -25,7 +27,9 @@ export default function Orders() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [isRegeocoding, setIsRegeocoding] = useState(false);
   const haptic = useHapticFeedback();
+  const { toast } = useToast();
 
   const handleRefresh = async () => {
     await refetch();
@@ -35,9 +39,11 @@ export default function Orders() {
     let filtered = orders;
 
     // Apply status filter
-    if (activeFilter !== 'all') {
-      const statusMap: Record<FilterType, string> = {
-        all: '',
+    if (activeFilter === 'no_geo') {
+      // Filter orders missing geocoding data
+      filtered = filtered.filter(o => !o.latitude || !o.longitude || !o.geo_zone);
+    } else if (activeFilter !== 'all') {
+      const statusMap: Record<Exclude<FilterType, 'all' | 'no_geo'>, string> = {
         pending: 'PENDING',
         assigned: 'PICKED_UP_AND_ASSIGNED',
         confirmed: 'CONFIRMED',
@@ -46,7 +52,7 @@ export default function Orders() {
         incomplete: 'COMPLETED_INCOMPLETE',
         review: 'REVIEW_REQUESTED',
       };
-      filtered = filtered.filter(o => o.timeline_status === statusMap[activeFilter]);
+      filtered = filtered.filter(o => o.timeline_status === statusMap[activeFilter as keyof typeof statusMap]);
     }
 
     // Apply search filter
@@ -99,6 +105,68 @@ export default function Orders() {
     refetch();
   };
 
+  // Re-geocode orders missing coordinates
+  const handleRegeocode = async () => {
+    const ordersNeedingGeo = orders.filter(o => 
+      o.address_line_1 && (!o.latitude || !o.longitude || !o.geo_zone)
+    );
+
+    if (ordersNeedingGeo.length === 0) {
+      toast({
+        title: "No orders to geocode",
+        description: "All orders with addresses already have coordinates.",
+      });
+      return;
+    }
+
+    setIsRegeocoding(true);
+    haptic.medium();
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const order of ordersNeedingGeo) {
+      try {
+        const address = `${order.address_line_1}, Canada`;
+        const { data, error } = await supabase.functions.invoke('geocode-address', {
+          body: { address }
+        });
+
+        if (error || !data) {
+          failCount++;
+          continue;
+        }
+
+        // Update order with geocoded data
+        await supabase
+          .from('orders')
+          .update({
+            latitude: data.latitude,
+            longitude: data.longitude,
+            geo_zone: data.geo_zone,
+            country: data.country || 'Canada'
+          })
+          .eq('id', order.id);
+
+        successCount++;
+      } catch (err) {
+        console.error('Geocode error for order:', order.id, err);
+        failCount++;
+      }
+    }
+
+    setIsRegeocoding(false);
+    
+    toast({
+      title: "Geocoding Complete",
+      description: `${successCount} orders geocoded successfully.${failCount > 0 ? ` ${failCount} failed.` : ''}`,
+    });
+
+    refetch();
+  };
+
+  const ordersNeedingGeo = orders.filter(o => !o.latitude || !o.longitude || !o.geo_zone);
+
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'pending', label: 'Pending' },
@@ -108,6 +176,7 @@ export default function Orders() {
     { key: 'delivered', label: 'Delivered' },
     { key: 'incomplete', label: 'Incomplete' },
     { key: 'review', label: 'Review' },
+    { key: 'no_geo', label: `No Location (${ordersNeedingGeo.length})` },
   ];
 
   return (
@@ -126,6 +195,19 @@ export default function Orders() {
               <Upload className="w-4 h-4 mr-2" />
               Import Orders
             </Button>
+            {ordersNeedingGeo.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleRegeocode}
+                disabled={isRegeocoding}
+              >
+                {isRegeocoding ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <MapPin className="w-4 h-4" />
+                )}
+              </Button>
+            )}
             <Button
               variant={isSelectionMode ? "secondary" : "outline"}
               onClick={() => {

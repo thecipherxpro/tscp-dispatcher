@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, QrCode, X, Package, MapPin, ChevronRight, Camera, FileDown, Printer, User, Clock } from 'lucide-react';
+import { Search, QrCode, X, Package, MapPin, ChevronRight, FileDown, User, Clock } from 'lucide-react';
 import { BrowserQRCodeReader } from '@zxing/library';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
 import { PackageLabel } from '@/components/orders/PackageLabel';
-import { toast } from '@/hooks/use-toast';
+import { NotificationBanner, useNotificationBanner } from '@/components/ui/notification-banner';
 import { cn } from '@/lib/utils';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
@@ -77,6 +77,7 @@ export default function DriverScan() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const haptic = useHapticFeedback();
+  const { notification, showSuccess, showError, close: closeNotification } = useNotificationBanner();
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -103,11 +104,7 @@ export default function DriverScan() {
         setFilteredOrders(data as Order[] || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load orders',
-          variant: 'destructive'
-        });
+        showError('Error', 'Failed to load orders');
       } finally {
         setIsLoading(false);
       }
@@ -226,29 +223,18 @@ export default function DriverScan() {
       setShowOrderDetail(true);
       stopScanning();
       setSearchQuery('');
-      toast({
-        title: 'Order Found',
-        description: `Found order for ${foundOrder.name || 'customer'}`
-      });
+      showSuccess('Order Found', `Found order for ${foundOrder.name || 'customer'}`);
     } else {
       haptic.error();
       const searchedId = qrData.trackingId || qrData.shipmentId || qrData.orderId || qrValue;
-      toast({
-        title: 'Order Not Found',
-        description: `No order found with ID: ${searchedId}`,
-        variant: 'destructive'
-      });
+      showError('Order Not Found', `No order found with ID: ${searchedId}`);
     }
-  }, [parseQRCodeValue, findOrderByQRData, haptic, stopScanning]);
+  }, [parseQRCodeValue, findOrderByQRData, haptic, stopScanning, showSuccess, showError]);
 
   // Start QR code scanning
   const startScanning = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      toast({
-        title: 'Camera Not Supported',
-        description: 'Your browser does not support camera access.',
-        variant: 'destructive'
-      });
+      showError('Camera Not Supported', 'Your browser does not support camera access.');
       return;
     }
 
@@ -270,11 +256,6 @@ export default function DriverScan() {
             // Ignore NotFoundException - means no QR in frame yet
           }
         );
-
-        toast({
-          title: 'Camera Active',
-          description: 'Point camera at QR code to scan'
-        });
       } catch (error: any) {
         console.error('Camera access error:', error);
         setIsScanning(false);
@@ -289,11 +270,7 @@ export default function DriverScan() {
         }
         
         haptic.error();
-        toast({
-          title: 'Camera Error',
-          description: errorMessage,
-          variant: 'destructive'
-        });
+        showError('Camera Error', errorMessage);
       }
     }, 100);
   };
@@ -320,12 +297,9 @@ export default function DriverScan() {
       setShowOrderDetail(true);
       stopScanning();
       setSearchQuery('');
+      showSuccess('Order Found', `Found order for ${foundOrder.name || 'customer'}`);
     } else {
-      toast({
-        title: 'Order Not Found',
-        description: `No order found with ID: ${trimmedValue}`,
-        variant: 'destructive'
-      });
+      showError('Order Not Found', `No order found with ID: ${trimmedValue}`);
     }
   };
 
@@ -351,6 +325,15 @@ export default function DriverScan() {
 
   return (
     <AppLayout title="Scan" showUserMenu>
+      {/* Notification Banner */}
+      <NotificationBanner
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+      />
+      
       <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Search Bar */}
         <div className="p-4 bg-card border-b border-border sticky top-0 z-10">
@@ -532,8 +515,9 @@ export default function DriverScan() {
 
       {/* Order Detail Sheet */}
       <Sheet open={showOrderDetail} onOpenChange={setShowOrderDetail}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-          <SheetHeader className="pb-4 border-b border-border">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col p-0">
+          {/* Fixed Header */}
+          <SheetHeader className="px-4 pt-4 pb-3 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-lg">Order Details</SheetTitle>
               {selectedOrder && (
@@ -545,106 +529,115 @@ export default function DriverScan() {
           </SheetHeader>
 
           {selectedOrder && (
-            <div className="overflow-y-auto h-[calc(100%-8rem)] py-4 space-y-4">
-              {/* Shipment Info */}
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Package className="w-5 h-5 text-primary" />
+            <>
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                {/* Shipment Info Card */}
+                <Card className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Shipment ID</p>
+                      <p className="font-semibold text-foreground truncate">{selectedOrder.shipment_id || 'N/A'}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleViewLabel} className="gap-1.5 flex-shrink-0">
+                      <FileDown className="w-4 h-4" />
+                      Label
+                    </Button>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Shipment ID</p>
-                    <p className="font-semibold text-foreground">{selectedOrder.shipment_id || 'N/A'}</p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleViewLabel} className="gap-1.5">
-                    <FileDown className="w-4 h-4" />
-                    Label
-                  </Button>
-                </div>
-              </Card>
+                </Card>
 
-              {/* Customer Info */}
-              <Card className="p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                    <User className="w-5 h-5 text-secondary-foreground" />
+                {/* Customer Info Card */}
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Customer</p>
+                      <p className="font-semibold text-foreground truncate">{selectedOrder.name || 'Unknown'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Customer</p>
-                    <p className="font-semibold text-foreground">{selectedOrder.name || 'Unknown'}</p>
+                  
+                  <div className="flex items-start gap-3 ml-[52px]">
+                    <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground break-words">{fullAddress || 'No address'}</p>
                   </div>
-                </div>
-                
-                <div className="flex items-start gap-3 pl-[52px]">
-                  <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">{fullAddress || 'No address'}</p>
-                </div>
-              </Card>
+                </Card>
 
-              {/* Timeline Info */}
-              <Card className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Clock className="w-5 h-5 text-muted-foreground" />
-                  <p className="font-medium text-foreground">Timeline</p>
-                </div>
-                <div className="space-y-2 pl-8">
-                  {selectedOrder.assigned_at && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Assigned</span>
-                      <span className="text-foreground">{formatDateTime(selectedOrder.assigned_at)}</span>
-                    </div>
-                  )}
-                  {selectedOrder.picked_up_at && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Picked Up</span>
-                      <span className="text-foreground">{formatDateTime(selectedOrder.picked_up_at)}</span>
-                    </div>
-                  )}
-                  {selectedOrder.in_route_at && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">In Route</span>
-                      <span className="text-foreground">{formatDateTime(selectedOrder.in_route_at)}</span>
-                    </div>
-                  )}
-                  {selectedOrder.arrived_at && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Arrived</span>
-                      <span className="text-foreground">{formatDateTime(selectedOrder.arrived_at)}</span>
-                    </div>
-                  )}
-                  {selectedOrder.completed_at && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Completed</span>
-                      <span className="text-foreground">{formatDateTime(selectedOrder.completed_at)}</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
+                {/* Timeline Info Card */}
+                <Card className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <p className="text-sm font-semibold text-foreground">Timeline</p>
+                  </div>
+                  <div className="space-y-3 ml-6">
+                    {selectedOrder.assigned_at && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Assigned</span>
+                        <span className="text-foreground font-medium">{formatDateTime(selectedOrder.assigned_at)}</span>
+                      </div>
+                    )}
+                    {selectedOrder.picked_up_at && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Picked Up</span>
+                        <span className="text-foreground font-medium">{formatDateTime(selectedOrder.picked_up_at)}</span>
+                      </div>
+                    )}
+                    {selectedOrder.in_route_at && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">In Route</span>
+                        <span className="text-foreground font-medium">{formatDateTime(selectedOrder.in_route_at)}</span>
+                      </div>
+                    )}
+                    {selectedOrder.arrived_at && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Arrived</span>
+                        <span className="text-foreground font-medium">{formatDateTime(selectedOrder.arrived_at)}</span>
+                      </div>
+                    )}
+                    {selectedOrder.completed_at && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Completed</span>
+                        <span className="text-foreground font-medium">{formatDateTime(selectedOrder.completed_at)}</span>
+                      </div>
+                    )}
+                    {!selectedOrder.assigned_at && !selectedOrder.picked_up_at && !selectedOrder.in_route_at && 
+                     !selectedOrder.arrived_at && !selectedOrder.completed_at && (
+                      <p className="text-sm text-muted-foreground italic">No timeline events yet</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
 
-              {/* Action Button */}
+              {/* Sticky Bottom Action Button */}
               {selectedOrder.timeline_status !== 'COMPLETED_DELIVERED' && 
                selectedOrder.timeline_status !== 'COMPLETED_INCOMPLETE' && (
-                <Button 
-                  size="lg" 
-                  className="w-full h-14 text-base font-semibold gap-2"
-                  onClick={handleNavigateToDelivery}
-                >
-                  <MapPin className="w-5 h-5" />
-                  Start Delivery
-                </Button>
+                <div className="flex-shrink-0 p-4 pt-3 border-t border-border bg-background">
+                  <Button 
+                    size="lg" 
+                    className="w-full h-14 text-base font-semibold gap-2"
+                    onClick={handleNavigateToDelivery}
+                  >
+                    <MapPin className="w-5 h-5" />
+                    Start Delivery
+                  </Button>
+                </div>
               )}
-            </div>
+            </>
           )}
         </SheetContent>
       </Sheet>
 
       {/* Label Sheet */}
       <Sheet open={showLabelSheet} onOpenChange={setShowLabelSheet}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl">
-          <SheetHeader className="pb-4 border-b border-border">
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl flex flex-col p-0">
+          <SheetHeader className="px-4 pt-4 pb-3 border-b border-border flex-shrink-0">
             <SheetTitle>Package Label</SheetTitle>
           </SheetHeader>
-          <div className="py-4 overflow-y-auto h-[calc(100%-4rem)]">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
             {selectedOrder && <PackageLabel order={selectedOrder} />}
           </div>
         </SheetContent>

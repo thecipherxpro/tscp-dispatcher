@@ -11,9 +11,11 @@ import { cn } from '@/lib/utils';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-type GeoZone = 'NORTH' | 'EAST' | 'WEST' | 'SOUTH';
+import { getOrderGeoZone, type GeoZone } from '@/lib/geoZone';
 
-const ZONES: GeoZone[] = ['NORTH', 'EAST', 'WEST', 'SOUTH'];
+type ZoneCard = GeoZone;
+
+const ZONES: ZoneCard[] = ['NORTH', 'EAST', 'WEST', 'SOUTH'];
 
 export default function DriverZoneDashboard() {
   const { user } = useAuth();
@@ -145,8 +147,8 @@ export default function DriverZoneDashboard() {
     };
   }, [user, fetchOrders]);
 
-  const getZoneCount = (zone: GeoZone) => {
-    return orders.filter(o => o.geo_zone === zone).length;
+  const getZoneCount = (zone: ZoneCard) => {
+    return orders.filter((o) => getOrderGeoZone(o) === zone).length;
   };
 
   const handleZoneClick = (zone: GeoZone) => {

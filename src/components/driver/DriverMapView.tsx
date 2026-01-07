@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Order, TimelineStatus } from '@/types/auth';
 import { updateOrderStatus } from '@/hooks/useOrders';
 import { fetchDriverLocationData } from '@/hooks/useDriverLocation';
+import { determineGeoZone, type GeoZone } from '@/lib/geoZone';
 
 import { Loader2, MapPin, AlertCircle, Navigation, Clock, Compass, Play, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,16 +31,11 @@ interface RouteInfo {
   distanceValue: number;
 }
 
-type GeoZone = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 
 interface OrderWithCoords extends Order {
   drivingDistance?: number;
   drivingDuration?: number;
 }
-
-// Toronto city center coordinates
-const CITY_CENTER_LAT = 43.6532;
-const CITY_CENTER_LNG = -79.3832;
 
 // Uber-style map styling - muted with visible parks and blue highways
 const UBER_MAP_STYLE: google.maps.MapTypeStyle[] = [
@@ -109,19 +105,6 @@ const DELIVERY_OUTCOMES = {
     { value: 'OTHER', label: 'Other' },
   ],
 };
-
-// Determine geo zone based on coordinates
-function determineGeoZone(lat: number, lng: number): GeoZone {
-  if (lat > CITY_CENTER_LAT) {
-    return 'NORTH';
-  } else if (lat < CITY_CENTER_LAT) {
-    return 'SOUTH';
-  } else if (lng > CITY_CENTER_LNG) {
-    return 'EAST';
-  } else {
-    return 'WEST';
-  }
-}
 
 export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -696,7 +679,7 @@ export function DriverMapView({ onOrderSelect }: DriverMapViewProps) {
 
         const initialLocation = position 
           ? { lat: position.coords.latitude, lng: position.coords.longitude }
-          : { lat: CITY_CENTER_LAT, lng: CITY_CENTER_LNG };
+          : { lat: 43.6532, lng: -79.3832 };
 
         setDriverLocation(initialLocation);
         setDriverZone(determineGeoZone(initialLocation.lat, initialLocation.lng));

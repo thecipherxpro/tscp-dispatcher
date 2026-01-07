@@ -462,9 +462,9 @@ export function DriverStatusUpdateModal({ order, isOpen, onClose, onSuccess }: D
           {/* Order Info */}
           <Card className="bg-muted/50 border-border">
             <CardContent className="p-3">
-              <p className="font-medium text-foreground">{order.name || 'Unknown Client'}</p>
+              <p className="font-medium text-foreground">{order.client_name || 'Unknown Client'}</p>
               <p className="text-sm text-muted-foreground">
-                {order.address_1}, {order.city}
+                {order.address_line_1}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Current: {order.timeline_status.replace(/_/g, ' ')}

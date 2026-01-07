@@ -258,8 +258,8 @@ export default function AdminTracking() {
                     <FieldValue value={order.shipped_at ? formatDateTime(order.shipped_at) : null} label="Not shipped" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Billing Date</p>
-                    <FieldValue value={order.billing_date ? formatDate(order.billing_date) : null} label="Not set" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Shipping Date</p>
+                    <FieldValue value={order.shipping_date ? formatDate(order.shipping_date) : null} label="Not set" />
                   </div>
                 </div>
               </div>
@@ -346,15 +346,12 @@ export default function AdminTracking() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <span className="text-sm font-semibold text-primary">
-                      {order.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
+                      {order.client_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-foreground truncate font-bold">
-                      {order.name || <EmptyField label="No name" />}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      DOB: {order.dob ? formatDate(order.dob) : <span className="italic text-muted-foreground/60">Not provided</span>}
+                      {order.client_name || <EmptyField label="No name" />}
                     </p>
                   </div>
                 </div>
@@ -364,15 +361,11 @@ export default function AdminTracking() {
                 <div className="space-y-2">
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Health Card</p>
-                    <FieldValue value={order.health_card} label="Not provided" />
+                    <FieldValue value={order.health_card_no} label="Not provided" />
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                    {order.phone_number ? <a href={`tel:${order.phone_number}`} className="text-primary underline">{order.phone_number}</a> : <EmptyField label="No phone" />}
-                  </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
                     {order.email ? <a href={`mailto:${order.email}`} className="text-primary underline truncate">{order.email}</a> : <EmptyField label="No email" />}
@@ -389,33 +382,23 @@ export default function AdminTracking() {
               </div>
               <div className="bg-muted/30 rounded-xl p-4 space-y-3">
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Street</p>
-                  <FieldValue value={order.address_1} label="No address" />
-                  {order.address_2 && <p className="text-sm text-muted-foreground mt-0.5">{order.address_2}</p>}
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Address Line 1</p>
+                  <FieldValue value={order.address_line_1} label="No address" />
                 </div>
-                
-                <div className="grid grid-cols-3 gap-2">
+                {order.address_line_2 && (
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">City</p>
-                    <FieldValue value={order.city} label="—" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Address Line 2</p>
+                    <FieldValue value={order.address_line_2} />
                   </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Province</p>
-                    <FieldValue value={order.province} label="—" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Postal</p>
-                    <FieldValue value={order.postal} label="—" />
-                  </div>
-                </div>
+                )}
                 
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Country</p>
                   <FieldValue value={order.country} label="Canada" />
                 </div>
                 
-                {order.address_1 && <Button variant="outline" className="w-full mt-2" onClick={() => {
-                const address = `${order.address_1}, ${order.city}, ${order.province} ${order.postal}`;
+                {order.address_line_1 && <Button variant="outline" className="w-full mt-2" onClick={() => {
+                const address = `${order.address_line_1}${order.address_line_2 ? ', ' + order.address_line_2 : ''}, ${order.country || 'Canada'}`;
                 window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
               }}>
                     <MapPin className="w-4 h-4 mr-2" />
@@ -442,11 +425,11 @@ export default function AdminTracking() {
                       </div>
                       <span className="text-xs font-medium text-muted-foreground">Nasal</span>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{order.doses_nasal || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">doses</p>
-                    {order.nasal_rx && <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-2xl font-bold text-foreground">{order.nasal_qty || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">qty</p>
+                    {order.nasal_rx_number && <div className="mt-2 pt-2 border-t border-border">
                         <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
-                        <p className="text-xs font-mono text-foreground">{order.nasal_rx}</p>
+                        <p className="text-xs font-mono text-foreground">{order.nasal_rx_number}</p>
                       </div>}
                   </div>
                   
@@ -457,36 +440,32 @@ export default function AdminTracking() {
                       </div>
                       <span className="text-xs font-medium text-muted-foreground">Injectable</span>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{order.doses_injectable || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">doses</p>
-                    {order.injection_rx && <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-2xl font-bold text-foreground">{order.injection_qty || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">qty</p>
+                    {order.injection_rx_number && <div className="mt-2 pt-2 border-t border-border">
                         <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
-                        <p className="text-xs font-mono text-foreground">{order.injection_rx}</p>
+                        <p className="text-xs font-mono text-foreground">{order.injection_rx_number}</p>
                       </div>}
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Pharmacy Section */}
+            {/* Warehouse & Doctor Section */}
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <Building className="w-4 h-4 text-muted-foreground" />
-                <h3 className="text-sm font-semibold text-foreground">Pharmacy Details</h3>
+                <h3 className="text-sm font-semibold text-foreground">Warehouse & Doctor</h3>
               </div>
               <div className="bg-muted/30 rounded-xl p-4 space-y-3">
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Pharmacy</p>
-                  <FieldValue value={order.pharmacy_name} label="Not specified" />
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Warehouse Address</p>
+                  <FieldValue value={order.warehouse_address} label="Not specified" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Authorizing Pharmacist</p>
-                  <FieldValue value={order.authorizing_pharmacist} label="Not specified" />
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Authorizing Doctor</p>
+                  <FieldValue value={order.authorizing_doctor_name} label="Not specified" />
                 </div>
-                {order.training_status && <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Training Status</p>
-                    <FieldValue value={order.training_status} />
-                  </div>}
               </div>
             </section>
 
@@ -534,13 +513,13 @@ export default function AdminTracking() {
 
 
             {/* Notes Section */}
-            {order.call_notes && <section>
+            {order.notes && <section>
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Notes</h3>
                 </div>
                 <div className="bg-muted/30 rounded-xl p-4">
-                  <p className="text-sm text-foreground">{order.call_notes}</p>
+                  <p className="text-sm text-foreground">{order.notes}</p>
                 </div>
               </section>}
           </div>

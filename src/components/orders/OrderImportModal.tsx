@@ -13,75 +13,72 @@ interface OrderImportModalProps {
 }
 
 interface ParsedOrder {
-  call_datetime?: string | null;
-  billing_date?: string | null;
-  ship_date?: string | null;
-  doses_nasal?: number;
-  nasal_rx?: string;
-  doses_injectable?: number;
-  injection_rx?: string;
-  tracking_url_source?: string;
-  name?: string;
-  dob?: string | null;
-  health_card?: string;
-  phone_number?: string;
+  // Customer & Order
+  order_date?: string | null;
+  shipping_date?: string | null;
+  client_name?: string;
   email?: string;
-  call_notes?: string;
-  address_1?: string;
-  address_2?: string;
-  city?: string;
-  province?: string;
-  postal?: string;
-  country?: string;
-  shipment_id_import?: string;
-  driver_id_import?: string;
-  authorizing_pharmacist?: string;
-  training_status?: string;
-  pharmacy_name?: string;
+  health_card_no?: string;
+  notes?: string;
+  // Address
+  address_line_1?: string;
+  address_line_2?: string;
+  warehouse_address?: string;
+  // Doctor
+  authorizing_doctor_name?: string;
+  // Drug Data (Injection)
+  injection_rx_number?: string;
+  injection_din?: string;
+  injection_drug_name?: string;
+  injection_strength?: string;
+  injection_form?: string;
+  injection_package?: string;
+  injection_qty?: number;
+  injection_billing_date?: string | null;
+  // Drug Data (Nasal)
+  nasal_rx_number?: string;
+  nasal_din?: string;
+  nasal_drug_name?: string;
+  nasal_package?: string;
+  nasal_qty?: number;
+  nasal_billing_date?: string | null;
 }
 
-// Exact XLSX column headers mapping
+// New CSV column headers mapping
 const COLUMN_MAPPING: Record<string, keyof ParsedOrder> = {
-  'call date & time': 'call_datetime',
-  'call_date_&_time': 'call_datetime',
-  'billing date': 'billing_date',
-  'billing_date': 'billing_date',
-  'ship date': 'ship_date',
-  'ship_date': 'ship_date',
-  'doses nasal': 'doses_nasal',
-  'doses_nasal': 'doses_nasal',
-  'nasal rx': 'nasal_rx',
-  'nasal_rx': 'nasal_rx',
-  'doses injectable': 'doses_injectable',
-  'doses_injectable': 'doses_injectable',
-  'injection rx': 'injection_rx',
-  'injection_rx': 'injection_rx',
-  'tracking_url': 'tracking_url_source',
-  'name': 'name',
-  'dob': 'dob',
-  'health card': 'health_card',
-  'health_card': 'health_card',
-  'phone number': 'phone_number',
-  'phone_number': 'phone_number',
+  // Customer & Order
+  'order date': 'order_date',
+  'order_date': 'order_date',
+  'shipping date': 'shipping_date',
+  'shipping_date': 'shipping_date',
+  'client name': 'client_name',
+  'client_name': 'client_name',
   'email': 'email',
-  'call notes': 'call_notes',
-  'call_notes': 'call_notes',
-  'address 1': 'address_1',
-  'address_1': 'address_1',
-  'address 2': 'address_2',
-  'address_2': 'address_2',
-  'city': 'city',
-  'province': 'province',
-  'postal': 'postal',
-  'country': 'country',
-  'shipment id': 'shipment_id_import',
-  'shipment_id': 'shipment_id_import',
-  'driver id': 'driver_id_import',
-  'driver_id': 'driver_id_import',
-  'authorizing pharmacist': 'authorizing_pharmacist',
-  'authorizing_pharmacist': 'authorizing_pharmacist',
-  'training': 'training_status',
-  'pharmacy': 'pharmacy_name',
+  'health card no.': 'health_card_no',
+  'health card no': 'health_card_no',
+  'health_card_no': 'health_card_no',
+  'notes': 'notes',
+  // Address
+  'address line 1': 'address_line_1',
+  'address_line_1': 'address_line_1',
+  'address line 2': 'address_line_2',
+  'address_line_2': 'address_line_2',
+  'warehouse address': 'warehouse_address',
+  'warehouse_address': 'warehouse_address',
+  // Doctor
+  'authorizing doctor name': 'authorizing_doctor_name',
+  'authorizing_doctor_name': 'authorizing_doctor_name',
+};
+
+// Drug column prefixes for duplicate handling
+const INJECTION_COLUMNS: Record<string, keyof ParsedOrder> = {
+  'naloxone-inj rx#': 'injection_rx_number',
+  'naloxone-inj rx': 'injection_rx_number',
+};
+
+const NASAL_COLUMNS: Record<string, keyof ParsedOrder> = {
+  'naloxone-nasal rx#': 'nasal_rx_number',
+  'naloxone-nasal rx': 'nasal_rx_number',
 };
 
 type ImportCount = 10 | 20 | 'all';
@@ -124,7 +121,7 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     try {
       const dateVal = value instanceof Date ? value : new Date(String(value));
       if (!isNaN(dateVal.getTime())) {
-        return dateVal.toISOString();
+        return dateVal.toISOString().split('T')[0]; // Return date only
       }
     } catch {
       // Ignore parse errors
@@ -145,27 +142,125 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
 
         const mapped = jsonData.map((row: Record<string, unknown>) => {
           const order: ParsedOrder = {};
+          const headers = Object.keys(row);
           
-          Object.entries(row).forEach(([key, value]) => {
+          // Track which drug type section we're in
+          let currentDrugType: 'injection' | 'nasal' | null = null;
+          
+          for (let i = 0; i < headers.length; i++) {
+            const key = headers[i];
+            const value = row[key];
             const normalizedKey = key.toLowerCase().trim();
-            const mappedKey = COLUMN_MAPPING[normalizedKey];
             
+            // Check if this is a Drug Type indicator
+            if (normalizedKey === 'drug type') {
+              const typeValue = String(value || '').toLowerCase();
+              if (typeValue.includes('inj') || typeValue.includes('injection')) {
+                currentDrugType = 'injection';
+              } else if (typeValue.includes('nasal')) {
+                currentDrugType = 'nasal';
+              }
+              continue;
+            }
+            
+            // Map standard columns
+            const mappedKey = COLUMN_MAPPING[normalizedKey];
             if (mappedKey) {
-              if (mappedKey === 'doses_nasal' || mappedKey === 'doses_injectable') {
-                order[mappedKey] = Number(value) || 0;
-              } else if (mappedKey === 'call_datetime' || mappedKey === 'billing_date' || mappedKey === 'ship_date' || mappedKey === 'dob') {
+              if (mappedKey === 'order_date' || mappedKey === 'shipping_date') {
                 order[mappedKey] = parseDate(value);
               } else {
-                order[mappedKey] = String(value || '').trim();
+                order[mappedKey] = String(value || '').trim() || undefined;
               }
+              continue;
             }
-          });
+            
+            // Check for injection-specific columns
+            if (INJECTION_COLUMNS[normalizedKey]) {
+              order.injection_rx_number = String(value || '').trim() || undefined;
+              continue;
+            }
+            
+            // Check for nasal-specific columns
+            if (NASAL_COLUMNS[normalizedKey]) {
+              order.nasal_rx_number = String(value || '').trim() || undefined;
+              continue;
+            }
+            
+            // Handle drug-related columns based on context
+            if (normalizedKey === 'billing date') {
+              const dateValue = parseDate(value);
+              if (currentDrugType === 'injection') {
+                order.injection_billing_date = dateValue;
+              } else if (currentDrugType === 'nasal') {
+                order.nasal_billing_date = dateValue;
+              }
+              continue;
+            }
+            
+            if (normalizedKey === 'din') {
+              const dinValue = String(value || '').trim();
+              if (currentDrugType === 'injection') {
+                order.injection_din = dinValue;
+              } else if (currentDrugType === 'nasal') {
+                order.nasal_din = dinValue;
+              }
+              continue;
+            }
+            
+            if (normalizedKey === 'drug name') {
+              const nameValue = String(value || '').trim();
+              if (currentDrugType === 'injection') {
+                order.injection_drug_name = nameValue;
+              } else if (currentDrugType === 'nasal') {
+                order.nasal_drug_name = nameValue;
+              }
+              continue;
+            }
+            
+            if (normalizedKey === 'strength') {
+              if (currentDrugType === 'injection') {
+                order.injection_strength = String(value || '').trim() || undefined;
+              }
+              continue;
+            }
+            
+            if (normalizedKey === 'form') {
+              if (currentDrugType === 'injection') {
+                order.injection_form = String(value || '').trim() || undefined;
+              }
+              continue;
+            }
+            
+            if (normalizedKey === 'package') {
+              const packageValue = String(value || '').trim();
+              if (currentDrugType === 'injection') {
+                order.injection_package = packageValue;
+              } else if (currentDrugType === 'nasal') {
+                order.nasal_package = packageValue;
+              }
+              continue;
+            }
+            
+            if (normalizedKey === 'qty') {
+              const qtyValue = Number(value) || undefined;
+              if (currentDrugType === 'injection') {
+                order.injection_qty = qtyValue;
+              } else if (currentDrugType === 'nasal') {
+                order.nasal_qty = qtyValue;
+              }
+              continue;
+            }
+          }
           
           return order;
         });
 
-        // Never filter - insert ALL rows even if data is partial
-        setParsedData(mapped);
+        // Filter out completely empty orders
+        const validOrders = mapped.filter(order => 
+          order.client_name || order.address_line_1 || order.injection_rx_number || order.nasal_rx_number
+        );
+        
+        setParsedData(validOrders);
       } catch (error) {
         console.error('Parse error:', error);
         toast({
@@ -197,31 +292,36 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     for (const order of ordersToImport) {
       try {
         const { error } = await supabase.from('orders').insert({
-          call_datetime: order.call_datetime || null,
-          billing_date: order.billing_date || null,
-          ship_date: order.ship_date || null,
-          doses_nasal: order.doses_nasal || 0,
-          nasal_rx: order.nasal_rx || '',
-          doses_injectable: order.doses_injectable || 0,
-          injection_rx: order.injection_rx || '',
-          tracking_url_source: order.tracking_url_source || '',
-          name: order.name || '',
-          dob: order.dob || null,
-          health_card: order.health_card || '',
-          phone_number: order.phone_number || '',
+          // Customer & Order
+          order_date: order.order_date || null,
+          shipping_date: order.shipping_date || null,
+          client_name: order.client_name || '',
           email: order.email || '',
-          call_notes: order.call_notes || '',
-          address_1: order.address_1 || '',
-          address_2: order.address_2 || '',
-          city: order.city || '',
-          province: order.province || '',
-          postal: order.postal || '',
-          country: order.country || 'Canada',
-          shipment_id_import: order.shipment_id_import || '',
-          driver_id_import: order.driver_id_import || '',
-          authorizing_pharmacist: order.authorizing_pharmacist || '',
-          training_status: order.training_status || '',
-          pharmacy_name: order.pharmacy_name || '',
+          health_card_no: order.health_card_no || '',
+          notes: order.notes || '',
+          // Address
+          address_line_1: order.address_line_1 || '',
+          address_line_2: order.address_line_2 || '',
+          warehouse_address: order.warehouse_address || '',
+          // Doctor
+          authorizing_doctor_name: order.authorizing_doctor_name || '',
+          // Drug Data (Injection)
+          injection_rx_number: order.injection_rx_number || null,
+          injection_din: order.injection_din || null,
+          injection_drug_name: order.injection_drug_name || null,
+          injection_strength: order.injection_strength || null,
+          injection_form: order.injection_form || null,
+          injection_package: order.injection_package || null,
+          injection_qty: order.injection_qty || null,
+          injection_billing_date: order.injection_billing_date || null,
+          // Drug Data (Nasal)
+          nasal_rx_number: order.nasal_rx_number || null,
+          nasal_din: order.nasal_din || null,
+          nasal_drug_name: order.nasal_drug_name || null,
+          nasal_package: order.nasal_package || null,
+          nasal_qty: order.nasal_qty || null,
+          nasal_billing_date: order.nasal_billing_date || null,
+          // System fields - set on import
           timeline_status: 'PENDING',
           assigned_driver_id: null,
           shipment_id: null,
@@ -342,16 +442,16 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
                       <thead className="bg-muted sticky top-0">
                         <tr>
                           <th className="p-2 text-left text-muted-foreground">#</th>
-                          <th className="p-2 text-left text-muted-foreground">Name</th>
-                          <th className="p-2 text-left text-muted-foreground">City</th>
+                          <th className="p-2 text-left text-muted-foreground">Client</th>
+                          <th className="p-2 text-left text-muted-foreground">Address</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {getOrdersToImport().slice(0, 10).map((order, i) => (
                           <tr key={i}>
                             <td className="p-2 text-muted-foreground">{i + 1}</td>
-                            <td className="p-2 text-foreground">{order.name || '-'}</td>
-                            <td className="p-2 text-foreground">{order.city || '-'}</td>
+                            <td className="p-2 text-foreground">{order.client_name || '-'}</td>
+                            <td className="p-2 text-foreground">{order.address_line_1 || '-'}</td>
                           </tr>
                         ))}
                       </tbody>

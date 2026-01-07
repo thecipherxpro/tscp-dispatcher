@@ -72,11 +72,8 @@ export function DriverOrderCard({ order, onClick, actionButton }: DriverOrderCar
   
   // Build full address - only show name and address for drivers
   const fullAddress = [
-    order.address_1,
-    order.address_2,
-    order.city,
-    order.province,
-    order.postal
+    order.address_line_1,
+    order.address_line_2,
   ].filter(Boolean).join(', ');
 
   return (
@@ -92,7 +89,7 @@ export function DriverOrderCard({ order, onClick, actionButton }: DriverOrderCar
               <User className="w-4 h-4 text-primary" />
             </div>
             <p className="font-semibold text-foreground truncate leading-tight">
-              {order.name || 'Unknown Client'}
+              {order.client_name || 'Unknown Client'}
             </p>
           </div>
           <Badge variant="outline" className={`${statusConfig.className} text-xs font-medium flex-shrink-0`}>

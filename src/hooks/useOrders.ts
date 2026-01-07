@@ -29,7 +29,6 @@ export function useOrders(enableRealtime = true) {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!enableRealtime) return;
 
@@ -48,7 +47,7 @@ export function useOrders(enableRealtime = true) {
               ).sort((a, b) => {
                 const dateA = new Date(a.created_at || 0).getTime();
                 const dateB = new Date(b.created_at || 0).getTime();
-                return dateB - dateA; // Newest first
+                return dateB - dateA;
               })
             );
           } else if (payload.eventType === 'DELETE') {
@@ -109,18 +108,14 @@ export async function assignDriverToOrder(
   orderData: Partial<Order>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Generate shipment ID using database function
     const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
     const shipmentId = shipmentIdData as string;
 
-    // Generate tracking ID using database function
     const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
     const trackingId = trackingIdData as string;
 
-    // Generate tracking URL
     const trackingUrl = `${window.location.origin}/track/${trackingId}`;
 
-    // Get client initials
     const { data: initialsData } = await supabase.rpc('get_client_initials', {
       full_name: clientName || ''
     });
@@ -128,7 +123,11 @@ export async function assignDriverToOrder(
 
     const now = new Date().toISOString();
 
-    // Update order - assignment sets status to PICKED_UP_AND_ASSIGNED
+    // Extract city from warehouse address for public tracking
+    const warehouseAddress = orderData.warehouse_address || '';
+    const warehouseParts = warehouseAddress.split(',').map(p => p.trim());
+    const warehouseCity = warehouseParts.length >= 2 ? warehouseParts[warehouseParts.length - 2] : warehouseParts[0] || null;
+
     const { error: orderError } = await supabase
       .from('orders')
       .update({
@@ -144,7 +143,6 @@ export async function assignDriverToOrder(
 
     if (orderError) throw orderError;
 
-    // Upsert public tracking record
     const { error: trackingError } = await supabase
       .from('public_tracking')
       .upsert({
@@ -154,13 +152,9 @@ export async function assignDriverToOrder(
         order_id: orderId,
         driver_id: driverId,
         client_initials: clientInitials,
-        doses_nasal: orderData.doses_nasal,
-        nasal_rx: orderData.nasal_rx,
-        doses_injectable: orderData.doses_injectable,
-        injection_rx: orderData.injection_rx,
-        city: orderData.city,
-        province: orderData.province,
-        postal_code: orderData.postal,
+        injection_qty: orderData.injection_qty,
+        nasal_qty: orderData.nasal_qty,
+        warehouse_city: warehouseCity,
         country: orderData.country || 'Canada',
         timeline_status: 'PICKED_UP_AND_ASSIGNED' as TimelineStatus,
         pending_at: orderData.pending_at,
@@ -195,7 +189,6 @@ export async function updateOrderStatus(
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // First get the current order status for audit logging
     const { data: currentOrder } = await supabase
       .from('orders')
       .select('timeline_status')
@@ -205,7 +198,6 @@ export async function updateOrderStatus(
     const previousStatus = currentOrder?.timeline_status;
     const now = new Date().toISOString();
     
-    // Map new status to timestamp fields
     const timestampField: Record<string, string> = {
       'CONFIRMED': 'confirmed_at',
       'IN_ROUTE': 'shipped_at',
@@ -223,7 +215,6 @@ export async function updateOrderStatus(
       updateData.delivery_status = deliveryStatus;
     }
 
-    // Add review data if provided
     if (reviewData?.review_reason) {
       updateData.review_reason = reviewData.review_reason;
     }
@@ -231,7 +222,6 @@ export async function updateOrderStatus(
       updateData.review_notes = reviewData.review_notes;
     }
 
-    // Update order
     const { error: orderError } = await supabase
       .from('orders')
       .update(updateData)
@@ -239,7 +229,6 @@ export async function updateOrderStatus(
 
     if (orderError) throw orderError;
 
-    // Update public tracking if tracking_id exists
     if (trackingId) {
       const { error: trackingError } = await supabase
         .from('public_tracking')
@@ -249,11 +238,9 @@ export async function updateOrderStatus(
       if (trackingError) throw trackingError;
     }
 
-    // Create audit log entry with location data
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData?.session?.user?.id;
 
-    // Determine the internal audit action based on status
     let auditAction = 'STATUS_CHANGE';
     if (newStatus === 'COMPLETED_DELIVERED') {
       auditAction = 'DELIVERY_COMPLETED_SUCCESS';

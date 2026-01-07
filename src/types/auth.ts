@@ -2,7 +2,7 @@ export type AppRole = 'pharmacy_admin' | 'driver';
 
 export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
 
-// New timeline status enum - matches database
+// Timeline status enum - matches database
 export type TimelineStatus = 
   | 'PENDING'
   | 'PICKED_UP_AND_ASSIGNED'
@@ -55,41 +55,47 @@ export interface UserRole {
 
 export interface Order {
   id: string;
-  call_datetime: string | null;
-  billing_date: string | null;
-  ship_date: string | null;
-  doses_nasal: number | null;
-  nasal_rx: string | null;
-  doses_injectable: number | null;
-  injection_rx: string | null;
-  tracking_url_source: string | null;
-  name: string | null;
-  dob: string | null;
-  health_card: string | null;
-  phone_number: string | null;
+  // Customer & Order fields
+  order_date: string | null;
+  shipping_date: string | null;
+  client_name: string | null;
   email: string | null;
-  call_notes: string | null;
-  address_1: string | null;
-  address_2: string | null;
-  city: string | null;
-  province: string | null;
-  postal: string | null;
-  country: string | null;
-  province_1: string | null;
-  shipment_id: string | null;
-  shipment_id_import: string | null;
-  driver_id_import: string | null;
-  authorizing_pharmacist: string | null;
-  training_status: string | null;
-  pharmacy_name: string | null;
+  health_card_no: string | null;
+  notes: string | null;
+  // Address fields
+  address_line_1: string | null;
+  address_line_2: string | null;
+  warehouse_address: string | null;
+  // Doctor field
+  authorizing_doctor_name: string | null;
+  // Drug Data (Injection)
+  injection_rx_number: string | null;
+  injection_din: string | null;
+  injection_drug_name: string | null;
+  injection_strength: string | null;
+  injection_form: string | null;
+  injection_package: string | null;
+  injection_qty: number | null;
+  injection_billing_date: string | null;
+  // Drug Data (Nasal)
+  nasal_rx_number: string | null;
+  nasal_din: string | null;
+  nasal_drug_name: string | null;
+  nasal_package: string | null;
+  nasal_qty: number | null;
+  nasal_billing_date: string | null;
+  // Delivery system fields
   assigned_driver_id: string | null;
   tracking_id: string | null;
   tracking_url: string | null;
+  shipment_id: string | null;
   timeline_status: TimelineStatus;
   delivery_status: DeliveryStatus | null;
   latitude: number | null;
   longitude: number | null;
   geo_zone: string | null;
+  country: string | null;
+  // Timestamps
   pending_at: string | null;
   picked_up_at: string | null;
   assigned_at: string | null;
@@ -117,13 +123,11 @@ export interface PublicTracking {
   order_id: string | null;
   driver_id: string | null;
   client_initials: string | null;
-  doses_nasal: number | null;
-  nasal_rx: string | null;
-  doses_injectable: number | null;
-  injection_rx: string | null;
-  city: string | null;
-  province: string | null;
-  postal_code: string | null;
+  // Drug quantities for public display
+  injection_qty: number | null;
+  nasal_qty: number | null;
+  // Location - only warehouse city for privacy
+  warehouse_city: string | null;
   country: string | null;
   latitude: number | null;
   longitude: number | null;

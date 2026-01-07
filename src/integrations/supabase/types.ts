@@ -126,17 +126,14 @@ export type Database = {
       }
       orders: {
         Row: {
-          address_1: string | null
-          address_2: string | null
+          address_line_1: string | null
+          address_line_2: string | null
           address_review_requested_at: string | null
           arrived_at: string | null
           assigned_at: string | null
           assigned_driver_id: string | null
-          authorizing_pharmacist: string | null
-          billing_date: string | null
-          call_datetime: string | null
-          call_notes: string | null
-          city: string | null
+          authorizing_doctor_name: string | null
+          client_name: string | null
           completed_at: string | null
           confirmed_at: string | null
           country: string | null
@@ -144,53 +141,52 @@ export type Database = {
           delivery_route_snapshot_status: string | null
           delivery_route_snapshot_url: string | null
           delivery_status: Database["public"]["Enums"]["delivery_status"] | null
-          dob: string | null
-          doses_injectable: number | null
-          doses_nasal: number | null
-          driver_id_import: string | null
           email: string | null
           geo_zone: string | null
-          health_card: string | null
+          health_card_no: string | null
           id: string
           in_route_at: string | null
-          injection_rx: string | null
+          injection_billing_date: string | null
+          injection_din: string | null
+          injection_drug_name: string | null
+          injection_form: string | null
+          injection_package: string | null
+          injection_qty: number | null
+          injection_rx_number: string | null
+          injection_strength: string | null
           latitude: number | null
           longitude: number | null
-          name: string | null
-          nasal_rx: string | null
+          nasal_billing_date: string | null
+          nasal_din: string | null
+          nasal_drug_name: string | null
+          nasal_package: string | null
+          nasal_qty: number | null
+          nasal_rx_number: string | null
+          notes: string | null
+          order_date: string | null
           pending_at: string | null
-          pharmacy_name: string | null
-          phone_number: string | null
           picked_up_at: string | null
-          postal: string | null
-          province: string | null
-          province_1: string | null
           review_notes: string | null
           review_reason: string | null
           review_requested_at: string | null
-          ship_date: string | null
           shipment_id: string | null
-          shipment_id_import: string | null
           shipped_at: string | null
+          shipping_date: string | null
           timeline_status: Database["public"]["Enums"]["timeline_status"] | null
           tracking_id: string | null
           tracking_url: string | null
-          tracking_url_source: string | null
-          training_status: string | null
           updated_at: string | null
+          warehouse_address: string | null
         }
         Insert: {
-          address_1?: string | null
-          address_2?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
           address_review_requested_at?: string | null
           arrived_at?: string | null
           assigned_at?: string | null
           assigned_driver_id?: string | null
-          authorizing_pharmacist?: string | null
-          billing_date?: string | null
-          call_datetime?: string | null
-          call_notes?: string | null
-          city?: string | null
+          authorizing_doctor_name?: string | null
+          client_name?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
           country?: string | null
@@ -200,55 +196,54 @@ export type Database = {
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
-          dob?: string | null
-          doses_injectable?: number | null
-          doses_nasal?: number | null
-          driver_id_import?: string | null
           email?: string | null
           geo_zone?: string | null
-          health_card?: string | null
+          health_card_no?: string | null
           id?: string
           in_route_at?: string | null
-          injection_rx?: string | null
+          injection_billing_date?: string | null
+          injection_din?: string | null
+          injection_drug_name?: string | null
+          injection_form?: string | null
+          injection_package?: string | null
+          injection_qty?: number | null
+          injection_rx_number?: string | null
+          injection_strength?: string | null
           latitude?: number | null
           longitude?: number | null
-          name?: string | null
-          nasal_rx?: string | null
+          nasal_billing_date?: string | null
+          nasal_din?: string | null
+          nasal_drug_name?: string | null
+          nasal_package?: string | null
+          nasal_qty?: number | null
+          nasal_rx_number?: string | null
+          notes?: string | null
+          order_date?: string | null
           pending_at?: string | null
-          pharmacy_name?: string | null
-          phone_number?: string | null
           picked_up_at?: string | null
-          postal?: string | null
-          province?: string | null
-          province_1?: string | null
           review_notes?: string | null
           review_reason?: string | null
           review_requested_at?: string | null
-          ship_date?: string | null
           shipment_id?: string | null
-          shipment_id_import?: string | null
           shipped_at?: string | null
+          shipping_date?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
           tracking_id?: string | null
           tracking_url?: string | null
-          tracking_url_source?: string | null
-          training_status?: string | null
           updated_at?: string | null
+          warehouse_address?: string | null
         }
         Update: {
-          address_1?: string | null
-          address_2?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
           address_review_requested_at?: string | null
           arrived_at?: string | null
           assigned_at?: string | null
           assigned_driver_id?: string | null
-          authorizing_pharmacist?: string | null
-          billing_date?: string | null
-          call_datetime?: string | null
-          call_notes?: string | null
-          city?: string | null
+          authorizing_doctor_name?: string | null
+          client_name?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
           country?: string | null
@@ -258,42 +253,44 @@ export type Database = {
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
-          dob?: string | null
-          doses_injectable?: number | null
-          doses_nasal?: number | null
-          driver_id_import?: string | null
           email?: string | null
           geo_zone?: string | null
-          health_card?: string | null
+          health_card_no?: string | null
           id?: string
           in_route_at?: string | null
-          injection_rx?: string | null
+          injection_billing_date?: string | null
+          injection_din?: string | null
+          injection_drug_name?: string | null
+          injection_form?: string | null
+          injection_package?: string | null
+          injection_qty?: number | null
+          injection_rx_number?: string | null
+          injection_strength?: string | null
           latitude?: number | null
           longitude?: number | null
-          name?: string | null
-          nasal_rx?: string | null
+          nasal_billing_date?: string | null
+          nasal_din?: string | null
+          nasal_drug_name?: string | null
+          nasal_package?: string | null
+          nasal_qty?: number | null
+          nasal_rx_number?: string | null
+          notes?: string | null
+          order_date?: string | null
           pending_at?: string | null
-          pharmacy_name?: string | null
-          phone_number?: string | null
           picked_up_at?: string | null
-          postal?: string | null
-          province?: string | null
-          province_1?: string | null
           review_notes?: string | null
           review_reason?: string | null
           review_requested_at?: string | null
-          ship_date?: string | null
           shipment_id?: string | null
-          shipment_id_import?: string | null
           shipped_at?: string | null
+          shipping_date?: string | null
           timeline_status?:
             | Database["public"]["Enums"]["timeline_status"]
             | null
           tracking_id?: string | null
           tracking_url?: string | null
-          tracking_url_source?: string | null
-          training_status?: string | null
           updated_at?: string | null
+          warehouse_address?: string | null
         }
         Relationships: [
           {
@@ -358,7 +355,6 @@ export type Database = {
           address_review_requested_at: string | null
           arrived_at: string | null
           assigned_at: string | null
-          city: string | null
           client_initials: string | null
           completed_at: string | null
           confirmed_at: string | null
@@ -367,21 +363,17 @@ export type Database = {
           delivery_route_snapshot_status: string | null
           delivery_route_snapshot_url: string | null
           delivery_status: Database["public"]["Enums"]["delivery_status"] | null
-          doses_injectable: number | null
-          doses_nasal: number | null
           driver_id: string | null
           geo_zone: string | null
           id: string
           in_route_at: string | null
-          injection_rx: string | null
+          injection_qty: number | null
           latitude: number | null
           longitude: number | null
-          nasal_rx: string | null
+          nasal_qty: number | null
           order_id: string | null
           pending_at: string | null
           picked_up_at: string | null
-          postal_code: string | null
-          province: string | null
           review_notes: string | null
           review_reason: string | null
           review_requested_at: string | null
@@ -391,12 +383,12 @@ export type Database = {
           tracking_id: string
           tracking_url: string | null
           updated_at: string | null
+          warehouse_city: string | null
         }
         Insert: {
           address_review_requested_at?: string | null
           arrived_at?: string | null
           assigned_at?: string | null
-          city?: string | null
           client_initials?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
@@ -407,21 +399,17 @@ export type Database = {
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
-          doses_injectable?: number | null
-          doses_nasal?: number | null
           driver_id?: string | null
           geo_zone?: string | null
           id?: string
           in_route_at?: string | null
-          injection_rx?: string | null
+          injection_qty?: number | null
           latitude?: number | null
           longitude?: number | null
-          nasal_rx?: string | null
+          nasal_qty?: number | null
           order_id?: string | null
           pending_at?: string | null
           picked_up_at?: string | null
-          postal_code?: string | null
-          province?: string | null
           review_notes?: string | null
           review_reason?: string | null
           review_requested_at?: string | null
@@ -433,12 +421,12 @@ export type Database = {
           tracking_id: string
           tracking_url?: string | null
           updated_at?: string | null
+          warehouse_city?: string | null
         }
         Update: {
           address_review_requested_at?: string | null
           arrived_at?: string | null
           assigned_at?: string | null
-          city?: string | null
           client_initials?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
@@ -449,21 +437,17 @@ export type Database = {
           delivery_status?:
             | Database["public"]["Enums"]["delivery_status"]
             | null
-          doses_injectable?: number | null
-          doses_nasal?: number | null
           driver_id?: string | null
           geo_zone?: string | null
           id?: string
           in_route_at?: string | null
-          injection_rx?: string | null
+          injection_qty?: number | null
           latitude?: number | null
           longitude?: number | null
-          nasal_rx?: string | null
+          nasal_qty?: number | null
           order_id?: string | null
           pending_at?: string | null
           picked_up_at?: string | null
-          postal_code?: string | null
-          province?: string | null
           review_notes?: string | null
           review_reason?: string | null
           review_requested_at?: string | null
@@ -475,6 +459,7 @@ export type Database = {
           tracking_id?: string
           tracking_url?: string | null
           updated_at?: string | null
+          warehouse_city?: string | null
         }
         Relationships: [
           {

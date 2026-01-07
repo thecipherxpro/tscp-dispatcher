@@ -37,15 +37,11 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
     const result = await assignDriverToOrder(
       order.id,
       selectedDriverId,
-      order.name,
+      order.client_name,
       {
-        doses_nasal: order.doses_nasal,
-        nasal_rx: order.nasal_rx,
-        doses_injectable: order.doses_injectable,
-        injection_rx: order.injection_rx,
-        city: order.city,
-        province: order.province,
-        postal: order.postal,
+        injection_qty: order.injection_qty,
+        nasal_qty: order.nasal_qty,
+        warehouse_address: order.warehouse_address,
         country: order.country,
         pending_at: order.pending_at,
       }
@@ -68,6 +64,13 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
     }
   };
 
+  // Extract city from warehouse address for display
+  const getCityFromWarehouse = (warehouseAddress: string | null) => {
+    if (!warehouseAddress) return 'N/A';
+    const parts = warehouseAddress.split(',').map(p => p.trim());
+    return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -81,9 +84,9 @@ export function DriverAssignmentModal({ order, isOpen, onClose, onSuccess }: Dri
         <div className="space-y-4">
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">Assigning to</p>
-            <p className="font-medium text-foreground">{order.name || 'Unknown Client'}</p>
+            <p className="font-medium text-foreground">{order.client_name || 'Unknown Client'}</p>
             <p className="text-sm text-muted-foreground">
-              {order.city}, {order.province}
+              {getCityFromWarehouse(order.warehouse_address)}
             </p>
           </div>
 

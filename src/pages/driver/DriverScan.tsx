@@ -133,15 +133,93 @@ export default function DriverScan() {
     setFilteredOrders(filtered);
   }, [searchQuery, orders]);
 
-  // Handle QR code detection
+  // Stop scanning helper - defined first for use in other callbacks
+  const stopScanning = useCallback(() => {
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
+    }
+    setIsScanning(false);
+  }, []);
+
+  // Parse QR code value - handles multiple formats
+  const parseQRCodeValue = useCallback((qrValue: string): { trackingId?: string; shipmentId?: string; orderId?: string } => {
+    const trimmedValue = qrValue.trim();
+    
+    // Try to parse as JSON (new QR code format)
+    try {
+      const parsed = JSON.parse(trimmedValue);
+      return {
+        trackingId: parsed.tracking_id || parsed.trackingId,
+        shipmentId: parsed.shipment_id || parsed.shipmentId,
+        orderId: parsed.order_id || parsed.orderId || parsed.id
+      };
+    } catch {
+      // Not JSON, continue with other formats
+    }
+    
+    // Check if it's a URL (tracking URL format)
+    try {
+      const url = new URL(trimmedValue);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      const trackingParam = url.searchParams.get('tracking') || url.searchParams.get('id');
+      
+      // Handle /track/TRACKING_ID format
+      if (pathParts.includes('track') && pathParts.length > 1) {
+        const trackIndex = pathParts.indexOf('track');
+        return { trackingId: pathParts[trackIndex + 1] };
+      }
+      
+      // Handle query param format
+      if (trackingParam) {
+        return { trackingId: trackingParam };
+      }
+      
+      // Use last path segment as tracking ID
+      if (pathParts.length > 0) {
+        return { trackingId: pathParts[pathParts.length - 1] };
+      }
+    } catch {
+      // Not a URL, treat as plain ID
+    }
+    
+    // Plain text - could be tracking ID or shipment ID
+    return { trackingId: trimmedValue.toUpperCase() };
+  }, []);
+
+  // Find order by parsed QR data
+  const findOrderByQRData = useCallback((qrData: { trackingId?: string; shipmentId?: string; orderId?: string }): Order | undefined => {
+    return orders.find(order => {
+      // Match by order ID (UUID)
+      if (qrData.orderId && order.id === qrData.orderId) {
+        return true;
+      }
+      
+      // Match by tracking ID (case-insensitive)
+      if (qrData.trackingId && order.tracking_id?.toUpperCase() === qrData.trackingId.toUpperCase()) {
+        return true;
+      }
+      
+      // Match by shipment ID (case-insensitive)
+      if (qrData.shipmentId && order.shipment_id?.toUpperCase() === qrData.shipmentId.toUpperCase()) {
+        return true;
+      }
+      
+      // Also check if trackingId matches shipment_id (backwards compatibility)
+      if (qrData.trackingId && order.shipment_id?.toUpperCase() === qrData.trackingId.toUpperCase()) {
+        return true;
+      }
+      
+      return false;
+    });
+  }, [orders]);
+
+  // Handle QR code detection with auto-detection logic
   const handleQRCodeDetected = useCallback((qrValue: string) => {
     haptic.success();
     
-    const trimmedValue = qrValue.trim().toUpperCase();
-    const foundOrder = orders.find(order => 
-      order.tracking_id?.toUpperCase() === trimmedValue || 
-      order.shipment_id?.toUpperCase() === trimmedValue
-    );
+    const qrData = parseQRCodeValue(qrValue);
+    const foundOrder = findOrderByQRData(qrData);
     
     if (foundOrder) {
       setSelectedOrder(foundOrder);
@@ -154,13 +232,14 @@ export default function DriverScan() {
       });
     } else {
       haptic.error();
+      const searchedId = qrData.trackingId || qrData.shipmentId || qrData.orderId || qrValue;
       toast({
         title: 'Order Not Found',
-        description: `No order found with ID: ${trimmedValue}`,
+        description: `No order found with ID: ${searchedId}`,
         variant: 'destructive'
       });
     }
-  }, [orders]);
+  }, [parseQRCodeValue, findOrderByQRData, haptic, stopScanning]);
 
   // Start QR code scanning
   const startScanning = async () => {
@@ -218,14 +297,6 @@ export default function DriverScan() {
       }
     }, 100);
   };
-
-  const stopScanning = useCallback(() => {
-    if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
-      codeReaderRef.current = null;
-    }
-    setIsScanning(false);
-  }, []);
 
   // Cleanup on unmount
   useEffect(() => {

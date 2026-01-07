@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink } from 'react-router-dom';
-import { Home, Package, Users, Tags, Settings, User, ScanBarcode } from 'lucide-react';
+import { Home, Package, Users, Tags, Settings, User, QrCode } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function MobileNav() {
@@ -16,7 +16,7 @@ export function MobileNav() {
   const driverLinks = [
     { to: '/dashboard', icon: Home, label: 'Home' },
     { to: '/my-orders', icon: Package, label: 'Orders' },
-    { to: '/scan', icon: ScanBarcode, label: 'Scan' },
+    { to: '/scan', icon: QrCode, label: 'Scan' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 

@@ -33,7 +33,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         <img 
           src={pharmanetLogo} 
-          alt="PharmaNet Delivery Service" 
+          alt="EndOverdose Delivery Service" 
           className="w-64 h-64 object-contain"
         />
       </div>

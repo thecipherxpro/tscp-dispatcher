@@ -126,6 +126,16 @@ export default function DriverScan() {
 
   // Handle barcode scanning via camera
   const startScanning = async () => {
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({
+        title: 'Camera Not Supported',
+        description: 'Your browser does not support camera access. Try using a modern browser.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsScanning(true);
     
     // Small delay to ensure video element is rendered
@@ -133,7 +143,7 @@ export default function DriverScan() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: { ideal: 'environment' },
+            facingMode: 'environment',
             width: { ideal: 1280 },
             height: { ideal: 720 }
           }
@@ -142,7 +152,6 @@ export default function DriverScan() {
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // Wait for video metadata to load before playing
           videoRef.current.onloadedmetadata = () => {
             videoRef.current?.play().catch(console.error);
           };
@@ -152,16 +161,43 @@ export default function DriverScan() {
           title: 'Camera Active',
           description: 'Point camera at barcode or enter tracking number manually'
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Camera access error:', error);
         setIsScanning(false);
+        
+        let errorMessage = 'Unable to access camera.';
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.';
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+          errorMessage = 'No camera found on this device.';
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          errorMessage = 'Camera is in use by another app. Please close other apps using the camera.';
+        } else if (error.name === 'OverconstrainedError') {
+          errorMessage = 'Camera requirements not met. Trying with basic settings...';
+          // Retry with basic constraints
+          try {
+            const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            streamRef.current = basicStream;
+            if (videoRef.current) {
+              videoRef.current.srcObject = basicStream;
+              videoRef.current.onloadedmetadata = () => {
+                videoRef.current?.play().catch(console.error);
+              };
+            }
+            setIsScanning(true);
+            return;
+          } catch {
+            errorMessage = 'Unable to access any camera on this device.';
+          }
+        }
+        
         toast({
           title: 'Camera Error',
-          description: 'Unable to access camera. Please check permissions.',
+          description: errorMessage,
           variant: 'destructive'
         });
       }
-    }, 100);
+    }, 150);
   };
   const stopScanning = useCallback(() => {
     if (streamRef.current) {

@@ -150,7 +150,7 @@ export default function DriverDashboard() {
             <h3 className="font-semibold text-foreground">Current Delivery</h3>
             <ActiveDeliveryCard 
               order={currentOrder} 
-              onClick={() => navigate('/my-orders')}
+              onClick={() => navigate(`/driver-delivery/${currentOrder.id}`)}
             />
           </div>
         )}

@@ -628,6 +628,19 @@ export default function OrderAuditTrail() {
             </div>
           </div>
 
+          <!-- Notes Card -->
+          ${order?.notes ? `
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">${icons.package}</span>
+              <span class="card-title">Notes</span>
+            </div>
+            <div class="card-content">
+              <div class="field-value" style="white-space: pre-wrap;">${order.notes}</div>
+            </div>
+          </div>
+          ` : ''}
+
           <!-- Driver Assignment Card -->
           <div class="card">
             <div class="card-header">
@@ -1042,6 +1055,21 @@ export default function OrderAuditTrail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Notes Card */}
+          {order.notes && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{order.notes}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Driver Assignment Card */}
           <Card>

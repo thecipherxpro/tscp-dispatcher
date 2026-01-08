@@ -273,6 +273,17 @@ export function OrderDetailSheet({
                 </div>
               </section>}
 
+            {/* Notes Section */}
+            {order.notes && <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Notes</h3>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{order.notes}</p>
+                </div>
+              </section>}
+
 
             {/* Package Label Section */}
             <section>

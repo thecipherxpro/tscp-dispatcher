@@ -609,7 +609,15 @@ export default function OrderAuditTrail() {
                   </div>
                   <div style="grid-column: span 2;">
                     <div class="field-label">Drug Name</div>
-                    <div class="field-value">${order?.injection_drug_name || '—'} ${order?.injection_strength || ''} ${order?.injection_form || ''}</div>
+                    <div class="field-value">${order?.injection_drug_name || '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Strength</div>
+                    <div class="field-value">${order?.injection_strength || '—'}</div>
+                  </div>
+                  <div>
+                    <div class="field-label">Form</div>
+                    <div class="field-value">${order?.injection_form || '—'}</div>
                   </div>
                 </div>
               </div>
@@ -1016,7 +1024,15 @@ export default function OrderAuditTrail() {
                     </div>
                     <div className="col-span-2">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Drug Name</p>
-                      <p className="text-sm">{order.injection_drug_name || <EmptyField label="—" />} {order.injection_strength} {order.injection_form}</p>
+                      <p className="text-sm">{order.injection_drug_name || <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Strength</p>
+                      <p className="text-sm font-medium">{order.injection_strength || <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Form</p>
+                      <p className="text-sm font-medium">{order.injection_form || <EmptyField label="—" />}</p>
                     </div>
                   </div>
                 </div>

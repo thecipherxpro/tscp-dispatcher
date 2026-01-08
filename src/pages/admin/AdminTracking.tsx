@@ -136,7 +136,9 @@ export default function AdminTracking() {
   };
   const formatDate = (date: string | null) => {
     if (!date) return 'Not set';
-    return new Date(date).toLocaleDateString('en-CA', {
+    // Parse date-only string without timezone shift
+    const parsed = new Date(date + 'T00:00:00');
+    return parsed.toLocaleDateString('en-CA', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

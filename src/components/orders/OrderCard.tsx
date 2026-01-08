@@ -80,7 +80,7 @@ const getCityFromWarehouse = (warehouseAddress: string | null) => {
 export function OrderCard({ order, onClick, isDriver = false, actionButton }: OrderCardProps) {
   const statusConfig = getStatusConfig(order.timeline_status);
   const hasAddress = order.address_line_1 || order.warehouse_address;
-  const orderDate = order.order_date ? new Date(order.order_date) : null;
+  const orderDate = order.order_date ? new Date(order.order_date + 'T00:00:00') : null;
   const displayCity = getCityFromWarehouse(order.warehouse_address);
 
   return (

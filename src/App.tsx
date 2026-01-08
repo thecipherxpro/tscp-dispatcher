@@ -26,6 +26,8 @@ import Drivers from "./pages/admin/Drivers";
 import UserManagement from "./pages/admin/UserManagement";
 import PackageLabels from "./pages/admin/PackageLabels";
 import Settings from "./pages/admin/Settings";
+import OrderEdits from "./pages/admin/OrderEdits";
+import OrderEditDetail from "./pages/admin/OrderEditDetail";
 import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
 import TrackShipment from "./pages/TrackShipment";
@@ -205,6 +207,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/order-edits"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <OrderEdits />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/order-edit"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <OrderEditDetail />
           </ProtectedRoute>
         }
       />

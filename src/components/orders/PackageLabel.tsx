@@ -21,6 +21,14 @@ const formatDate = (date: string | null): string => {
   });
 };
 
+const formatTime = (date: string | null): string => {
+  if (!date) return "";
+  return new Date(date).toLocaleTimeString("en-CA", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const CANVAS_OPTIONS = {
   scale: 3,
   backgroundColor: "#ffffff",
@@ -170,8 +178,9 @@ export function PackageLabel({ order }: PackageLabelProps) {
               <p style={{ fontSize: "14px", fontFamily: "monospace", fontWeight: "bold", color: "#000000" }}>{order.shipment_id}</p>
             </div>
             <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ship Date</p>
-              <p style={{ fontSize: "13px", fontWeight: "600", color: "#000000" }}>{formatDate(order.shipping_date)}</p>
+              <p style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Shipped Date</p>
+              <p style={{ fontSize: "13px", fontWeight: "600", color: "#000000", marginBottom: "1px" }}>{formatDate(order.shipped_at)}</p>
+              {order.shipped_at && <p style={{ fontSize: "10px", color: "#6b7280" }}>{formatTime(order.shipped_at)}</p>}
             </div>
           </div>
 

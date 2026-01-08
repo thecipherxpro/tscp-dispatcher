@@ -715,7 +715,7 @@ export default function OrderEditDetail() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="font-semibold text-sm lg:text-lg">
+              <h1 className="font-semibold lg:text-lg text-xs">
                 {order.shipment_id || order.tracking_id}
               </h1>
               <p className="text-xs lg:text-sm text-muted-foreground">{order.client_name}</p>

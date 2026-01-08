@@ -271,15 +271,33 @@ export function OrderDetailSheet({
               </div>
             </section>
 
-            {/* Injection Drug Details Section */}
-            {(order.injection_drug_name || order.injection_strength || order.injection_form) && (
+            {/* Medication Details Section */}
+            {(order.injection_drug_name || order.injection_strength || order.injection_form || order.injection_rx_number || order.injection_din || order.injection_qty) && (
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Package className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">Injection Drug Details</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Medication Details</h3>
                 </div>
                 <div className="bg-muted/30 rounded-xl p-4">
                   <div className="grid grid-cols-2 gap-4">
+                    {order.injection_rx_number && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Rx Number</p>
+                        <p className="text-sm font-medium text-foreground">{order.injection_rx_number}</p>
+                      </div>
+                    )}
+                    {order.injection_din && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">DIN</p>
+                        <p className="text-sm font-medium text-foreground">{order.injection_din}</p>
+                      </div>
+                    )}
+                    {order.injection_qty && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Qty</p>
+                        <p className="text-sm font-medium text-foreground">{order.injection_qty}</p>
+                      </div>
+                    )}
                     {order.injection_drug_name && (
                       <div className="col-span-2">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Drug Name</p>

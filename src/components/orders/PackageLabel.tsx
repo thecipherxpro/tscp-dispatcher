@@ -106,128 +106,127 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const gray = rgb(0.4, 0.4, 0.4);
     const lightGray = rgb(0.85, 0.85, 0.85);
     
+    // Layout constants
+    const marginLeft = 16;
+    const marginRight = 16;
+    const contentWidth = width - marginLeft - marginRight;
+    
     // ============================================
     // HEADER - Full width banner with logo
     // ============================================
+    const headerY = height - 44;
     try {
       const headerBytes = await loadImageAsBytes(labelHeaderImage);
       const headerImg = await pdfDoc.embedPng(headerBytes);
-      const headerHeight = 36;
-      const headerY = height - headerHeight - 8;
       
       page.drawImage(headerImg, {
-        x: 8,
+        x: marginLeft,
         y: headerY,
-        width: width - 16,
-        height: headerHeight,
+        width: contentWidth,
+        height: 36,
       });
     } catch (error) {
       console.error("Failed to embed header:", error);
-      // Fallback: Draw text header
       page.drawRectangle({
-        x: 8,
-        y: height - 44,
-        width: width - 16,
+        x: marginLeft,
+        y: headerY,
+        width: contentWidth,
         height: 36,
         color: rgb(0.95, 0.95, 0.95),
         borderColor: lightGray,
         borderWidth: 1,
       });
       page.drawText("CANADA HARM CONTROL", {
-        x: 16,
-        y: height - 28,
+        x: marginLeft + 8,
+        y: headerY + 14,
         size: 12,
         font: helveticaBold,
         color: black,
-      });
-      page.drawText("EndOverdose.ca", {
-        x: 16,
-        y: height - 40,
-        size: 8,
-        font: helvetica,
-        color: gray,
       });
     }
     
     // ============================================
     // DIVIDER LINE below header
     // ============================================
+    const divider1Y = height - 56;
     page.drawLine({
-      start: { x: 8, y: height - 52 },
-      end: { x: width - 8, y: height - 52 },
+      start: { x: marginLeft, y: divider1Y },
+      end: { x: width - marginRight, y: divider1Y },
       thickness: 1,
       color: lightGray,
     });
     
     // ============================================
-    // FROM SECTION - X: 16, Y: 320
+    // FROM SECTION - Left column
     // ============================================
-    const fromStartY = 320;
+    const fromStartY = height - 72;
+    const leftColWidth = 140;
     
     page.drawText("FROM:", {
-      x: 16,
+      x: marginLeft,
       y: fromStartY,
-      size: 8,
+      size: 7,
       font: helveticaBold,
       color: gray,
     });
     
     page.drawText("CanadaHarmControl", {
-      x: 16,
-      y: fromStartY - 14,
+      x: marginLeft,
+      y: fromStartY - 12,
       size: 10,
       font: helveticaBold,
       color: black,
     });
     
     page.drawText("Healthcare Delivery Service", {
-      x: 16,
-      y: fromStartY - 26,
-      size: 8,
+      x: marginLeft,
+      y: fromStartY - 23,
+      size: 7,
       font: helvetica,
       color: gray,
     });
     
     page.drawText("3265 Wharton Way #23", {
-      x: 16,
-      y: fromStartY - 38,
+      x: marginLeft,
+      y: fromStartY - 35,
       size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("Mississauga, ON L4X 2X9", {
-      x: 16,
-      y: fromStartY - 50,
+      x: marginLeft,
+      y: fromStartY - 46,
       size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("(647) 494-4538", {
-      x: 16,
-      y: fromStartY - 62,
+      x: marginLeft,
+      y: fromStartY - 57,
       size: 8,
       font: helvetica,
       color: black,
     });
     
     // ============================================
-    // RIGHT COLUMN - Order details
+    // RIGHT COLUMN - Order details (aligned)
     // ============================================
-    const rightColX = 160;
+    const rightColX = 158;
+    const labelValueGap = 10;
     
     // Order Date
     page.drawText("ORDER DATE:", {
       x: rightColX,
-      y: 320,
+      y: fromStartY,
       size: 7,
       font: helveticaBold,
       color: gray,
     });
     page.drawText(formatDate(order.order_date), {
       x: rightColX,
-      y: 308,
+      y: fromStartY - labelValueGap,
       size: 9,
       font: helvetica,
       color: black,
@@ -236,48 +235,102 @@ export function PackageLabel({ order }: PackageLabelProps) {
     // Shipped Date
     page.drawText("SHIPPED:", {
       x: rightColX,
-      y: 290,
+      y: fromStartY - 28,
       size: 7,
       font: helveticaBold,
       color: gray,
     });
     const shippedDate = formatDate(order.shipped_at);
     const shippedTime = formatTime(order.shipped_at);
-    page.drawText(shippedDate, {
+    page.drawText(`${shippedDate} ${shippedTime}`.trim(), {
       x: rightColX,
-      y: 278,
+      y: fromStartY - 28 - labelValueGap,
       size: 9,
       font: helvetica,
       color: black,
     });
-    if (shippedTime) {
-      page.drawText(shippedTime, {
-        x: rightColX + 60,
-        y: 278,
-        size: 8,
-        font: helvetica,
-        color: gray,
-      });
-    }
     
     // Shipment ID
     page.drawText("SHIPMENT ID:", {
       x: rightColX,
-      y: 260,
+      y: fromStartY - 56,
       size: 7,
       font: helveticaBold,
       color: gray,
     });
     page.drawText(order.shipment_id || "N/A", {
       x: rightColX,
-      y: 248,
+      y: fromStartY - 56 - labelValueGap,
       size: 9,
       font: helveticaBold,
       color: black,
     });
     
     // ============================================
-    // FRAGILE BADGE - Right side, middle area
+    // DIVIDER LINE between FROM and SHIP TO
+    // ============================================
+    const divider2Y = height - 145;
+    page.drawLine({
+      start: { x: marginLeft, y: divider2Y },
+      end: { x: width - marginRight, y: divider2Y },
+      thickness: 1,
+      color: lightGray,
+    });
+    
+    // ============================================
+    // SHIP TO SECTION - Full width
+    // ============================================
+    const shipToStartY = height - 160;
+    
+    page.drawText("SHIP TO:", {
+      x: marginLeft,
+      y: shipToStartY,
+      size: 7,
+      font: helveticaBold,
+      color: gray,
+    });
+    
+    page.drawText(order.client_name || "Customer", {
+      x: marginLeft,
+      y: shipToStartY - 14,
+      size: 12,
+      font: helveticaBold,
+      color: black,
+    });
+    
+    let addressY = shipToStartY - 28;
+    if (order.address_line_1) {
+      page.drawText(order.address_line_1, {
+        x: marginLeft,
+        y: addressY,
+        size: 9,
+        font: helvetica,
+        color: black,
+      });
+      addressY -= 12;
+    }
+    
+    if (order.address_line_2) {
+      page.drawText(order.address_line_2, {
+        x: marginLeft,
+        y: addressY,
+        size: 9,
+        font: helvetica,
+        color: black,
+      });
+      addressY -= 12;
+    }
+    
+    page.drawText(order.country || "Canada", {
+      x: marginLeft,
+      y: addressY,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    // ============================================
+    // FRAGILE BADGE - Right side of SHIP TO
     // ============================================
     try {
       const fragileBytes = await loadImageAsBytes(labelFragileImage);
@@ -285,110 +338,54 @@ export function PackageLabel({ order }: PackageLabelProps) {
       
       page.drawImage(fragileImg, {
         x: rightColX,
-        y: 200,
+        y: shipToStartY - 36,
         width: 100,
-        height: 28,
+        height: 25,
       });
     } catch (error) {
       console.error("Failed to embed fragile badge:", error);
     }
     
     // ============================================
-    // DIVIDER LINE between FROM and SHIP TO
-    // ============================================
-    page.drawLine({
-      start: { x: 8, y: 245 },
-      end: { x: 140, y: 245 },
-      thickness: 1,
-      color: lightGray,
-    });
-    
-    // ============================================
-    // SHIP TO SECTION - X: 16, Y: 230
-    // ============================================
-    const shipToStartY = 230;
-    
-    page.drawText("SHIP TO:", {
-      x: 16,
-      y: shipToStartY,
-      size: 8,
-      font: helveticaBold,
-      color: gray,
-    });
-    
-    page.drawText(order.client_name || "Customer", {
-      x: 16,
-      y: shipToStartY - 14,
-      size: 11,
-      font: helveticaBold,
-      color: black,
-    });
-    
-    if (order.address_line_1) {
-      page.drawText(order.address_line_1, {
-        x: 16,
-        y: shipToStartY - 28,
-        size: 9,
-        font: helvetica,
-        color: black,
-      });
-    }
-    
-    if (order.address_line_2) {
-      page.drawText(order.address_line_2, {
-        x: 16,
-        y: shipToStartY - 40,
-        size: 9,
-        font: helvetica,
-        color: black,
-      });
-    }
-    
-    page.drawText(order.country || "Canada", {
-      x: 16,
-      y: shipToStartY - 52,
-      size: 9,
-      font: helvetica,
-      color: black,
-    });
-    
-    // ============================================
     // BOTTOM SECTION DIVIDER
     // ============================================
+    const divider3Y = height - 230;
     page.drawLine({
-      start: { x: 8, y: 160 },
-      end: { x: width - 8, y: 160 },
+      start: { x: marginLeft, y: divider3Y },
+      end: { x: width - marginRight, y: divider3Y },
       thickness: 1,
       color: lightGray,
     });
     
     // ============================================
-    // QR CODE - X: 16, Y: 50, Size: 100x100
+    // QR CODE - Left side
     // ============================================
+    const qrSize = 100;
+    const qrY = height - 340;
+    
     try {
       const qrPngBytes = await generateQRCodeImage(120);
       const qrImage = await pdfDoc.embedPng(qrPngBytes);
       
       page.drawImage(qrImage, {
-        x: 16,
-        y: 50,
-        width: 100,
-        height: 100,
+        x: marginLeft,
+        y: qrY,
+        width: qrSize,
+        height: qrSize,
       });
     } catch (error) {
       console.error("Failed to embed QR code:", error);
-      // Draw placeholder box
       page.drawRectangle({
-        x: 16,
-        y: 50,
-        width: 100,
-        height: 100,
+        x: marginLeft,
+        y: qrY,
+        width: qrSize,
+        height: qrSize,
         borderColor: lightGray,
         borderWidth: 1,
       });
       page.drawText("QR CODE", {
-        x: 45,
-        y: 95,
+        x: marginLeft + 25,
+        y: qrY + 45,
         size: 10,
         font: helvetica,
         color: gray,
@@ -398,9 +395,12 @@ export function PackageLabel({ order }: PackageLabelProps) {
     // ============================================
     // TRACKING INFO - Right side of QR
     // ============================================
+    const trackingX = marginLeft + qrSize + 16;
+    const trackingY = qrY + qrSize - 10;
+    
     page.drawText("TRACKING NUMBER:", {
-      x: 130,
-      y: 140,
+      x: trackingX,
+      y: trackingY,
       size: 7,
       font: helveticaBold,
       color: gray,
@@ -408,24 +408,24 @@ export function PackageLabel({ order }: PackageLabelProps) {
     
     const trackingId = order.tracking_id || "N/A";
     page.drawText(trackingId, {
-      x: 130,
-      y: 122,
-      size: 12,
+      x: trackingX,
+      y: trackingY - 16,
+      size: 11,
       font: helveticaBold,
       color: black,
     });
     
     // Scan instructions
-    page.drawText("Scan QR code to track", {
-      x: 130,
-      y: 100,
+    page.drawText("Scan QR code to", {
+      x: trackingX,
+      y: trackingY - 40,
       size: 8,
       font: helvetica,
       color: gray,
     });
-    page.drawText("your delivery status", {
-      x: 130,
-      y: 88,
+    page.drawText("track your delivery", {
+      x: trackingX,
+      y: trackingY - 52,
       size: 8,
       font: helvetica,
       color: gray,
@@ -434,17 +434,20 @@ export function PackageLabel({ order }: PackageLabelProps) {
     // ============================================
     // FOOTER BAR
     // ============================================
+    const footerHeight = 32;
     page.drawRectangle({
       x: 0,
       y: 0,
       width: width,
-      height: 36,
+      height: footerHeight,
       color: rgb(0.1, 0.1, 0.1),
     });
     
-    page.drawText("HEALTHCARE DELIVERY • HANDLE WITH CARE", {
-      x: 40,
-      y: 16,
+    const footerText = "HEALTHCARE DELIVERY • HANDLE WITH CARE";
+    const footerTextWidth = helveticaBold.widthOfTextAtSize(footerText, 8);
+    page.drawText(footerText, {
+      x: (width - footerTextWidth) / 2,
+      y: 12,
       size: 8,
       font: helveticaBold,
       color: rgb(1, 1, 1),

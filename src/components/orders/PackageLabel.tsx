@@ -115,7 +115,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
     // HEADER - Full size 1200 x 147 px (aspect ratio 8.16:1)
     // ============================================
     const headerWidth = contentWidth; // Use full content width
-    const headerHeight = 50; // Larger height to match reference image
+    const headerHeight = 35; // Balanced height to avoid stretch
     const headerY = height - 6 - headerHeight;
     const headerX = marginLeft;
     

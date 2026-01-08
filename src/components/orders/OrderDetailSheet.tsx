@@ -249,7 +249,7 @@ export function OrderDetailSheet({
                 <div className="space-y-2">
                   {/* Injection Drug */}
                   {(order.injection_drug_name || order.injection_rx_number) && <div className="bg-muted/30 rounded-lg p-3">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 font-semibold">Injection</p>
+                      <p className="text-[10px] uppercase tracking-wide mb-1 font-semibold text-ring">Injection</p>
                       <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
                         {order.injection_rx_number && <p><span className="text-muted-foreground">Rx:</span> {order.injection_rx_number}</p>}
                         {order.injection_din && <p><span className="text-muted-foreground">DIN:</span> {order.injection_din}</p>}
@@ -261,7 +261,7 @@ export function OrderDetailSheet({
                     </div>}
                   {/* Nasal Drug */}
                   {(order.nasal_drug_name || order.nasal_rx_number) && <div className="bg-muted/30 rounded-lg p-3">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Nasal</p>
+                      <p className="text-[10px] uppercase tracking-wide mb-1 font-semibold text-ring">Nasal</p>
                       <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
                         {order.nasal_rx_number && <p><span className="text-muted-foreground">Rx:</span> {order.nasal_rx_number}</p>}
                         {order.nasal_din && <p><span className="text-muted-foreground">DIN:</span> {order.nasal_din}</p>}

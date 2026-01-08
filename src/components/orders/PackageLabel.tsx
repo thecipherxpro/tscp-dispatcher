@@ -115,8 +115,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
     // HEADER - Full size 1200 x 147 px (aspect ratio 8.16:1)
     // ============================================
     const headerAspectRatio = 1200 / 147; // Original image aspect ratio
-    const headerWidth = contentWidth; // Use full content width
-    const headerHeight = headerWidth / headerAspectRatio;
+    const headerWidth = 1200px; // Use full content width
+    const headerHeight = 147px; 
     const headerY = height - 6 - headerHeight;
     const headerX = marginLeft;
     
@@ -135,8 +135,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
       page.drawRectangle({
         x: headerX,
         y: headerY,
-        width: headerWidth,
-        height: headerHeight,
+        width: 1200px,
+        height: 147px,
         color: rgb(0.95, 0.95, 0.95),
         borderColor: lightGray,
         borderWidth: 1,

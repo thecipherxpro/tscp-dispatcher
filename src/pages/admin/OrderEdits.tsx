@@ -79,24 +79,23 @@ export default function OrderEdits() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background border-b">
-        <div className="flex items-center justify-between px-4 lg:px-6 h-14 max-w-7xl mx-auto w-full">
+        <div className="flex items-center justify-between px-4 lg:px-8 h-14 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-3">
             {/* Desktop: Off-canvas menu */}
             <div className="hidden lg:block">
               <DesktopNav title="Order Edits" />
             </div>
-            {/* Mobile: Back button */}
+            {/* Back button - visible on all screens */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => navigate('/admin')}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="font-semibold text-lg">Order Edits</h1>
+            <h1 className="font-semibold text-lg lg:text-xl">Order Edits</h1>
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs lg:text-sm">
             {filteredOrders.length} orders
           </Badge>
         </div>

@@ -73,7 +73,7 @@ export function OrderEditCard({ order }: OrderEditCardProps) {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow h-full">
       <CardContent className="p-4">
         {/* Mobile Layout */}
         <div className="lg:hidden space-y-3">
@@ -87,7 +87,7 @@ export function OrderEditCard({ order }: OrderEditCardProps) {
                 <span className="truncate max-w-[150px]">{order.client_name || 'Unknown'}</span>
               </div>
             </div>
-            <Badge className={`${getStatusColor(order.timeline_status)} text-xs`}>
+            <Badge className={`${getStatusColor(order.timeline_status)} text-xs shrink-0`}>
               {getStatusLabel(order.timeline_status)}
             </Badge>
           </div>
@@ -114,48 +114,52 @@ export function OrderEditCard({ order }: OrderEditCardProps) {
           </div>
         </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden lg:flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6 flex-1">
-            <div className="min-w-[140px]">
-              <p className="font-semibold text-sm">
+        {/* Desktop Layout - Consistent Card Structure */}
+        <div className="hidden lg:flex lg:flex-col lg:h-full">
+          {/* Top Row: ID and Status */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm truncate">
                 {order.shipment_id || order.tracking_id || 'No ID'}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {order.tracking_id && order.shipment_id ? order.tracking_id : ''}
-              </p>
+              {order.tracking_id && order.shipment_id && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {order.tracking_id}
+                </p>
+              )}
             </div>
-
-            <div className="min-w-[150px]">
-              <div className="flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm truncate max-w-[130px]">{order.client_name || 'Unknown'}</span>
-              </div>
-            </div>
-
-            <Badge className={`${getStatusColor(order.timeline_status)} text-xs`}>
+            <Badge className={`${getStatusColor(order.timeline_status)} text-xs shrink-0`}>
               {getStatusLabel(order.timeline_status)}
             </Badge>
-
-            {order.geo_zone && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" />
-                <span>{order.geo_zone}</span>
-              </div>
-            )}
-
-            {order.order_date && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{new Date(order.order_date).toLocaleDateString()}</span>
-              </div>
-            )}
           </div>
 
-          <Button size="sm" variant="outline" onClick={handleView}>
-            <Eye className="h-4 w-4 mr-1" />
-            View
-          </Button>
+          {/* Middle Row: Client Info */}
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-sm truncate">{order.client_name || 'Unknown'}</span>
+          </div>
+
+          {/* Bottom Row: Meta + Action */}
+          <div className="flex items-center justify-between gap-3 mt-auto pt-3 border-t">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground min-w-0">
+              {order.geo_zone && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>{order.geo_zone}</span>
+                </div>
+              )}
+              {order.order_date && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{new Date(order.order_date).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+            <Button size="sm" variant="outline" onClick={handleView} className="shrink-0">
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

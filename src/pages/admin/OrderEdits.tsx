@@ -79,7 +79,7 @@ export default function OrderEdits() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background border-b">
-        <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center justify-between px-4 lg:px-6 h-14 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-3">
             {/* Desktop: Off-canvas menu */}
             <div className="hidden lg:block">
@@ -102,9 +102,9 @@ export default function OrderEdits() {
         </div>
 
         {/* Search and Filters - Sticky */}
-        <div className="px-4 py-3 space-y-3 bg-background">
+        <div className="px-4 lg:px-6 py-3 space-y-3 bg-background max-w-7xl mx-auto w-full">
           {/* Search */}
-          <div className="relative">
+          <div className="relative lg:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by ID, name, zone..."
@@ -134,11 +134,11 @@ export default function OrderEdits() {
       {/* Content */}
       <main className="flex-1 overflow-y-auto pb-20 lg:pb-6">
         <PullToRefresh onRefresh={handleRefresh}>
-          <div className="p-4">
+          <div className="p-4 lg:px-6 lg:py-6 max-w-7xl mx-auto">
             {isLoading ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-28 w-full rounded-lg" />
                 ))}
               </div>
             ) : filteredOrders.length === 0 ? (
@@ -150,7 +150,7 @@ export default function OrderEdits() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filteredOrders.map((order) => (
                   <OrderEditCard key={order.id} order={order} />
                 ))}

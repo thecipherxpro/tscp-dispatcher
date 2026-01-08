@@ -166,29 +166,73 @@ export default function OrderEditDetail() {
         return;
       }
 
-      // Update order
+      const now = new Date().toISOString();
+      let shipmentId = order.shipment_id;
+      let trackingId = order.tracking_id;
+      let trackingUrl = order.tracking_url;
+
+      // Generate tracking if not exists
+      if (!shipmentId || !trackingId) {
+        const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
+        shipmentId = shipmentIdData as string;
+
+        const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
+        trackingId = trackingIdData as string;
+
+        trackingUrl = `${window.location.origin}/track/${trackingId}`;
+      }
+
+      // Get client initials
+      const { data: initialsData } = await supabase.rpc('get_client_initials', {
+        full_name: order.client_name || ''
+      });
+      const clientInitials = initialsData as string;
+
+      // Extract city from warehouse address for public tracking
+      const warehouseAddress = order.warehouse_address || '';
+      const warehouseParts = warehouseAddress.split(',').map(p => p.trim());
+      const warehouseCity = warehouseParts.length >= 2 ? warehouseParts[warehouseParts.length - 2] : warehouseParts[0] || null;
+
+      // Update order with driver assignment and tracking
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           assigned_driver_id: driverData.id,
           timeline_status: 'PICKED_UP_AND_ASSIGNED',
-          picked_up_at: new Date().toISOString(),
-          assigned_at: new Date().toISOString(),
+          picked_up_at: now,
+          assigned_at: now,
+          shipment_id: shipmentId,
+          tracking_id: trackingId,
+          tracking_url: trackingUrl,
         })
         .eq('id', order.id);
 
       if (updateError) throw updateError;
 
-      // Update public_tracking
+      // Upsert public_tracking entry
       await supabase
         .from('public_tracking')
-        .update({
+        .upsert({
+          tracking_id: trackingId,
+          tracking_url: trackingUrl,
+          shipment_id: shipmentId,
+          order_id: order.id,
           driver_id: driverData.id,
+          client_initials: clientInitials,
+          injection_qty: order.injection_qty,
+          nasal_qty: order.nasal_qty,
+          warehouse_city: warehouseCity,
+          country: order.country || 'Canada',
+          latitude: order.latitude,
+          longitude: order.longitude,
+          geo_zone: order.geo_zone,
           timeline_status: 'PICKED_UP_AND_ASSIGNED',
-          picked_up_at: new Date().toISOString(),
-          assigned_at: new Date().toISOString(),
-        })
-        .eq('order_id', order.id);
+          pending_at: order.pending_at || now,
+          picked_up_at: now,
+          assigned_at: now,
+        }, {
+          onConflict: 'tracking_id'
+        });
 
       // Create audit log
       await createAuditLog({
@@ -196,10 +240,16 @@ export default function OrderEditDetail() {
         action: 'ORDER_ASSIGNED',
         previousStatus: order.timeline_status || undefined,
         newStatus: 'PICKED_UP_AND_ASSIGNED',
-        metadata: { assigned_driver: driverData.full_name, driver_id: SYSTEM_DRIVER_ID },
+        metadata: { 
+          assigned_driver: driverData.full_name, 
+          driver_id: SYSTEM_DRIVER_ID,
+          tracking_generated: !order.tracking_id,
+          shipment_id: shipmentId,
+          tracking_id: trackingId,
+        },
       });
 
-      toast.success(`Assigned to ${driverData.full_name}`);
+      toast.success(`Assigned to ${driverData.full_name} with tracking generated`);
       await fetchOrder();
     } catch (error) {
       console.error('Error assigning driver:', error);

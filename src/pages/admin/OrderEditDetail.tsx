@@ -33,6 +33,11 @@ import {
   Clock,
   UserPlus,
   Tag,
+  Mail,
+  Syringe,
+  Wind,
+  Pill,
+  FileDown,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -352,6 +357,256 @@ export default function OrderEditDetail() {
     toast.success('Copied to clipboard');
   };
 
+  const formatDate = (date: string | null) => {
+    if (!date) return 'Not set';
+    return new Date(date).toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (date: string | null) => {
+    if (!date) return null;
+    return new Date(date).toLocaleString('en-CA', {
+      timeZone: 'America/Toronto',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const handleExportAuditPDF = () => {
+    if (!order) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Please allow popups to export PDF');
+      return;
+    }
+
+    const clientInitials = order.client_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA';
+    const driverInitials = driver?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'DR';
+
+    const getStatusLabel = (status: string) => {
+      switch (status) {
+        case 'PENDING': return 'Pending';
+        case 'PICKED_UP_AND_ASSIGNED': return 'Assigned';
+        case 'REVIEW_REQUESTED': return 'Review Requested';
+        case 'CONFIRMED': return 'Confirmed';
+        case 'IN_ROUTE': return 'In Route';
+        case 'COMPLETED_DELIVERED': return 'Delivered';
+        case 'COMPLETED_INCOMPLETE': return 'Incomplete';
+        default: return status;
+      }
+    };
+
+    const getStatusBadgeClass = (status: string) => {
+      switch (status) {
+        case 'PENDING': return 'badge-amber';
+        case 'PICKED_UP_AND_ASSIGNED': return 'badge-blue';
+        case 'REVIEW_REQUESTED': return 'badge-amber';
+        case 'CONFIRMED': return 'badge-indigo';
+        case 'IN_ROUTE': return 'badge-purple';
+        case 'COMPLETED_DELIVERED': return 'badge-emerald';
+        case 'COMPLETED_INCOMPLETE': return 'badge-red';
+        default: return 'badge-outline';
+      }
+    };
+
+    const styles = `
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #1a1a1a; background: #f8fafc; line-height: 1.5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .header-title { font-size: 20px; font-weight: 600; color: #111827; }
+        .header-subtitle { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+        .badge-amber { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .badge-purple { background: #f3e8ff; color: #7c3aed; border: 1px solid #c4b5fd; }
+        .badge-emerald { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .badge-outline { background: white; color: #374151; border: 1px solid #d1d5db; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 16px; overflow: hidden; }
+        .card-header { padding: 16px 20px 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; font-weight: 600; color: #111827; }
+        .card-content { padding: 16px 20px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .field-label { font-size: 10px; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; font-weight: 500; margin-bottom: 2px; }
+        .field-value { font-size: 14px; font-weight: 500; color: #111827; }
+        .field-value.mono { font-family: ui-monospace, monospace; }
+        .separator { height: 1px; background: #f3f4f6; margin: 12px 0; }
+        .drug-section { background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+        .drug-section:last-child { margin-bottom: 0; }
+        .drug-title { font-size: 11px; font-weight: 600; color: #2563eb; margin-bottom: 8px; }
+        .audit-item { background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .audit-item:last-child { margin-bottom: 0; }
+        .audit-action { font-size: 13px; font-weight: 500; color: #111827; }
+        .audit-time { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+        .avatar-primary { background: #eff6ff; color: #2563eb; }
+        .avatar-emerald { background: #d1fae5; color: #059669; }
+        .user-card { display: flex; align-items: center; gap: 12px; }
+        .user-name { font-size: 14px; font-weight: 600; color: #111827; }
+        .user-detail { font-size: 12px; color: #6b7280; }
+        .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center; }
+        @media print { body { padding: 16px; background: white; } .card { break-inside: avoid; } }
+      </style>
+    `;
+
+    const content = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Audit Trail - ${order.shipment_id || order.id}</title>
+        ${styles}
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div>
+              <div class="header-title">Audit Trail</div>
+              <div class="header-subtitle">${order.shipment_id || 'No Shipment ID'}</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge ${getStatusBadgeClass(order.timeline_status || 'PENDING')}">${getStatusLabel(order.timeline_status || 'PENDING')}</span>
+              ${order.delivery_status ? `<span class="badge badge-emerald" style="margin-left: 8px;">${order.delivery_status.replace(/_/g, ' ')}</span>` : ''}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Order Summary</div>
+            <div class="card-content">
+              <div class="grid-2">
+                <div>
+                  <div class="field-label">Order Date</div>
+                  <div class="field-value">${formatDate(order.order_date || null)}</div>
+                </div>
+                <div>
+                  <div class="field-label">Shipment ID</div>
+                  <div class="field-value mono">${order.shipment_id || 'Not assigned'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Tracking ID</div>
+                  <div class="field-value mono">${order.tracking_id || 'Not assigned'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Shipped Date</div>
+                  <div class="field-value">${order.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Customer Information</div>
+            <div class="card-content">
+              <div class="user-card">
+                <div class="avatar avatar-primary">${clientInitials}</div>
+                <div>
+                  <div class="user-name">${order.client_name || 'No name'}</div>
+                  <div class="user-detail">Health Card: ${order.health_card_no || 'N/A'}</div>
+                </div>
+              </div>
+              <div class="separator"></div>
+              <div class="grid-2">
+                <div>
+                  <div class="field-label">Email</div>
+                  <div class="field-value">${order.email || 'Not provided'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Address</div>
+                  <div class="field-value">${order.address_line_1 || 'No address'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Drug Information</div>
+            <div class="card-content">
+              ${order.authorizing_doctor_name ? `
+              <div style="margin-bottom: 12px;">
+                <div class="field-label">Authorizing Doctor</div>
+                <div class="field-value">${order.authorizing_doctor_name}</div>
+              </div>
+              <div class="separator"></div>
+              ` : ''}
+              ${order.nasal_rx_number || order.nasal_qty ? `
+              <div class="drug-section">
+                <div class="drug-title">Nasal Spray</div>
+                <div class="grid-2">
+                  <div><div class="field-label">Drug Name</div><div class="field-value">${order.nasal_drug_name || '—'}</div></div>
+                  <div><div class="field-label">Qty</div><div class="field-value">${order.nasal_qty ?? '—'}</div></div>
+                  <div><div class="field-label">RX#</div><div class="field-value mono">${order.nasal_rx_number || '—'}</div></div>
+                  <div><div class="field-label">DIN</div><div class="field-value mono">${order.nasal_din || '—'}</div></div>
+                </div>
+              </div>
+              ` : ''}
+              ${order.injection_rx_number || order.injection_qty ? `
+              <div class="drug-section">
+                <div class="drug-title">Injectable</div>
+                <div class="grid-2">
+                  <div><div class="field-label">Drug Name</div><div class="field-value">${order.injection_drug_name || '—'}</div></div>
+                  <div><div class="field-label">Qty</div><div class="field-value">${order.injection_qty ?? '—'}</div></div>
+                  <div><div class="field-label">RX#</div><div class="field-value mono">${order.injection_rx_number || '—'}</div></div>
+                  <div><div class="field-label">DIN</div><div class="field-value mono">${order.injection_din || '—'}</div></div>
+                  <div><div class="field-label">Strength</div><div class="field-value">${order.injection_strength || '—'}</div></div>
+                  <div><div class="field-label">Form</div><div class="field-value">${order.injection_form || '—'}</div></div>
+                </div>
+              </div>
+              ` : ''}
+              ${!order.nasal_rx_number && !order.nasal_qty && !order.injection_rx_number && !order.injection_qty ? `
+              <div style="text-align: center; padding: 12px; color: #9ca3af;">No drug information available</div>
+              ` : ''}
+            </div>
+          </div>
+
+          ${driver ? `
+          <div class="card">
+            <div class="card-header">Driver Assignment</div>
+            <div class="card-content">
+              <div class="user-card">
+                <div class="avatar avatar-emerald">${driverInitials}</div>
+                <div>
+                  <div class="user-name">${driver.full_name || 'Unknown Driver'}</div>
+                  <div class="user-detail">${driver.driver_id || 'No Driver ID'} • ${driver.phone || 'No phone'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="card">
+            <div class="card-header">Audit Log</div>
+            <div class="card-content">
+              ${auditLogs.length === 0 ? '<div style="text-align: center; padding: 12px; color: #9ca3af;">No activity recorded</div>' : ''}
+              ${auditLogs.map((log) => `
+                <div class="audit-item">
+                  <div class="audit-action">${log.action.replace(/_/g, ' ')}</div>
+                  <div class="audit-time">${log.user_full_name || 'System'} • ${new Date(log.created_at).toLocaleString()}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="footer">
+            Generated on ${new Date().toLocaleString()} • Confidential Audit Record
+          </div>
+        </div>
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(content);
+    printWindow.document.close();
+  };
+
   const downloadLabel = async () => {
     const labelElement = document.getElementById('package-label-preview');
     if (!labelElement) return;
@@ -471,7 +726,7 @@ export default function OrderEditDetail() {
                 </Card>
               ) : (
                 <>
-                {/* Order Info */}
+                {/* Order Information */}
                 <Card>
                   <CardHeader className="pb-3 lg:pb-4">
                     <CardTitle className="text-base lg:text-lg flex items-center gap-2">
@@ -480,6 +735,12 @@ export default function OrderEditDetail() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 lg:space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm lg:text-base text-muted-foreground">Order Date</span>
+                      <span className="text-sm lg:text-base font-medium">
+                        {order.order_date ? new Date(order.order_date).toLocaleDateString() : '-'}
+                      </span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm lg:text-base text-muted-foreground">Shipment ID</span>
                       <div className="flex items-center gap-2">
@@ -502,14 +763,31 @@ export default function OrderEditDetail() {
                         )}
                       </div>
                     </div>
-                    <Separator />
+                  </CardContent>
+                </Card>
+
+                {/* Customer Info */}
+                <Card>
+                  <CardHeader className="pb-3 lg:pb-4">
+                    <CardTitle className="text-base lg:text-lg flex items-center gap-2">
+                      <User className="h-4 w-4 lg:h-5 lg:w-5" />
+                      Customer Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 lg:space-y-4">
                     <div className="flex items-start gap-3">
                       <User className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm lg:text-base font-medium">{order.client_name}</p>
-                        {order.email && <p className="text-xs lg:text-sm text-muted-foreground">{order.email}</p>}
+                        <p className="text-sm lg:text-base font-medium">{order.client_name || '-'}</p>
+                        <p className="text-xs lg:text-sm text-muted-foreground">Health Card: {order.health_card_no || 'N/A'}</p>
                       </div>
                     </div>
+                    {order.email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
+                        <span className="text-sm lg:text-base">{order.email}</span>
+                      </div>
+                    )}
                     <div className="flex items-start gap-3">
                       <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground mt-0.5" />
                       <div>
@@ -518,24 +796,106 @@ export default function OrderEditDetail() {
                         <p className="text-xs lg:text-sm text-muted-foreground">{order.geo_zone}, {order.country}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
-                      <span className="text-sm lg:text-base">
-                        Ordered: {order.order_date ? new Date(order.order_date).toLocaleDateString() : '-'}
-                      </span>
-                    </div>
-                    {(order.injection_drug_name || order.nasal_drug_name) && (
-                      <>
-                        <Separator />
-                        <div className="text-sm lg:text-base space-y-1">
-                          {order.injection_drug_name && (
-                            <p>💉 {order.injection_drug_name} x{order.injection_qty}</p>
-                          )}
-                          {order.nasal_drug_name && (
-                            <p>👃 {order.nasal_drug_name} x{order.nasal_qty}</p>
+                  </CardContent>
+                </Card>
+
+                {/* Drug Info */}
+                <Card className="lg:col-span-2">
+                  <CardHeader className="pb-3 lg:pb-4">
+                    <CardTitle className="text-base lg:text-lg flex items-center gap-2">
+                      <Pill className="h-4 w-4 lg:h-5 lg:w-5" />
+                      Drug Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {order.authorizing_doctor_name && (
+                      <div className="flex items-center gap-3 pb-3 border-b">
+                        <User className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Authorizing Doctor</p>
+                          <p className="text-sm lg:text-base font-medium">{order.authorizing_doctor_name}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Nasal Spray */}
+                    {(order.nasal_drug_name || order.nasal_qty) && (
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Wind className="h-4 w-4 text-primary" />
+                          <span className="font-semibold text-sm">Nasal Spray</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Drug Name</p>
+                            <p className="text-sm font-medium">{order.nasal_drug_name || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Quantity</p>
+                            <p className="text-sm font-medium">{order.nasal_qty || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">RX Number</p>
+                            <p className="text-sm font-mono">{order.nasal_rx_number || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">DIN</p>
+                            <p className="text-sm font-mono">{order.nasal_din || '-'}</p>
+                          </div>
+                          {order.nasal_package && (
+                            <div className="col-span-2">
+                              <p className="text-xs text-muted-foreground">Package</p>
+                              <p className="text-sm">{order.nasal_package}</p>
+                            </div>
                           )}
                         </div>
-                      </>
+                      </div>
+                    )}
+
+                    {/* Injectable */}
+                    {(order.injection_drug_name || order.injection_qty) && (
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Syringe className="h-4 w-4 text-primary" />
+                          <span className="font-semibold text-sm">Injectable</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Drug Name</p>
+                            <p className="text-sm font-medium">{order.injection_drug_name || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Quantity</p>
+                            <p className="text-sm font-medium">{order.injection_qty || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">RX Number</p>
+                            <p className="text-sm font-mono">{order.injection_rx_number || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">DIN</p>
+                            <p className="text-sm font-mono">{order.injection_din || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Strength</p>
+                            <p className="text-sm">{order.injection_strength || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Form</p>
+                            <p className="text-sm">{order.injection_form || '-'}</p>
+                          </div>
+                          {order.injection_package && (
+                            <div className="col-span-2">
+                              <p className="text-xs text-muted-foreground">Package</p>
+                              <p className="text-sm">{order.injection_package}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!order.nasal_drug_name && !order.nasal_qty && !order.injection_drug_name && !order.injection_qty && (
+                      <p className="text-sm text-muted-foreground text-center py-4">No drug information available</p>
                     )}
                   </CardContent>
                 </Card>
@@ -580,7 +940,7 @@ export default function OrderEditDetail() {
                 )}
 
                 {/* Package Label */}
-                <Card className="lg:col-span-2">
+                <Card className={driver ? '' : 'lg:col-span-2'}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base flex items-center gap-2">
@@ -608,8 +968,9 @@ export default function OrderEditDetail() {
                         <FileText className="h-4 w-4" />
                         Recent Activity
                       </CardTitle>
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/admin/audit?order=${order.id}`)}>
-                        View Full Audit
+                      <Button size="sm" variant="outline" onClick={() => handleExportAuditPDF()}>
+                        <FileDown className="h-4 w-4 mr-1" />
+                        Export Audit PDF
                       </Button>
                     </div>
                   </CardHeader>

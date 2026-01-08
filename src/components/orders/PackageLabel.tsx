@@ -146,6 +146,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const pdfDoc = await PDFDocument.load(templateBytes);
     const pages = pdfDoc.getPages();
     const page = pages[0];
+    const { width, height } = page.getSize();
     
     // Embed fonts
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -153,80 +154,84 @@ export function PackageLabel({ order }: PackageLabelProps) {
     
     // Colors
     const black = rgb(0, 0, 0);
-    const gray = rgb(0.3, 0.3, 0.3);
+    
+    // Template is portrait 4x6 inches (288 x 432 points)
+    // Y=0 is bottom, Y=height is top
     
     // ============================================
-    // FIXED FROM BLOCK - Static text (X:20, Y:320)
+    // FROM BLOCK - Below "From:" label area
+    // Position: Left side, below header (~Y: 355 from bottom)
     // ============================================
-    const fromX = 20;
-    const fromY = 320;
+    const fromX = 22;
+    const fromY = height - 78; // ~354 for 432 height
     
     page.drawText("CanadaHarmControl", {
       x: fromX,
       y: fromY,
-      size: 11,
+      size: 10,
       font: helveticaBold,
       color: black,
     });
     
     page.drawText("Healthcare Delivery Service", {
       x: fromX,
-      y: fromY - 14,
-      size: 9,
+      y: fromY - 12,
+      size: 8,
       font: helvetica,
-      color: gray,
+      color: black,
     });
     
     page.drawText("3265 Wharton Way #23", {
       x: fromX,
-      y: fromY - 30,
-      size: 9,
+      y: fromY - 24,
+      size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("Mississauga, ON L4X 2X9", {
       x: fromX,
-      y: fromY - 42,
-      size: 9,
+      y: fromY - 34,
+      size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("(647) 494-4538", {
       x: fromX,
-      y: fromY - 56,
-      size: 9,
+      y: fromY - 44,
+      size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("Info@endoverdose.ca", {
       x: fromX,
-      y: fromY - 68,
-      size: 9,
+      y: fromY - 54,
+      size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("www.endoverdose.ca", {
       x: fromX,
-      y: fromY - 80,
-      size: 9,
+      y: fromY - 64,
+      size: 8,
       font: helvetica,
       color: black,
     });
     
     // ============================================
-    // SHIP TO BLOCK - Dynamic from order (X:20, Y:230)
+    // SHIP TO BLOCK - Below FROM, next to FRAGILE icon
+    // Position: Left side (~Y: 255 from bottom)
     // ============================================
-    const shipToX = 20;
-    const shipToY = 230;
+    const shipToX = 22;
+    const shipToY = height - 168; // ~264 for 432 height
     
     page.drawText(order.client_name || "Customer", {
       x: shipToX,
       y: shipToY,
-      size: 11,
+      size: 10,
       font: helveticaBold,
       color: black,
     });
@@ -234,8 +239,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
     if (order.address_line_1) {
       page.drawText(order.address_line_1, {
         x: shipToX,
-        y: shipToY - 14,
-        size: 10,
+        y: shipToY - 12,
+        size: 9,
         font: helvetica,
         color: black,
       });
@@ -244,88 +249,100 @@ export function PackageLabel({ order }: PackageLabelProps) {
     if (order.address_line_2) {
       page.drawText(order.address_line_2, {
         x: shipToX,
-        y: shipToY - 28,
-        size: 10,
+        y: shipToY - 24,
+        size: 9,
         font: helvetica,
         color: black,
       });
     }
     
     // ============================================
-    // ORDER DATE (X:170, Y:300)
+    // ORDER DATE - Right side, first row
+    // Position: (~X: 175, Y: 320 from bottom)
     // ============================================
+    const rightColX = 175;
+    const orderDateY = height - 112;
+    
     const orderDate = formatDate(order.order_date);
     page.drawText(orderDate, {
-      x: 170,
-      y: 300,
-      size: 10,
+      x: rightColX,
+      y: orderDateY,
+      size: 9,
       font: helvetica,
       color: black,
     });
     
     // ============================================
-    // SHIPPED DATE & TIME (X:170, Y:280)
+    // SHIPPED DATE & TIME - Right side, second row
+    // Position: (~X: 175, Y: 295 from bottom)
     // ============================================
+    const shippedDateY = height - 135;
     const shippedDate = formatDate(order.shipped_at);
     const shippedTime = formatTime(order.shipped_at);
     
     page.drawText(shippedDate, {
-      x: 170,
-      y: 280,
-      size: 10,
+      x: rightColX,
+      y: shippedDateY,
+      size: 9,
       font: helvetica,
       color: black,
     });
     
     if (shippedTime) {
       page.drawText(shippedTime, {
-        x: 170,
-        y: 268,
+        x: rightColX,
+        y: shippedDateY - 10,
         size: 8,
         font: helvetica,
-        color: gray,
+        color: black,
       });
     }
     
     // ============================================
-    // SHIPMENT ID (X:170, Y:260)
+    // SHIPMENT ID - Right side, third row
+    // Position: (~X: 175, Y: 260 from bottom)
     // ============================================
+    const shipmentIdY = height - 162;
+    
     page.drawText(order.shipment_id || "N/A", {
-      x: 170,
-      y: 250,
-      size: 10,
+      x: rightColX,
+      y: shipmentIdY,
+      size: 9,
       font: helveticaBold,
       color: black,
     });
     
     // ============================================
-    // QR CODE (X:20, Y:70, Size:120x120)
+    // QR CODE - Bottom left, in the QR box area
+    // Position: (~X: 22, Y: 95, Size: 100x100)
     // ============================================
     try {
       const qrPngBytes = await generateQRCodeImage(qrValue, 120);
       const qrImage = await pdfDoc.embedPng(qrPngBytes);
       
       page.drawImage(qrImage, {
-        x: 20,
-        y: 70,
-        width: 120,
-        height: 120,
+        x: 22,
+        y: 95,
+        width: 100,
+        height: 100,
       });
     } catch (error) {
       console.error("Failed to embed QR code:", error);
     }
     
     // ============================================
-    // TRACKING NUMBER (X:20, Y:40, Center aligned, Bold)
+    // TRACKING NUMBER - Bottom center, large bold
+    // Position: (~X: centered, Y: 45)
     // ============================================
     const trackingId = order.tracking_id || "N/A";
-    const trackingWidth = helveticaBold.widthOfTextAtSize(trackingId, 14);
-    const trackingCenterX = 20 + (248 - trackingWidth) / 2;
+    const trackingFontSize = 16;
+    const trackingWidth = helveticaBold.widthOfTextAtSize(trackingId, trackingFontSize);
+    const trackingCenterX = (width - trackingWidth) / 2;
     
     page.drawText(trackingId, {
       x: trackingCenterX,
-      y: 40,
-      size: 14,
+      y: 45,
+      size: trackingFontSize,
       font: helveticaBold,
       color: black,
     });

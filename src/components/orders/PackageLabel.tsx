@@ -146,7 +146,6 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const pdfDoc = await PDFDocument.load(templateBytes);
     const pages = pdfDoc.getPages();
     const page = pages[0];
-    const { width, height } = page.getSize();
     
     // Embed fonts
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -156,19 +155,73 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const black = rgb(0, 0, 0);
     const gray = rgb(0.3, 0.3, 0.3);
     
-    // Calculate positions based on template layout (4x6 inch label = 288x432 points)
-    // Template areas based on visual inspection:
-    // - Header: Top section with logo
-    // - SHIP TO: Left column, upper section
-    // - FROM: Right column, upper section  
-    // - FRAGILE/Handle icons: Left column, middle section
-    // - TRACKING#: Right column, middle section
-    // - SCAN TO TRACK + QR: Left column, bottom section
-    // - ORDER DATE & SHIPMENT ID: Right column, bottom section
+    // ============================================
+    // FIXED FROM BLOCK - Static text (X:20, Y:320)
+    // ============================================
+    const fromX = 20;
+    const fromY = 320;
     
-    // SHIP TO section (left column) - Customer details
-    const shipToX = 30;
-    const shipToY = height - 140; // Below header
+    page.drawText("CanadaHarmControl", {
+      x: fromX,
+      y: fromY,
+      size: 11,
+      font: helveticaBold,
+      color: black,
+    });
+    
+    page.drawText("Healthcare Delivery Service", {
+      x: fromX,
+      y: fromY - 14,
+      size: 9,
+      font: helvetica,
+      color: gray,
+    });
+    
+    page.drawText("3265 Wharton Way #23", {
+      x: fromX,
+      y: fromY - 30,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    page.drawText("Mississauga, ON L4X 2X9", {
+      x: fromX,
+      y: fromY - 42,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    page.drawText("(647) 494-4538", {
+      x: fromX,
+      y: fromY - 56,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    page.drawText("Info@endoverdose.ca", {
+      x: fromX,
+      y: fromY - 68,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    page.drawText("www.endoverdose.ca", {
+      x: fromX,
+      y: fromY - 80,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    // ============================================
+    // SHIP TO BLOCK - Dynamic from order (X:20, Y:230)
+    // ============================================
+    const shipToX = 20;
+    const shipToY = 230;
     
     page.drawText(order.client_name || "Customer", {
       x: shipToX,
@@ -198,72 +251,27 @@ export function PackageLabel({ order }: PackageLabelProps) {
       });
     }
     
-    page.drawText(order.country || "Canada", {
-      x: shipToX,
-      y: shipToY - (order.address_line_2 ? 42 : 28),
+    // ============================================
+    // ORDER DATE (X:170, Y:300)
+    // ============================================
+    const orderDate = formatDate(order.order_date);
+    page.drawText(orderDate, {
+      x: 170,
+      y: 300,
       size: 10,
       font: helvetica,
       color: black,
     });
     
-    // FROM section (right column) - Sender details
-    const fromX = width / 2 + 20;
-    const fromY = height - 100;
-    
-    page.drawText(labelSettings.from_company || "Canada Harm Control", {
-      x: fromX,
-      y: fromY,
-      size: 10,
-      font: helveticaBold,
-      color: black,
-    });
-    
-    page.drawText(labelSettings.from_tagline || "EndOverdose.ca", {
-      x: fromX,
-      y: fromY - 12,
-      size: 9,
-      font: helvetica,
-      color: gray,
-    });
-    
-    page.drawText(labelSettings.contact_address || "", {
-      x: fromX,
-      y: fromY - 26,
-      size: 8,
-      font: helvetica,
-      color: gray,
-    });
-    
-    page.drawText(labelSettings.contact_phone || "", {
-      x: fromX,
-      y: fromY - 38,
-      size: 8,
-      font: helvetica,
-      color: gray,
-    });
-    
-    // TRACKING# section (right column, middle)
-    const trackingX = width / 2 + 20;
-    const trackingY = height - 250;
-    
-    page.drawText(order.tracking_id || "N/A", {
-      x: trackingX,
-      y: trackingY,
-      size: 12,
-      font: helveticaBold,
-      color: black,
-    });
-    
-    // ORDER DATE section (right column, bottom)
-    const orderDateX = width / 2 + 20;
-    const orderDateY = height - 340;
-    
+    // ============================================
+    // SHIPPED DATE & TIME (X:170, Y:280)
+    // ============================================
     const shippedDate = formatDate(order.shipped_at);
     const shippedTime = formatTime(order.shipped_at);
     
     page.drawText(shippedDate, {
-      x: orderDateX + 80,
-      y: orderDateY,
+      x: 170,
+      y: 280,
       size: 10,
       font: helvetica,
       color: black,
@@ -271,45 +279,59 @@ export function PackageLabel({ order }: PackageLabelProps) {
     
     if (shippedTime) {
       page.drawText(shippedTime, {
-        x: orderDateX + 80,
-        y: orderDateY - 12,
+        x: 170,
+        y: 268,
         size: 8,
         font: helvetica,
         color: gray,
       });
     }
     
-    // SHIPMENT ID section
+    // ============================================
+    // SHIPMENT ID (X:170, Y:260)
+    // ============================================
     page.drawText(order.shipment_id || "N/A", {
-      x: orderDateX + 80,
-      y: orderDateY - 30,
+      x: 170,
+      y: 250,
       size: 10,
       font: helveticaBold,
       color: black,
     });
     
-    // Generate and embed QR code
+    // ============================================
+    // QR CODE (X:20, Y:70, Size:120x120)
+    // ============================================
     try {
       const qrPngBytes = await generateQRCodeImage(qrValue, 120);
       const qrImage = await pdfDoc.embedPng(qrPngBytes);
       
-      // QR code position (left column, bottom section - below "SCAN TO TRACK")
-      const qrX = 80;
-      const qrY = height - 420;
-      const qrSize = 80;
-      
       page.drawImage(qrImage, {
-        x: qrX,
-        y: qrY,
-        width: qrSize,
-        height: qrSize,
+        x: 20,
+        y: 70,
+        width: 120,
+        height: 120,
       });
     } catch (error) {
       console.error("Failed to embed QR code:", error);
     }
     
+    // ============================================
+    // TRACKING NUMBER (X:20, Y:40, Center aligned, Bold)
+    // ============================================
+    const trackingId = order.tracking_id || "N/A";
+    const trackingWidth = helveticaBold.widthOfTextAtSize(trackingId, 14);
+    const trackingCenterX = 20 + (248 - trackingWidth) / 2;
+    
+    page.drawText(trackingId, {
+      x: trackingCenterX,
+      y: 40,
+      size: 14,
+      font: helveticaBold,
+      color: black,
+    });
+    
     return await pdfDoc.save() as unknown as Uint8Array;
-  }, [order, labelSettings, qrValue]);
+  }, [order, qrValue]);
 
   const generatePDF = useCallback(async () => {
     setIsGenerating(true);
@@ -420,8 +442,9 @@ export function PackageLabel({ order }: PackageLabelProps) {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase mb-1">From</p>
-              <p className="font-medium">{labelSettings.from_company}</p>
-              <p className="text-muted-foreground text-xs">{labelSettings.from_tagline}</p>
+              <p className="font-medium">CanadaHarmControl</p>
+              <p className="text-muted-foreground text-xs">Healthcare Delivery Service</p>
+              <p className="text-muted-foreground text-xs">3265 Wharton Way #23, Mississauga</p>
             </div>
           </div>
           

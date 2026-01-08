@@ -91,12 +91,22 @@ export default function OrderEditDetail() {
 
     setIsLoading(true);
     try {
-      // Try to find by shipment_id, tracking_id, or id
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .or(`shipment_id.eq.${orderId},tracking_id.eq.${orderId},id.eq.${orderId}`)
-        .maybeSingle();
+      // Check if orderId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isUUID = uuidRegex.test(orderId);
+
+      // Build the query based on what type of ID we have
+      let query = supabase.from('orders').select('*');
+      
+      if (isUUID) {
+        // If it's a UUID, check all three fields
+        query = query.or(`shipment_id.eq.${orderId},tracking_id.eq.${orderId},id.eq.${orderId}`);
+      } else {
+        // If not a UUID, only check shipment_id and tracking_id
+        query = query.or(`shipment_id.eq.${orderId},tracking_id.eq.${orderId}`);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       if (!data) {

@@ -275,10 +275,13 @@ export default function OrderEditDetail() {
         }
       }
       if (editShippedAt) {
-        updates.shipped_at = new Date(editShippedAt).toISOString();
-        updates.in_route_at = new Date(editShippedAt).toISOString();
-        publicUpdates.shipped_at = updates.shipped_at;
-        publicUpdates.in_route_at = updates.in_route_at;
+        const shippedDateTime = new Date(editShippedAt).toISOString();
+        updates.shipped_at = shippedDateTime;
+        updates.in_route_at = shippedDateTime;
+        updates.confirmed_at = shippedDateTime; // Also set confirmed to same timestamp
+        publicUpdates.shipped_at = shippedDateTime;
+        publicUpdates.in_route_at = shippedDateTime;
+        publicUpdates.confirmed_at = shippedDateTime;
         if (!editCompletedAt) {
           newTimelineStatus = 'IN_ROUTE';
         }

@@ -112,18 +112,28 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const contentWidth = width - marginLeft - marginRight;
     
     // ============================================
-    // HEADER - Full width banner with logo
+    // HEADER - Preserve original aspect ratio
     // ============================================
-    const headerY = height - 44;
+    const headerHeight = 28;
+    const headerY = height - 12 - headerHeight;
     try {
       const headerBytes = await loadImageAsBytes(labelHeaderImage);
       const headerImg = await pdfDoc.embedPng(headerBytes);
       
+      // Calculate width maintaining aspect ratio
+      const originalWidth = headerImg.width;
+      const originalHeight = headerImg.height;
+      const aspectRatio = originalWidth / originalHeight;
+      const scaledWidth = headerHeight * aspectRatio;
+      
+      // Center the header
+      const headerX = (width - scaledWidth) / 2;
+      
       page.drawImage(headerImg, {
-        x: marginLeft,
+        x: headerX,
         y: headerY,
-        width: contentWidth,
-        height: 36,
+        width: scaledWidth,
+        height: headerHeight,
       });
     } catch (error) {
       console.error("Failed to embed header:", error);
@@ -131,14 +141,14 @@ export function PackageLabel({ order }: PackageLabelProps) {
         x: marginLeft,
         y: headerY,
         width: contentWidth,
-        height: 36,
+        height: headerHeight,
         color: rgb(0.95, 0.95, 0.95),
         borderColor: lightGray,
         borderWidth: 1,
       });
       page.drawText("CANADA HARM CONTROL", {
         x: marginLeft + 8,
-        y: headerY + 14,
+        y: headerY + 10,
         size: 12,
         font: helveticaBold,
         color: black,
@@ -329,22 +339,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
       color: black,
     });
     
-    // ============================================
-    // FRAGILE BADGE - Right side of SHIP TO
-    // ============================================
-    try {
-      const fragileBytes = await loadImageAsBytes(labelFragileImage);
-      const fragileImg = await pdfDoc.embedPng(fragileBytes);
-      
-      page.drawImage(fragileImg, {
-        x: rightColX,
-        y: shipToStartY - 36,
-        width: 100,
-        height: 25,
-      });
-    } catch (error) {
-      console.error("Failed to embed fragile badge:", error);
-    }
+    // (Badge moved to bottom section)
     
     // ============================================
     // BOTTOM SECTION DIVIDER
@@ -430,6 +425,30 @@ export function PackageLabel({ order }: PackageLabelProps) {
       font: helvetica,
       color: gray,
     });
+    
+    // ============================================
+    // FRAGILE BADGE - Below scan instructions, preserve aspect ratio
+    // ============================================
+    try {
+      const fragileBytes = await loadImageAsBytes(labelFragileImage);
+      const fragileImg = await pdfDoc.embedPng(fragileBytes);
+      
+      // Calculate dimensions maintaining aspect ratio
+      const originalWidth = fragileImg.width;
+      const originalHeight = fragileImg.height;
+      const aspectRatio = originalWidth / originalHeight;
+      const badgeHeight = 22;
+      const badgeWidth = badgeHeight * aspectRatio;
+      
+      page.drawImage(fragileImg, {
+        x: trackingX,
+        y: trackingY - 82,
+        width: badgeWidth,
+        height: badgeHeight,
+      });
+    } catch (error) {
+      console.error("Failed to embed fragile badge:", error);
+    }
     
     // ============================================
     // FOOTER BAR

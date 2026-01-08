@@ -304,10 +304,33 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
 
     for (const order of ordersToImport) {
       try {
+        // Generate shipment_id and tracking_id on import
+        const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
+        const shipmentId = shipmentIdData as string;
+
+        const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
+        const trackingId = trackingIdData as string;
+
+        const trackingUrl = `${window.location.origin}/track/${trackingId}`;
+
+        // Get client initials
+        const { data: initialsData } = await supabase.rpc('get_client_initials', {
+          full_name: order.client_name || ''
+        });
+        const clientInitials = initialsData as string;
+
         // Geocode the address_line_1 to get lat/lng and geo_zone
         const geoData = await geocodeAddress(order.address_line_1 || '');
+
+        // Extract city from warehouse address for public tracking
+        const warehouseAddress = order.warehouse_address || '';
+        const warehouseParts = warehouseAddress.split(',').map(p => p.trim());
+        const warehouseCity = warehouseParts.length >= 2 ? warehouseParts[warehouseParts.length - 2] : warehouseParts[0] || null;
+
+        const now = new Date().toISOString();
         
-        const { error } = await supabase.from('orders').insert({
+        // Insert order with tracking info
+        const { data: insertedOrder, error: orderError } = await supabase.from('orders').insert({
           // Customer & Order
           order_date: order.order_date || null,
           client_name: order.client_name || '',
@@ -340,21 +363,48 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
           nasal_package: order.nasal_package || null,
           nasal_qty: order.nasal_qty || null,
           nasal_billing_date: order.nasal_billing_date || null,
-          // System fields - set on import
+          // System fields - set on import with tracking
           timeline_status: 'PENDING',
           assigned_driver_id: null,
-          shipment_id: null,
-          tracking_id: null,
-          tracking_url: null,
+          shipment_id: shipmentId,
+          tracking_id: trackingId,
+          tracking_url: trackingUrl,
           delivery_status: null,
-        });
+          shipped_at: now,
+        }).select('id').single();
 
-        if (error) {
-          console.error('Insert error:', error);
+        if (orderError) {
+          console.error('Insert error:', orderError);
           failed++;
-        } else {
-          success++;
+          continue;
         }
+
+        // Create public tracking entry
+        const { error: trackingError } = await supabase
+          .from('public_tracking')
+          .insert({
+            tracking_id: trackingId,
+            tracking_url: trackingUrl,
+            shipment_id: shipmentId,
+            order_id: insertedOrder.id,
+            client_initials: clientInitials,
+            injection_qty: order.injection_qty,
+            nasal_qty: order.nasal_qty,
+            warehouse_city: warehouseCity,
+            country: geoData.country || 'Canada',
+            latitude: geoData.latitude,
+            longitude: geoData.longitude,
+            geo_zone: geoData.geo_zone,
+            timeline_status: 'PENDING',
+            pending_at: now,
+            shipped_at: now,
+          });
+
+        if (trackingError) {
+          console.warn('Tracking insert error (order still created):', trackingError);
+        }
+
+        success++;
       } catch (error) {
         console.error('Import error:', error);
         failed++;
@@ -367,7 +417,7 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
     if (success > 0) {
       toast({
         title: "Import Complete",
-        description: `Successfully imported ${success} orders.${failed > 0 ? ` ${failed} failed.` : ''}`,
+        description: `Successfully imported ${success} orders with tracking.${failed > 0 ? ` ${failed} failed.` : ''}`,
       });
       onSuccess();
     }

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, Filter, Download, FileDown, Printer, Check, X, Calendar, Pill } from "lucide-react";
+import { ChevronDown, ChevronRight, Filter, Download, FileDown, Printer, Check, X, Calendar, Pill, Tag } from "lucide-react";
 import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns";
 import JsBarcode from "jsbarcode";
 import html2canvas from "html2canvas";
@@ -16,7 +16,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useOrders } from "@/hooks/useOrders";
+import { useOrders, generateTrackingForOrders } from "@/hooks/useOrders";
 import { useLabelSettings, type PackageLabelSettings } from "@/hooks/useLabelSettings";
 import type { Order } from "@/types/auth";
 import { cn } from "@/lib/utils";
@@ -59,14 +59,17 @@ function OrderSelectCard({
   order,
   isSelected,
   onSelect,
+  allowWithoutTracking = false,
 }: {
   order: Order;
   isSelected: boolean;
   onSelect: (selected: boolean) => void;
+  allowWithoutTracking?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
+  const hasTracking = Boolean(order.tracking_id && order.shipment_id);
+  const canSelect = allowWithoutTracking || hasTracking;
 
   return (
     <div className={cn(
@@ -78,7 +81,7 @@ function OrderSelectCard({
           <Checkbox
             checked={isSelected}
             onCheckedChange={onSelect}
-            disabled={!canGenerateLabel}
+            disabled={!canSelect}
             className="shrink-0"
           />
           <CollapsibleTrigger asChild>
@@ -86,8 +89,8 @@ function OrderSelectCard({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-sm truncate">{order.client_name || "Unknown"}</span>
-                  {!canGenerateLabel && (
-                    <Badge variant="outline" className="text-xs shrink-0">No Label</Badge>
+                  {!hasTracking && (
+                    <Badge variant="outline" className="text-xs shrink-0">No Tracking</Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -207,7 +210,7 @@ function LabelCard({
 }
 
 export default function PackageLabels() {
-  const { orders, isLoading } = useOrders();
+  const { orders, isLoading, refetch } = useOrders();
   const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
   const { toast } = useToast();
   
@@ -216,6 +219,7 @@ export default function PackageLabels() {
   const [generatedLabels, setGeneratedLabels] = useState<GeneratedLabel[]>([]);
   const [selectedLabelIds, setSelectedLabelIds] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingTracking, setIsGeneratingTracking] = useState(false);
   
   // Filters
   const [showFilters, setShowFilters] = useState(false);
@@ -223,9 +227,14 @@ export default function PackageLabels() {
   const [singleDate, setSingleDate] = useState<Date | undefined>(undefined);
   const [rxFilter, setRxFilter] = useState("");
 
-  // Filter orders that can have labels generated
+  // Filter orders that can have labels generated (have tracking)
   const labelReadyOrders = useMemo(() => {
     return orders.filter(order => order.tracking_id && order.shipment_id);
+  }, [orders]);
+
+  // Filter orders that need tracking generated
+  const ordersNeedingTracking = useMemo(() => {
+    return orders.filter(order => !order.tracking_id || !order.shipment_id);
   }, [orders]);
 
   // Apply filters
@@ -286,14 +295,52 @@ export default function PackageLabels() {
     });
   }, []);
 
-  const handleSelectAllOrders = useCallback(() => {
-    const labelReadyFiltered = filteredOrders.filter(o => o.tracking_id && o.shipment_id);
-    if (selectedOrderIds.size === labelReadyFiltered.length) {
+  const handleSelectAllOrders = useCallback((includeWithoutTracking = false) => {
+    const selectableOrders = includeWithoutTracking 
+      ? filteredOrders 
+      : filteredOrders.filter(o => o.tracking_id && o.shipment_id);
+    
+    if (selectedOrderIds.size === selectableOrders.length) {
       setSelectedOrderIds(new Set());
     } else {
-      setSelectedOrderIds(new Set(labelReadyFiltered.map(o => o.id)));
+      setSelectedOrderIds(new Set(selectableOrders.map(o => o.id)));
     }
   }, [filteredOrders, selectedOrderIds.size]);
+
+  // Generate tracking for selected orders that don't have it
+  const handleGenerateTracking = useCallback(async () => {
+    const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id) && (!o.tracking_id || !o.shipment_id));
+    if (selectedOrders.length === 0) {
+      toast({
+        title: "No orders need tracking",
+        description: "All selected orders already have tracking IDs.",
+      });
+      return;
+    }
+
+    setIsGeneratingTracking(true);
+    
+    try {
+      const result = await generateTrackingForOrders(selectedOrders);
+      
+      toast({
+        title: "Tracking Generated",
+        description: `Generated tracking for ${result.success} order(s).${result.failed > 0 ? ` ${result.failed} failed.` : ''}`,
+      });
+      
+      setSelectedOrderIds(new Set());
+      refetch();
+    } catch (error) {
+      console.error("Error generating tracking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate tracking",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingTracking(false);
+    }
+  }, [orders, selectedOrderIds, toast, refetch]);
 
   const handleSelectLabel = useCallback((orderId: string, selected: boolean) => {
     setSelectedLabelIds(prev => {
@@ -414,7 +461,6 @@ export default function PackageLabels() {
   }, []);
 
   const hasActiveFilters = singleDate || dateRange.from || rxFilter.trim();
-  const labelReadyFilteredCount = filteredOrders.filter(o => o.tracking_id && o.shipment_id).length;
 
   return (
     <AppLayout title="Package Labels">
@@ -554,16 +600,16 @@ export default function PackageLabels() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleSelectAllOrders}
+                onClick={() => handleSelectAllOrders(true)}
                 className="gap-2"
-                disabled={labelReadyFilteredCount === 0}
+                disabled={filteredOrders.length === 0}
               >
                 <Checkbox
-                  checked={selectedOrderIds.size === labelReadyFilteredCount && labelReadyFilteredCount > 0}
+                  checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0}
                   className="pointer-events-none"
                 />
-                {selectedOrderIds.size === labelReadyFilteredCount && labelReadyFilteredCount > 0 ? "Deselect All" : "Select All"}
-                <span className="text-muted-foreground">({labelReadyFilteredCount})</span>
+                {selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0 ? "Deselect All" : "Select All"}
+                <span className="text-muted-foreground">({filteredOrders.length})</span>
               </Button>
               
               {selectedOrderIds.size > 0 && (
@@ -593,6 +639,7 @@ export default function PackageLabels() {
                     order={order}
                     isSelected={selectedOrderIds.has(order.id)}
                     onSelect={(selected) => handleSelectOrder(order.id, selected)}
+                    allowWithoutTracking={true}
                   />
                 ))}
               </div>
@@ -601,29 +648,55 @@ export default function PackageLabels() {
             {/* Action Buttons */}
             {selectedOrderIds.size > 0 && (
               <div className="fixed bottom-20 left-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-30">
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
-                    onClick={generateLabels}
-                    disabled={isGenerating}
-                  >
-                    <FileDown className="w-4 h-4" />
-                    Generate Labels
-                  </Button>
-                  <Button
-                    className="flex-1 gap-2"
-                    onClick={generateAndDownload}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                    Generate & Download
-                  </Button>
-                </div>
+                {/* Check if any selected orders need tracking */}
+                {(() => {
+                  const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id));
+                  const needsTracking = selectedOrders.some(o => !o.tracking_id || !o.shipment_id);
+                  const allHaveTracking = selectedOrders.every(o => o.tracking_id && o.shipment_id);
+                  
+                  return (
+                    <div className="flex flex-col gap-2">
+                      {needsTracking && (
+                        <Button
+                          variant="secondary"
+                          className="w-full gap-2"
+                          onClick={handleGenerateTracking}
+                          disabled={isGeneratingTracking}
+                        >
+                          {isGeneratingTracking ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                          ) : (
+                            <Tag className="w-4 h-4" />
+                          )}
+                          Generate Tracking First ({selectedOrders.filter(o => !o.tracking_id || !o.shipment_id).length})
+                        </Button>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={generateLabels}
+                          disabled={isGenerating || !allHaveTracking}
+                        >
+                          <FileDown className="w-4 h-4" />
+                          Generate Labels
+                        </Button>
+                        <Button
+                          className="flex-1 gap-2"
+                          onClick={generateAndDownload}
+                          disabled={isGenerating || !allHaveTracking}
+                        >
+                          {isGenerating ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                          Generate & Download
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </TabsContent>

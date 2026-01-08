@@ -117,7 +117,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const headerAspectRatio = 1200 / 147; // Original image aspect ratio
     const headerWidth = contentWidth; // Use full content width
     const headerHeight = headerWidth / headerAspectRatio;
-    const headerY = height - 8 - headerHeight;
+    const headerY = height - 6 - headerHeight;
     const headerX = marginLeft;
     
     try {
@@ -428,14 +428,14 @@ export function PackageLabel({ order }: PackageLabelProps) {
       const fragileBytes = await loadImageAsBytes(labelFragileImage);
       const fragileImg = await pdfDoc.embedPng(fragileBytes);
       
-      // Full size badge: 656 x 147 px aspect ratio
+      // Full size badge: 656 x 147 px aspect ratio - match reference image size
       const badgeAspectRatio = 656 / 147;
-      const badgeHeight = 24; // Height in points for PDF
+      const badgeHeight = 20; // Height in points for PDF - sized to match reference
       const badgeWidth = badgeHeight * badgeAspectRatio;
       
       page.drawImage(fragileImg, {
         x: trackingX,
-        y: trackingY - 86,
+        y: trackingY - 80,
         width: badgeWidth,
         height: badgeHeight,
       });

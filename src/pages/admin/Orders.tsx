@@ -83,11 +83,18 @@ export default function Orders() {
     setSelectedOrderIds(newSelected);
   };
 
-  const selectAllPending = () => {
+  const selectAllFiltered = () => {
     haptic.medium();
-    const pendingIds = pendingOrders.map(o => o.id);
-    setSelectedOrderIds(new Set(pendingIds));
+    // Select all filtered pending orders
+    const filteredPendingIds = filteredOrders
+      .filter(o => o.timeline_status === 'PENDING')
+      .map(o => o.id);
+    setSelectedOrderIds(new Set(filteredPendingIds));
   };
+
+  const filteredPendingOrders = filteredOrders.filter(o => o.timeline_status === 'PENDING');
+  const allFilteredSelected = filteredPendingOrders.length > 0 && 
+    filteredPendingOrders.every(o => selectedOrderIds.has(o.id));
 
   const clearSelection = () => {
     haptic.light();
@@ -235,12 +242,18 @@ export default function Orders() {
                 </p>
               </div>
               <Button
-                variant="ghost"
+                variant={allFilteredSelected ? "secondary" : "ghost"}
                 size="sm"
-                onClick={selectAllPending}
-                disabled={pendingOrders.length === 0}
+                onClick={() => {
+                  if (allFilteredSelected) {
+                    clearSelection();
+                  } else {
+                    selectAllFiltered();
+                  }
+                }}
+                disabled={filteredPendingOrders.length === 0}
               >
-                Select All Pending
+                {allFilteredSelected ? 'Deselect All' : `Select All (${filteredPendingOrders.length})`}
               </Button>
               {selectedOrderIds.size > 0 && (
                 <Button

@@ -173,6 +173,88 @@ export async function assignDriverToOrder(
   }
 }
 
+export async function generateTrackingForOrders(
+  orders: Order[]
+): Promise<{ success: number; failed: number }> {
+  let success = 0;
+  let failed = 0;
+
+  for (const order of orders) {
+    try {
+      // Skip if already has tracking
+      if (order.tracking_id && order.shipment_id) {
+        success++;
+        continue;
+      }
+
+      const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
+      const shipmentId = shipmentIdData as string;
+
+      const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
+      const trackingId = trackingIdData as string;
+
+      const trackingUrl = `${window.location.origin}/track/${trackingId}`;
+
+      const { data: initialsData } = await supabase.rpc('get_client_initials', {
+        full_name: order.client_name || ''
+      });
+      const clientInitials = initialsData as string;
+
+      const now = new Date().toISOString();
+
+      // Extract city from warehouse address for public tracking
+      const warehouseAddress = order.warehouse_address || '';
+      const warehouseParts = warehouseAddress.split(',').map(p => p.trim());
+      const warehouseCity = warehouseParts.length >= 2 ? warehouseParts[warehouseParts.length - 2] : warehouseParts[0] || null;
+
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          shipment_id: shipmentId,
+          tracking_id: trackingId,
+          tracking_url: trackingUrl,
+          shipped_at: now,
+        })
+        .eq('id', order.id);
+
+      if (orderError) throw orderError;
+
+      const { error: trackingError } = await supabase
+        .from('public_tracking')
+        .upsert({
+          tracking_id: trackingId,
+          tracking_url: trackingUrl,
+          shipment_id: shipmentId,
+          order_id: order.id,
+          client_initials: clientInitials,
+          injection_qty: order.injection_qty,
+          nasal_qty: order.nasal_qty,
+          warehouse_city: warehouseCity,
+          country: order.country || 'Canada',
+          latitude: order.latitude,
+          longitude: order.longitude,
+          geo_zone: order.geo_zone,
+          timeline_status: order.timeline_status || 'PENDING',
+          pending_at: order.pending_at || now,
+          shipped_at: now,
+        }, {
+          onConflict: 'tracking_id'
+        });
+
+      if (trackingError) {
+        console.warn('Tracking upsert error:', trackingError);
+      }
+
+      success++;
+    } catch (error) {
+      console.error('Error generating tracking for order:', order.id, error);
+      failed++;
+    }
+  }
+
+  return { success, failed };
+}
+
 export async function updateOrderStatus(
   orderId: string,
   trackingId: string | null,

@@ -387,28 +387,29 @@ export default function OrderEditDetail() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background border-b">
-        <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center justify-between px-4 lg:px-8 h-14 lg:h-16 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-3">
+            {/* Desktop: Off-canvas menu */}
             <div className="hidden lg:block">
               <DesktopNav title="Order Edit" />
             </div>
+            {/* Back button - visible on all screens */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => navigate('/admin/order-edits')}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="font-semibold text-sm lg:text-base">
+              <h1 className="font-semibold text-sm lg:text-lg">
                 {order.shipment_id || order.tracking_id}
               </h1>
-              <p className="text-xs text-muted-foreground">{order.client_name}</p>
+              <p className="text-xs lg:text-sm text-muted-foreground">{order.client_name}</p>
             </div>
           </div>
           <Badge
-            className={
+            className={`text-xs lg:text-sm ${
               isCompleted
                 ? order.timeline_status === 'COMPLETED_DELIVERED'
                   ? 'bg-green-100 text-green-800'
@@ -416,7 +417,7 @@ export default function OrderEditDetail() {
                 : isAssigned
                 ? 'bg-blue-100 text-blue-800'
                 : 'bg-amber-100 text-amber-800'
-            }
+            }`}
           >
             {order.timeline_status?.replace(/_/g, ' ') || 'Pending'}
           </Badge>
@@ -425,95 +426,98 @@ export default function OrderEditDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-2 rounded-none border-b bg-background h-12">
-          <TabsTrigger value="details" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="edit" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-            Edit Delivery
-          </TabsTrigger>
-        </TabsList>
+        <div className="max-w-7xl mx-auto w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 rounded-none border-b bg-background h-12 lg:h-14 lg:ml-8">
+            <TabsTrigger value="details" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-sm lg:text-base">
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="edit" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-sm lg:text-base">
+              Edit Delivery
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Details Tab */}
-        <TabsContent value="details" className="flex-1 overflow-y-auto pb-20 lg:pb-6 mt-0">
-          <div className="p-4 space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
-            {!isAssigned ? (
-              /* Not Assigned State */
-              <Card className="lg:col-span-2">
-                <CardContent className="p-6 text-center">
-                  <AlertTriangle className="h-12 w-12 mx-auto text-amber-500 mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">Order Not Assigned</h3>
-                  <p className="text-muted-foreground mb-4">
-                    This order has not been assigned to a driver yet.
-                  </p>
-                  <Button onClick={handleAssignSystemDriver} disabled={isAssigning}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    {isAssigning ? 'Assigning...' : 'Assign to System Driver'}
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Will assign to driver {SYSTEM_DRIVER_ID}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
+        <TabsContent value="details" className="flex-1 overflow-y-auto pb-20 lg:pb-8 mt-0">
+          <div className="p-4 lg:px-8 lg:py-6 max-w-7xl mx-auto">
+            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+              {!isAssigned ? (
+                /* Not Assigned State */
+                <Card className="lg:col-span-2">
+                  <CardContent className="p-6 lg:p-10 text-center">
+                    <AlertTriangle className="h-12 w-12 lg:h-16 lg:w-16 mx-auto text-amber-500 mb-4" />
+                    <h3 className="font-semibold text-lg lg:text-xl mb-2">Order Not Assigned</h3>
+                    <p className="text-muted-foreground mb-6 lg:text-lg">
+                      This order has not been assigned to a driver yet.
+                    </p>
+                    <Button size="lg" onClick={handleAssignSystemDriver} disabled={isAssigning}>
+                      <UserPlus className="h-5 w-5 mr-2" />
+                      {isAssigning ? 'Assigning...' : 'Assign to System Driver'}
+                    </Button>
+                    <p className="text-xs lg:text-sm text-muted-foreground mt-3">
+                      Will assign to driver {SYSTEM_DRIVER_ID} and generate tracking
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
                 {/* Order Info */}
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Package className="h-4 w-4" />
+                  <CardHeader className="pb-3 lg:pb-4">
+                    <CardTitle className="text-base lg:text-lg flex items-center gap-2">
+                      <Package className="h-4 w-4 lg:h-5 lg:w-5" />
                       Order Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 lg:space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Shipment ID</span>
+                      <span className="text-sm lg:text-base text-muted-foreground">Shipment ID</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{order.shipment_id || '-'}</span>
+                        <span className="font-mono text-sm lg:text-base">{order.shipment_id || '-'}</span>
                         {order.shipment_id && (
-                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(order.shipment_id!)}>
-                            <Copy className="h-3 w-3" />
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(order.shipment_id!)}>
+                            <Copy className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Tracking ID</span>
+                      <span className="text-sm lg:text-base text-muted-foreground">Tracking ID</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{order.tracking_id || '-'}</span>
+                        <span className="font-mono text-sm lg:text-base">{order.tracking_id || '-'}</span>
                         {order.tracking_id && (
-                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(order.tracking_id!)}>
-                            <Copy className="h-3 w-3" />
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(order.tracking_id!)}>
+                            <Copy className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </div>
                     </div>
                     <Separator />
-                    <div className="flex items-start gap-2">
-                      <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex items-start gap-3">
+                      <User className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium">{order.client_name}</p>
-                        {order.email && <p className="text-xs text-muted-foreground">{order.email}</p>}
+                        <p className="text-sm lg:text-base font-medium">{order.client_name}</p>
+                        {order.email && <p className="text-xs lg:text-sm text-muted-foreground">{order.email}</p>}
                       </div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm">{order.address_line_1}</p>
-                        {order.address_line_2 && <p className="text-sm">{order.address_line_2}</p>}
-                        <p className="text-xs text-muted-foreground">{order.geo_zone}, {order.country}</p>
+                        <p className="text-sm lg:text-base">{order.address_line_1}</p>
+                        {order.address_line_2 && <p className="text-sm lg:text-base">{order.address_line_2}</p>}
+                        <p className="text-xs lg:text-sm text-muted-foreground">{order.geo_zone}, {order.country}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
+                      <span className="text-sm lg:text-base">
                         Ordered: {order.order_date ? new Date(order.order_date).toLocaleDateString() : '-'}
                       </span>
                     </div>
                     {(order.injection_drug_name || order.nasal_drug_name) && (
                       <>
                         <Separator />
-                        <div className="text-sm space-y-1">
+                        <div className="text-sm lg:text-base space-y-1">
                           {order.injection_drug_name && (
                             <p>💉 {order.injection_drug_name} x{order.injection_qty}</p>
                           )}
@@ -623,156 +627,161 @@ export default function OrderEditDetail() {
                 </Card>
               </>
             )}
+            </div>
           </div>
         </TabsContent>
 
         {/* Edit Delivery Tab */}
         <TabsContent value="edit" className="flex-1 overflow-y-auto pb-24 lg:pb-20 mt-0">
-          <div className="p-4 space-y-4">
-            {!isAssigned ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <AlertTriangle className="h-12 w-12 mx-auto text-amber-500 mb-4" />
-                  <h3 className="font-semibold">Cannot Edit Delivery</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Please assign the order to a driver first.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {/* Current Status */}
+          <div className="p-4 lg:px-8 lg:py-6 max-w-7xl mx-auto">
+            <div className="space-y-4 lg:max-w-2xl">
+              {!isAssigned ? (
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Current Status</span>
-                      <Badge variant={isCompleted ? (order.timeline_status === 'COMPLETED_DELIVERED' ? 'default' : 'destructive') : 'secondary'}>
-                        {order.timeline_status?.replace(/_/g, ' ')}
-                      </Badge>
-                    </div>
+                  <CardContent className="p-6 lg:p-10 text-center">
+                    <AlertTriangle className="h-12 w-12 lg:h-16 lg:w-16 mx-auto text-amber-500 mb-4" />
+                    <h3 className="font-semibold lg:text-lg">Cannot Edit Delivery</h3>
+                    <p className="text-sm lg:text-base text-muted-foreground">
+                      Please assign the order to a driver first.
+                    </p>
                   </CardContent>
                 </Card>
+              ) : (
+                <>
+                  {/* Current Status */}
+                  <Card>
+                    <CardContent className="p-4 lg:p-5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm lg:text-base font-medium">Current Status</span>
+                        <Badge variant={isCompleted ? (order.timeline_status === 'COMPLETED_DELIVERED' ? 'default' : 'destructive') : 'secondary'}>
+                          {order.timeline_status?.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Timeline Editor */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Delivery Timeline</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Ordered - Read Only */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                          <Package className="h-5 w-5 text-amber-600" />
+                  {/* Timeline Editor */}
+                  <Card>
+                    <CardHeader className="pb-3 lg:pb-4">
+                      <CardTitle className="text-base lg:text-lg">Delivery Timeline</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6 lg:space-y-8">
+                      {/* Ordered - Read Only */}
+                      <div className="flex gap-4 lg:gap-6">
+                        <div className="flex flex-col items-center">
+                          <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                            <Package className="h-5 w-5 lg:h-6 lg:w-6 text-amber-600" />
+                          </div>
+                          <div className="w-0.5 h-full bg-border flex-1 mt-2" />
                         </div>
-                        <div className="w-0.5 h-full bg-border flex-1 mt-2" />
-                      </div>
-                      <div className="flex-1 pb-6">
-                        <h4 className="font-medium">Ordered</h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {order.order_date ? new Date(order.order_date).toLocaleDateString() : 'No date'}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">Read-only</p>
-                      </div>
-                    </div>
-
-                    {/* Picked Up */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${editPickedUpAt ? 'bg-blue-100' : 'bg-muted'}`}>
-                          <CheckCircle className={`h-5 w-5 ${editPickedUpAt ? 'text-blue-600' : 'text-muted-foreground'}`} />
-                        </div>
-                        <div className="w-0.5 h-full bg-border flex-1 mt-2" />
-                      </div>
-                      <div className="flex-1 pb-6">
-                        <h4 className="font-medium">Picked Up</h4>
-                        <p className="text-xs text-muted-foreground mb-2">When order was assigned to driver</p>
-                        <Input
-                          type="datetime-local"
-                          value={editPickedUpAt}
-                          onChange={(e) => setEditPickedUpAt(e.target.value)}
-                          className="max-w-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Shipped */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${editShippedAt ? 'bg-purple-100' : 'bg-muted'}`}>
-                          <Navigation className={`h-5 w-5 ${editShippedAt ? 'text-purple-600' : 'text-muted-foreground'}`} />
-                        </div>
-                        <div className="w-0.5 h-full bg-border flex-1 mt-2" />
-                      </div>
-                      <div className="flex-1 pb-6">
-                        <h4 className="font-medium">Shipped</h4>
-                        <p className="text-xs text-muted-foreground mb-2">When driver started transit</p>
-                        <Input
-                          type="datetime-local"
-                          value={editShippedAt}
-                          onChange={(e) => setEditShippedAt(e.target.value)}
-                          className="max-w-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Delivered */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          editDeliveryStatus 
-                            ? deliveryOutcomes.find(o => o.value === editDeliveryStatus)?.success 
-                              ? 'bg-green-100' 
-                              : 'bg-red-100'
-                            : 'bg-muted'
-                        }`}>
-                          <Truck className={`h-5 w-5 ${
-                            editDeliveryStatus 
-                              ? deliveryOutcomes.find(o => o.value === editDeliveryStatus)?.success 
-                                ? 'text-green-600' 
-                                : 'text-red-600'
-                              : 'text-muted-foreground'
-                          }`} />
+                        <div className="flex-1 pb-6 lg:pb-8">
+                          <h4 className="font-medium lg:text-lg">Ordered</h4>
+                          <p className="text-sm lg:text-base text-muted-foreground mt-1">
+                            {order.order_date ? new Date(order.order_date).toLocaleDateString() : 'No date'}
+                          </p>
+                          <p className="text-xs lg:text-sm text-muted-foreground mt-1">Read-only</p>
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">Delivered</h4>
-                        <p className="text-xs text-muted-foreground mb-2">Delivery outcome</p>
-                        <div className="space-y-3">
-                          <Select value={editDeliveryStatus} onValueChange={setEditDeliveryStatus}>
-                            <SelectTrigger className="max-w-xs">
-                              <SelectValue placeholder="Select outcome" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {deliveryOutcomes.map((outcome) => (
-                                <SelectItem key={outcome.value} value={outcome.value}>
-                                  {outcome.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+
+                      {/* Picked Up */}
+                      <div className="flex gap-4 lg:gap-6">
+                        <div className="flex flex-col items-center">
+                          <div className={`h-10 w-10 lg:h-12 lg:w-12 rounded-full flex items-center justify-center ${editPickedUpAt ? 'bg-blue-100' : 'bg-muted'}`}>
+                            <CheckCircle className={`h-5 w-5 lg:h-6 lg:w-6 ${editPickedUpAt ? 'text-blue-600' : 'text-muted-foreground'}`} />
+                          </div>
+                          <div className="w-0.5 h-full bg-border flex-1 mt-2" />
+                        </div>
+                        <div className="flex-1 pb-6 lg:pb-8">
+                          <h4 className="font-medium lg:text-lg">Picked Up</h4>
+                          <p className="text-xs lg:text-sm text-muted-foreground mb-2">When order was assigned to driver</p>
                           <Input
                             type="datetime-local"
-                            value={editCompletedAt}
-                            onChange={(e) => setEditCompletedAt(e.target.value)}
-                            className="max-w-xs"
-                            placeholder="Completion time"
+                            value={editPickedUpAt}
+                            onChange={(e) => setEditPickedUpAt(e.target.value)}
+                            className="max-w-xs lg:max-w-sm"
                           />
                         </div>
                       </div>
+
+                      {/* Shipped */}
+                      <div className="flex gap-4 lg:gap-6">
+                        <div className="flex flex-col items-center">
+                          <div className={`h-10 w-10 lg:h-12 lg:w-12 rounded-full flex items-center justify-center ${editShippedAt ? 'bg-purple-100' : 'bg-muted'}`}>
+                            <Navigation className={`h-5 w-5 lg:h-6 lg:w-6 ${editShippedAt ? 'text-purple-600' : 'text-muted-foreground'}`} />
+                          </div>
+                          <div className="w-0.5 h-full bg-border flex-1 mt-2" />
+                        </div>
+                        <div className="flex-1 pb-6 lg:pb-8">
+                          <h4 className="font-medium lg:text-lg">Shipped</h4>
+                          <p className="text-xs lg:text-sm text-muted-foreground mb-2">When driver started transit</p>
+                          <Input
+                            type="datetime-local"
+                            value={editShippedAt}
+                            onChange={(e) => setEditShippedAt(e.target.value)}
+                            className="max-w-xs lg:max-w-sm"
+                          />
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
+
+                      {/* Delivered */}
+                      <div className="flex gap-4 lg:gap-6">
+                        <div className="flex flex-col items-center">
+                          <div className={`h-10 w-10 lg:h-12 lg:w-12 rounded-full flex items-center justify-center ${
+                            editDeliveryStatus 
+                              ? deliveryOutcomes.find(o => o.value === editDeliveryStatus)?.success 
+                                ? 'bg-green-100' 
+                                : 'bg-red-100'
+                              : 'bg-muted'
+                          }`}>
+                            <Truck className={`h-5 w-5 lg:h-6 lg:w-6 ${
+                              editDeliveryStatus 
+                                ? deliveryOutcomes.find(o => o.value === editDeliveryStatus)?.success 
+                                  ? 'text-green-600' 
+                                  : 'text-red-600'
+                                : 'text-muted-foreground'
+                            }`} />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium lg:text-lg">Delivered</h4>
+                          <p className="text-xs lg:text-sm text-muted-foreground mb-2">Delivery outcome</p>
+                          <div className="space-y-3 lg:space-y-4">
+                            <Select value={editDeliveryStatus} onValueChange={setEditDeliveryStatus}>
+                              <SelectTrigger className="max-w-xs lg:max-w-sm">
+                                <SelectValue placeholder="Select outcome" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {deliveryOutcomes.map((outcome) => (
+                                  <SelectItem key={outcome.value} value={outcome.value}>
+                                    {outcome.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="datetime-local"
+                              value={editCompletedAt}
+                              onChange={(e) => setEditCompletedAt(e.target.value)}
+                              className="max-w-xs lg:max-w-sm"
+                              placeholder="Completion time"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Sticky Save Button */}
           {isAssigned && (
-            <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-background border-t">
-              <Button className="w-full lg:max-w-md lg:mx-auto lg:block" onClick={handleSaveDelivery} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
+            <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 lg:p-6 bg-background border-t">
+              <div className="max-w-7xl mx-auto lg:max-w-2xl lg:ml-8">
+                <Button className="w-full lg:w-auto lg:px-12" size="lg" onClick={handleSaveDelivery} disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
             </div>
           )}
         </TabsContent>

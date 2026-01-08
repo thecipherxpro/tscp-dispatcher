@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Package, Truck, Clock, Copy, ExternalLink, Eye } from 'lucide-react';
+import { User, MapPin, Package, Truck, Clock, Copy, ExternalLink, Eye, FileDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Order, Profile } from '@/types/auth';
 import { DriverAssignmentModal } from './DriverAssignmentModal';
+import { PackageLabel } from './PackageLabel';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -294,6 +295,17 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                 </CardContent>
               </Card>
             )}
+
+            {/* Package Label Section */}
+            <Card className="bg-card border-border">
+              <CardContent className="p-4 space-y-3">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
+                  <FileDown className="w-4 h-4" />
+                  Package Label
+                </h4>
+                <PackageLabel order={order} />
+              </CardContent>
+            </Card>
 
             {/* Admin Actions */}
             {isAdmin && (

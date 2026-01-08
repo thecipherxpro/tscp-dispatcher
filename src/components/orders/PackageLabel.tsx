@@ -1,11 +1,10 @@
-import { useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { FileDown, Printer } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useLabelSettings } from "@/hooks/useLabelSettings";
 
 interface PackageLabelProps {
   order: Order;
@@ -132,14 +131,15 @@ const generateQRCodeImage = async (value: string, size: number = 120): Promise<U
 export function PackageLabel({ order }: PackageLabelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
 
   const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
-  const qrValue = order.tracking_id || order.id;
+  const qrValue = order.tracking_url || order.tracking_id || order.id;
 
   const generatePDFFromTemplate = useCallback(async (): Promise<Uint8Array> => {
-    // Fetch the template PDF
-    const templateResponse = await fetch("/templates/shipping-label-template.pdf");
+    // Fetch the template PDF (cache-busted to avoid PWA/service-worker stale files)
+    const templateResponse = await fetch(`/templates/label_template.pdf?ts=${Date.now()}`, {
+      cache: "no-store",
+    });
     const templateBytes = await templateResponse.arrayBuffer();
     
     // Load the PDF document
@@ -401,14 +401,6 @@ export function PackageLabel({ order }: PackageLabelProps) {
     );
   }
 
-  if (isLoadingSettings) {
-    return (
-      <div className="bg-muted/30 rounded-xl p-6 border border-border flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {/* Hidden QR Code for capture */}
@@ -427,7 +419,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
       <div className="bg-background rounded-xl border border-border overflow-hidden">
         <div className="p-4 bg-muted/30 border-b border-border">
           <p className="text-sm font-medium text-foreground">Package Label Preview</p>
-          <p className="text-xs text-muted-foreground mt-1">Using template: Shipping_Label.pdf</p>
+          <p className="text-xs text-muted-foreground mt-1">Using template: label_template.pdf</p>
         </div>
         
         <div className="p-4 space-y-3">

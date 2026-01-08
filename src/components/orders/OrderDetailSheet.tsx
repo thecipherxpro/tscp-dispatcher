@@ -272,51 +272,40 @@ export function OrderDetailSheet({
             </section>
 
             {/* Medication Details Section */}
-            {(order.injection_drug_name || order.injection_strength || order.injection_form || order.injection_rx_number || order.injection_din || order.injection_qty) && (
+            {(order.injection_drug_name || order.injection_rx_number || order.nasal_drug_name || order.nasal_rx_number) && (
               <section>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-2">
                   <Package className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Medication Details</h3>
                 </div>
-                <div className="bg-muted/30 rounded-xl p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {order.injection_rx_number && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Rx Number</p>
-                        <p className="text-sm font-medium text-foreground">{order.injection_rx_number}</p>
+                <div className="space-y-2">
+                  {/* Injection Drug */}
+                  {(order.injection_drug_name || order.injection_rx_number) && (
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Injection</p>
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+                        {order.injection_rx_number && <p><span className="text-muted-foreground">Rx:</span> {order.injection_rx_number}</p>}
+                        {order.injection_din && <p><span className="text-muted-foreground">DIN:</span> {order.injection_din}</p>}
+                        {order.injection_qty && <p><span className="text-muted-foreground">Qty:</span> {order.injection_qty}</p>}
+                        {order.injection_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.injection_drug_name}</p>}
+                        {order.injection_strength && <p><span className="text-muted-foreground">Str:</span> {order.injection_strength}</p>}
+                        {order.injection_form && <p><span className="text-muted-foreground">Form:</span> {order.injection_form}</p>}
                       </div>
-                    )}
-                    {order.injection_din && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">DIN</p>
-                        <p className="text-sm font-medium text-foreground">{order.injection_din}</p>
+                    </div>
+                  )}
+                  {/* Nasal Drug */}
+                  {(order.nasal_drug_name || order.nasal_rx_number) && (
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Nasal</p>
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+                        {order.nasal_rx_number && <p><span className="text-muted-foreground">Rx:</span> {order.nasal_rx_number}</p>}
+                        {order.nasal_din && <p><span className="text-muted-foreground">DIN:</span> {order.nasal_din}</p>}
+                        {order.nasal_qty && <p><span className="text-muted-foreground">Qty:</span> {order.nasal_qty}</p>}
+                        {order.nasal_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.nasal_drug_name}</p>}
+                        {order.nasal_package && <p><span className="text-muted-foreground">Pkg:</span> {order.nasal_package}</p>}
                       </div>
-                    )}
-                    {order.injection_qty && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Qty</p>
-                        <p className="text-sm font-medium text-foreground">{order.injection_qty}</p>
-                      </div>
-                    )}
-                    {order.injection_drug_name && (
-                      <div className="col-span-2">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Drug Name</p>
-                        <p className="text-sm font-medium text-foreground">{order.injection_drug_name}</p>
-                      </div>
-                    )}
-                    {order.injection_strength && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Strength</p>
-                        <p className="text-sm font-medium text-foreground">{order.injection_strength}</p>
-                      </div>
-                    )}
-                    {order.injection_form && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Form</p>
-                        <p className="text-sm font-medium text-foreground">{order.injection_form}</p>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </section>
             )}

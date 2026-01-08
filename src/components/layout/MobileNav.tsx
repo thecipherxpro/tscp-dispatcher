@@ -1,9 +1,11 @@
 import { NavLink as RouterNavLink } from 'react-router-dom';
 import { Home, Package, Users, Tags, Settings, User, QrCode } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 export function MobileNav() {
   const { role } = useAuth();
+  const haptic = useHapticFeedback();
 
   const adminLinks = [
     { to: '/dashboard', icon: Home, label: 'Home' },
@@ -22,6 +24,10 @@ export function MobileNav() {
 
   const links = role === 'pharmacy_admin' ? adminLinks : driverLinks;
 
+  const handleNavClick = () => {
+    haptic.light();
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-bottom z-40">
       <div className="flex justify-around items-center h-16">
@@ -29,6 +35,7 @@ export function MobileNav() {
           <RouterNavLink
             key={link.to}
             to={link.to}
+            onClick={handleNavClick}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                 isActive

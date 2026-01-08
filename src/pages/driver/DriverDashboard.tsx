@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, ChevronRight } from 'lucide-react';
+import { Package, Truck, CheckCircle, ChevronRight, LogOut } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/auth';
 import { ActiveDeliveryCard } from '@/components/orders/ActiveDeliveryCard';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-
+import { toast } from 'sonner';
 interface DriverStats {
   assignedOrders: number;
   inRouteOrders: number;
@@ -28,14 +28,14 @@ export default function DriverDashboard() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+      toast.success('Logged out successfully');
+    } catch (error) {
+      toast.error('Failed to log out');
+    }
   };
 
   useEffect(() => {
@@ -105,26 +105,36 @@ export default function DriverDashboard() {
   return (
     <AppLayout title="Dashboard" showUserMenu>
       <div className="p-4 space-y-6">
-        {/* Welcome Section with Avatar */}
-        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 rounded-2xl p-5">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14 border-2 border-primary/30 shadow-sm">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/20 text-primary text-lg font-semibold">
-                {getInitials(profile?.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Welcome back,</p>
-              <h2 className="text-xl font-bold text-foreground">
-                {profile?.full_name || 'Driver'}
-              </h2>
-              {profile?.driver_id && (
-                <p className="text-xs text-primary/70 font-medium">{profile.driver_id}</p>
-              )}
+        {/* Welcome Card - Matching Admin Style */}
+        <Card className="bg-gradient-to-br from-primary to-primary/80 border-0 overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-primary-foreground/70 text-sm">Welcome back,</p>
+                <h2 className="text-xl font-bold text-primary-foreground">
+                  {profile?.full_name || 'Driver'}
+                </h2>
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-0">
+                    Driver
+                  </Badge>
+                  {profile?.driver_id && (
+                    <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-0">
+                      {profile.driver_id}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 transition-colors"
+                aria-label="Logout"
+              >
+                <LogOut className="w-5 h-5 text-primary-foreground" />
+              </button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-3">

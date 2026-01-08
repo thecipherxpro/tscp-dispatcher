@@ -216,9 +216,9 @@ export function OrderDetailSheet({
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Created</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Shipped Date</p>
                       <p className="text-sm font-medium text-foreground">
-                        {order.created_at ? formatDateTime(order.created_at) : 'Unknown'}
+                        {order.shipped_at ? formatDateTime(order.shipped_at) : 'Not shipped'}
                       </p>
                     </div>
                   </div>

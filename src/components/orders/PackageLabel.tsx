@@ -112,43 +112,38 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const contentWidth = width - marginLeft - marginRight;
     
     // ============================================
-    // HEADER - Preserve original aspect ratio
+    // HEADER - Full size 1200 x 147 px (aspect ratio 8.16:1)
     // ============================================
-    const headerHeight = 28;
-    const headerY = height - 12 - headerHeight;
+    const headerAspectRatio = 1200 / 147; // Original image aspect ratio
+    const headerWidth = contentWidth; // Use full content width
+    const headerHeight = headerWidth / headerAspectRatio;
+    const headerY = height - 8 - headerHeight;
+    const headerX = marginLeft;
+    
     try {
       const headerBytes = await loadImageAsBytes(labelHeaderImage);
       const headerImg = await pdfDoc.embedPng(headerBytes);
       
-      // Calculate width maintaining aspect ratio
-      const originalWidth = headerImg.width;
-      const originalHeight = headerImg.height;
-      const aspectRatio = originalWidth / originalHeight;
-      const scaledWidth = headerHeight * aspectRatio;
-      
-      // Center the header
-      const headerX = (width - scaledWidth) / 2;
-      
       page.drawImage(headerImg, {
         x: headerX,
         y: headerY,
-        width: scaledWidth,
+        width: headerWidth,
         height: headerHeight,
       });
     } catch (error) {
       console.error("Failed to embed header:", error);
       page.drawRectangle({
-        x: marginLeft,
+        x: headerX,
         y: headerY,
-        width: contentWidth,
+        width: headerWidth,
         height: headerHeight,
         color: rgb(0.95, 0.95, 0.95),
         borderColor: lightGray,
         borderWidth: 1,
       });
       page.drawText("CANADA HARM CONTROL", {
-        x: marginLeft + 8,
-        y: headerY + 10,
+        x: headerX + 8,
+        y: headerY + (headerHeight / 2) - 6,
         size: 12,
         font: helveticaBold,
         color: black,
@@ -427,22 +422,20 @@ export function PackageLabel({ order }: PackageLabelProps) {
     });
     
     // ============================================
-    // FRAGILE BADGE - Below scan instructions, preserve aspect ratio
+    // FRAGILE BADGE - Full size 656 x 147 px (aspect ratio 4.46:1)
     // ============================================
     try {
       const fragileBytes = await loadImageAsBytes(labelFragileImage);
       const fragileImg = await pdfDoc.embedPng(fragileBytes);
       
-      // Calculate dimensions maintaining aspect ratio
-      const originalWidth = fragileImg.width;
-      const originalHeight = fragileImg.height;
-      const aspectRatio = originalWidth / originalHeight;
-      const badgeHeight = 22;
-      const badgeWidth = badgeHeight * aspectRatio;
+      // Full size badge: 656 x 147 px aspect ratio
+      const badgeAspectRatio = 656 / 147;
+      const badgeHeight = 24; // Height in points for PDF
+      const badgeWidth = badgeHeight * badgeAspectRatio;
       
       page.drawImage(fragileImg, {
         x: trackingX,
-        y: trackingY - 82,
+        y: trackingY - 86,
         width: badgeWidth,
         height: badgeHeight,
       });

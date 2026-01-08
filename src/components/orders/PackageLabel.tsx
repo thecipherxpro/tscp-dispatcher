@@ -5,6 +5,8 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
+import labelHeaderImage from "@/assets/label-header.png";
+import labelFragileImage from "@/assets/label-fragile.png";
 
 interface PackageLabelProps {
   order: Order;
@@ -27,62 +29,9 @@ const formatTime = (date: string | null): string => {
   });
 };
 
-// Convert QR code SVG to PNG data URL for PDF embedding
-const generateQRCodePNG = async (value: string, size: number = 100): Promise<string> => {
-  return new Promise((resolve) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = size;
-    canvas.height = size;
-    
-    // Create temporary container for QR code
-    const container = document.createElement("div");
-    container.style.position = "absolute";
-    container.style.left = "-9999px";
-    document.body.appendChild(container);
-    
-    // Render QR code SVG
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("width", size.toString());
-    svg.setAttribute("height", size.toString());
-    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
-    
-    // Use a library-free QR approach - create image from existing QR component
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"></svg>`;
-    
-    // For simplicity, we'll generate a placeholder and use the actual QR from the preview
-    // In production, you'd use a proper QR library that outputs to canvas
-    const img = new Image();
-    const svgData = document.querySelector(`[data-qr-value="${value}"]`)?.outerHTML || 
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><rect fill="white" width="100%" height="100%"/><text x="50%" y="50%" text-anchor="middle">QR</text></svg>`;
-    
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
-    
-    img.onload = () => {
-      ctx?.drawImage(img, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      document.body.removeChild(container);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    
-    img.onerror = () => {
-      // Fallback: return empty image
-      URL.revokeObjectURL(url);
-      document.body.removeChild(container);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    
-    img.src = url;
-  });
-};
-
 // Generate QR code as PNG using canvas
-const generateQRCodeImage = async (value: string, size: number = 120): Promise<Uint8Array> => {
+const generateQRCodeImage = async (size: number = 120): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
-    // Find the QR code SVG element rendered in the DOM
     const qrContainer = document.getElementById("qr-code-container");
     if (!qrContainer) {
       reject(new Error("QR container not found"));
@@ -128,6 +77,13 @@ const generateQRCodeImage = async (value: string, size: number = 120): Promise<U
   });
 };
 
+// Load image as bytes for PDF embedding
+const loadImageAsBytes = async (imageSrc: string): Promise<Uint8Array> => {
+  const response = await fetch(imageSrc);
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
+};
+
 export function PackageLabel({ order }: PackageLabelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -135,17 +91,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
   const canGenerateLabel = Boolean(order.tracking_id && order.shipment_id);
   const qrValue = order.tracking_url || order.tracking_id || order.id;
 
-  const generatePDFFromTemplate = useCallback(async (): Promise<Uint8Array> => {
-    // Fetch the template PDF (cache-busted to avoid PWA/service-worker stale files)
-    const templateResponse = await fetch(`/templates/label_template.pdf?ts=${Date.now()}`, {
-      cache: "no-store",
-    });
-    const templateBytes = await templateResponse.arrayBuffer();
-    
-    // Load the PDF document
-    const pdfDoc = await PDFDocument.load(templateBytes);
-    const pages = pdfDoc.getPages();
-    const page = pages[0];
+  const generatePDFFromScratch = useCallback(async (): Promise<Uint8Array> => {
+    // Create a new PDF document - 4x6 inches (288 x 432 points)
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([288, 432]);
     const { width, height } = page.getSize();
     
     // Embed fonts
@@ -154,91 +103,231 @@ export function PackageLabel({ order }: PackageLabelProps) {
     
     // Colors
     const black = rgb(0, 0, 0);
-    
-    // Template is portrait 4x6 inches (288 x 432 points)
-    // Y=0 is bottom, Y=height is top
-    // Using exact coordinates from spec: FROM Y=320, SHIP TO Y=230, etc.
+    const gray = rgb(0.4, 0.4, 0.4);
+    const lightGray = rgb(0.85, 0.85, 0.85);
     
     // ============================================
-    // FROM BLOCK - X: 20, Y: 320
+    // HEADER - Full width banner with logo
     // ============================================
-    const fromX = 20;
-    const fromY = 320;
+    try {
+      const headerBytes = await loadImageAsBytes(labelHeaderImage);
+      const headerImg = await pdfDoc.embedPng(headerBytes);
+      const headerHeight = 36;
+      const headerY = height - headerHeight - 8;
+      
+      page.drawImage(headerImg, {
+        x: 8,
+        y: headerY,
+        width: width - 16,
+        height: headerHeight,
+      });
+    } catch (error) {
+      console.error("Failed to embed header:", error);
+      // Fallback: Draw text header
+      page.drawRectangle({
+        x: 8,
+        y: height - 44,
+        width: width - 16,
+        height: 36,
+        color: rgb(0.95, 0.95, 0.95),
+        borderColor: lightGray,
+        borderWidth: 1,
+      });
+      page.drawText("CANADA HARM CONTROL", {
+        x: 16,
+        y: height - 28,
+        size: 12,
+        font: helveticaBold,
+        color: black,
+      });
+      page.drawText("EndOverdose.ca", {
+        x: 16,
+        y: height - 40,
+        size: 8,
+        font: helvetica,
+        color: gray,
+      });
+    }
+    
+    // ============================================
+    // DIVIDER LINE below header
+    // ============================================
+    page.drawLine({
+      start: { x: 8, y: height - 52 },
+      end: { x: width - 8, y: height - 52 },
+      thickness: 1,
+      color: lightGray,
+    });
+    
+    // ============================================
+    // FROM SECTION - X: 16, Y: 320
+    // ============================================
+    const fromStartY = 320;
+    
+    page.drawText("FROM:", {
+      x: 16,
+      y: fromStartY,
+      size: 8,
+      font: helveticaBold,
+      color: gray,
+    });
     
     page.drawText("CanadaHarmControl", {
-      x: fromX,
-      y: fromY,
+      x: 16,
+      y: fromStartY - 14,
       size: 10,
       font: helveticaBold,
       color: black,
     });
     
     page.drawText("Healthcare Delivery Service", {
-      x: fromX,
-      y: fromY - 12,
+      x: 16,
+      y: fromStartY - 26,
       size: 8,
       font: helvetica,
-      color: black,
+      color: gray,
     });
     
     page.drawText("3265 Wharton Way #23", {
-      x: fromX,
-      y: fromY - 24,
+      x: 16,
+      y: fromStartY - 38,
       size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("Mississauga, ON L4X 2X9", {
-      x: fromX,
-      y: fromY - 34,
+      x: 16,
+      y: fromStartY - 50,
       size: 8,
       font: helvetica,
       color: black,
     });
     
     page.drawText("(647) 494-4538", {
-      x: fromX,
-      y: fromY - 44,
-      size: 8,
-      font: helvetica,
-      color: black,
-    });
-    
-    page.drawText("Info@endoverdose.ca", {
-      x: fromX,
-      y: fromY - 54,
-      size: 8,
-      font: helvetica,
-      color: black,
-    });
-    
-    page.drawText("www.endoverdose.ca", {
-      x: fromX,
-      y: fromY - 64,
+      x: 16,
+      y: fromStartY - 62,
       size: 8,
       font: helvetica,
       color: black,
     });
     
     // ============================================
-    // SHIP TO BLOCK - X: 20, Y: 230
+    // RIGHT COLUMN - Order details
     // ============================================
-    const shipToX = 20;
-    const shipToY = 230;
+    const rightColX = 160;
+    
+    // Order Date
+    page.drawText("ORDER DATE:", {
+      x: rightColX,
+      y: 320,
+      size: 7,
+      font: helveticaBold,
+      color: gray,
+    });
+    page.drawText(formatDate(order.order_date), {
+      x: rightColX,
+      y: 308,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    
+    // Shipped Date
+    page.drawText("SHIPPED:", {
+      x: rightColX,
+      y: 290,
+      size: 7,
+      font: helveticaBold,
+      color: gray,
+    });
+    const shippedDate = formatDate(order.shipped_at);
+    const shippedTime = formatTime(order.shipped_at);
+    page.drawText(shippedDate, {
+      x: rightColX,
+      y: 278,
+      size: 9,
+      font: helvetica,
+      color: black,
+    });
+    if (shippedTime) {
+      page.drawText(shippedTime, {
+        x: rightColX + 60,
+        y: 278,
+        size: 8,
+        font: helvetica,
+        color: gray,
+      });
+    }
+    
+    // Shipment ID
+    page.drawText("SHIPMENT ID:", {
+      x: rightColX,
+      y: 260,
+      size: 7,
+      font: helveticaBold,
+      color: gray,
+    });
+    page.drawText(order.shipment_id || "N/A", {
+      x: rightColX,
+      y: 248,
+      size: 9,
+      font: helveticaBold,
+      color: black,
+    });
+    
+    // ============================================
+    // FRAGILE BADGE - Right side, middle area
+    // ============================================
+    try {
+      const fragileBytes = await loadImageAsBytes(labelFragileImage);
+      const fragileImg = await pdfDoc.embedPng(fragileBytes);
+      
+      page.drawImage(fragileImg, {
+        x: rightColX,
+        y: 200,
+        width: 100,
+        height: 28,
+      });
+    } catch (error) {
+      console.error("Failed to embed fragile badge:", error);
+    }
+    
+    // ============================================
+    // DIVIDER LINE between FROM and SHIP TO
+    // ============================================
+    page.drawLine({
+      start: { x: 8, y: 245 },
+      end: { x: 140, y: 245 },
+      thickness: 1,
+      color: lightGray,
+    });
+    
+    // ============================================
+    // SHIP TO SECTION - X: 16, Y: 230
+    // ============================================
+    const shipToStartY = 230;
+    
+    page.drawText("SHIP TO:", {
+      x: 16,
+      y: shipToStartY,
+      size: 8,
+      font: helveticaBold,
+      color: gray,
+    });
     
     page.drawText(order.client_name || "Customer", {
-      x: shipToX,
-      y: shipToY,
-      size: 10,
+      x: 16,
+      y: shipToStartY - 14,
+      size: 11,
       font: helveticaBold,
       color: black,
     });
     
     if (order.address_line_1) {
       page.drawText(order.address_line_1, {
-        x: shipToX,
-        y: shipToY - 12,
+        x: 16,
+        y: shipToStartY - 28,
         size: 9,
         font: helvetica,
         color: black,
@@ -247,99 +336,118 @@ export function PackageLabel({ order }: PackageLabelProps) {
     
     if (order.address_line_2) {
       page.drawText(order.address_line_2, {
-        x: shipToX,
-        y: shipToY - 24,
+        x: 16,
+        y: shipToStartY - 40,
         size: 9,
         font: helvetica,
         color: black,
       });
     }
     
-    // ============================================
-    // ORDER DATE - X: 170, Y: 300
-    // ============================================
-    const rightColX = 170;
-    const orderDateY = 300;
-    
-    const orderDate = formatDate(order.order_date);
-    page.drawText(orderDate, {
-      x: rightColX,
-      y: orderDateY,
+    page.drawText(order.country || "Canada", {
+      x: 16,
+      y: shipToStartY - 52,
       size: 9,
       font: helvetica,
       color: black,
     });
     
     // ============================================
-    // SHIPPED DATE & TIME - X: 170, Y: 280
+    // BOTTOM SECTION DIVIDER
     // ============================================
-    const shippedDateY = 280;
-    const shippedDate = formatDate(order.shipped_at);
-    const shippedTime = formatTime(order.shipped_at);
-    
-    page.drawText(shippedDate, {
-      x: rightColX,
-      y: shippedDateY,
-      size: 9,
-      font: helvetica,
-      color: black,
-    });
-    
-    if (shippedTime) {
-      page.drawText(shippedTime, {
-        x: rightColX,
-        y: shippedDateY - 10,
-        size: 8,
-        font: helvetica,
-        color: black,
-      });
-    }
-    
-    // ============================================
-    // SHIPMENT ID - X: 170, Y: 260
-    // ============================================
-    const shipmentIdY = 260;
-    
-    page.drawText(order.shipment_id || "N/A", {
-      x: rightColX,
-      y: shipmentIdY,
-      size: 9,
-      font: helveticaBold,
-      color: black,
+    page.drawLine({
+      start: { x: 8, y: 160 },
+      end: { x: width - 8, y: 160 },
+      thickness: 1,
+      color: lightGray,
     });
     
     // ============================================
-    // QR CODE - X: 20, Y: 70, Size: 120x120
+    // QR CODE - X: 16, Y: 50, Size: 100x100
     // ============================================
     try {
-      const qrPngBytes = await generateQRCodeImage(qrValue, 120);
+      const qrPngBytes = await generateQRCodeImage(120);
       const qrImage = await pdfDoc.embedPng(qrPngBytes);
       
       page.drawImage(qrImage, {
-        x: 20,
-        y: 70,
-        width: 120,
-        height: 120,
+        x: 16,
+        y: 50,
+        width: 100,
+        height: 100,
       });
     } catch (error) {
       console.error("Failed to embed QR code:", error);
+      // Draw placeholder box
+      page.drawRectangle({
+        x: 16,
+        y: 50,
+        width: 100,
+        height: 100,
+        borderColor: lightGray,
+        borderWidth: 1,
+      });
+      page.drawText("QR CODE", {
+        x: 45,
+        y: 95,
+        size: 10,
+        font: helvetica,
+        color: gray,
+      });
     }
     
     // ============================================
-    // TRACKING NUMBER - X: 20, Y: 40, Width: 248, Centered
+    // TRACKING INFO - Right side of QR
     // ============================================
-    const trackingId = order.tracking_id || "N/A";
-    const trackingFontSize = 14;
-    const trackingWidth = helveticaBold.widthOfTextAtSize(trackingId, trackingFontSize);
-    // Center within 248pt width starting at X=20
-    const trackingCenterX = 20 + (248 - trackingWidth) / 2;
+    page.drawText("TRACKING NUMBER:", {
+      x: 130,
+      y: 140,
+      size: 7,
+      font: helveticaBold,
+      color: gray,
+    });
     
+    const trackingId = order.tracking_id || "N/A";
     page.drawText(trackingId, {
-      x: trackingCenterX,
-      y: 40,
-      size: trackingFontSize,
+      x: 130,
+      y: 122,
+      size: 12,
       font: helveticaBold,
       color: black,
+    });
+    
+    // Scan instructions
+    page.drawText("Scan QR code to track", {
+      x: 130,
+      y: 100,
+      size: 8,
+      font: helvetica,
+      color: gray,
+    });
+    page.drawText("your delivery status", {
+      x: 130,
+      y: 88,
+      size: 8,
+      font: helvetica,
+      color: gray,
+    });
+    
+    // ============================================
+    // FOOTER BAR
+    // ============================================
+    page.drawRectangle({
+      x: 0,
+      y: 0,
+      width: width,
+      height: 36,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    
+    page.drawText("HEALTHCARE DELIVERY • HANDLE WITH CARE", {
+      x: 40,
+      y: 16,
+      size: 8,
+      font: helveticaBold,
+      color: rgb(1, 1, 1),
     });
     
     return await pdfDoc.save() as unknown as Uint8Array;
@@ -348,9 +456,8 @@ export function PackageLabel({ order }: PackageLabelProps) {
   const generatePDF = useCallback(async () => {
     setIsGenerating(true);
     try {
-      const pdfBytes = await generatePDFFromTemplate();
+      const pdfBytes = await generatePDFFromScratch();
       
-      // Create download link
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -368,18 +475,16 @@ export function PackageLabel({ order }: PackageLabelProps) {
     } finally {
       setIsGenerating(false);
     }
-  }, [generatePDFFromTemplate, order.shipment_id, order.id, toast]);
+  }, [generatePDFFromScratch, order.shipment_id, order.id, toast]);
 
   const printLabel = useCallback(async () => {
     setIsGenerating(true);
     try {
-      const pdfBytes = await generatePDFFromTemplate();
+      const pdfBytes = await generatePDFFromScratch();
       
-      // Create blob URL for printing
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       
-      // Open in new window for printing
       const printWindow = window.open(url, "_blank");
       if (printWindow) {
         printWindow.onload = () => {
@@ -388,7 +493,6 @@ export function PackageLabel({ order }: PackageLabelProps) {
         };
       }
       
-      // Clean up after a delay
       setTimeout(() => URL.revokeObjectURL(url), 10000);
       
     } catch (error) {
@@ -397,7 +501,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
     } finally {
       setIsGenerating(false);
     }
-  }, [generatePDFFromTemplate, toast]);
+  }, [generatePDFFromScratch, toast]);
 
   if (!canGenerateLabel) {
     return (
@@ -431,7 +535,7 @@ export function PackageLabel({ order }: PackageLabelProps) {
       <div className="bg-background rounded-xl border border-border overflow-hidden">
         <div className="p-4 bg-muted/30 border-b border-border">
           <p className="text-sm font-medium text-foreground">Package Label Preview</p>
-          <p className="text-xs text-muted-foreground mt-1">Using template: label_template.pdf</p>
+          <p className="text-xs text-muted-foreground mt-1">4×6" shipping label with QR tracking</p>
         </div>
         
         <div className="p-4 space-y-3">

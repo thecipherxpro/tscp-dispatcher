@@ -428,6 +428,7 @@ export default function OrderEditDetail() {
         .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
         .badge-amber { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
         .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .badge-indigo { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
         .badge-purple { background: #f3e8ff; color: #7c3aed; border: 1px solid #c4b5fd; }
         .badge-emerald { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
         .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
@@ -454,9 +455,36 @@ export default function OrderEditDetail() {
         .user-name { font-size: 14px; font-weight: 600; color: #111827; }
         .user-detail { font-size: 12px; color: #6b7280; }
         .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center; }
+        /* Timeline Styles */
+        .timeline { position: relative; padding-left: 36px; }
+        .timeline::before { content: ''; position: absolute; left: 12px; top: 24px; bottom: 24px; width: 2px; background: #e5e7eb; }
+        .timeline-item { position: relative; padding-bottom: 16px; display: flex; align-items: flex-start; gap: 12px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; left: -36px; z-index: 1; }
+        .timeline-dot svg { width: 14px; height: 14px; }
+        .timeline-dot-amber { background: #fef3c7; color: #d97706; }
+        .timeline-dot-blue { background: #dbeafe; color: #2563eb; }
+        .timeline-dot-indigo { background: #e0e7ff; color: #4f46e5; }
+        .timeline-dot-purple { background: #f3e8ff; color: #7c3aed; }
+        .timeline-dot-emerald { background: #d1fae5; color: #059669; }
+        .timeline-dot-red { background: #fee2e2; color: #dc2626; }
+        .timeline-dot-muted { background: #f3f4f6; color: #9ca3af; }
+        .timeline-content { flex: 1; padding-top: 2px; }
+        .timeline-title { font-size: 13px; font-weight: 500; color: #111827; }
+        .timeline-time { font-size: 11px; color: #6b7280; }
+        .timeline-meta { font-size: 10px; color: #2563eb; margin-top: 2px; }
         @media print { body { padding: 16px; background: white; } .card { break-inside: avoid; } }
       </style>
     `;
+
+    // SVG icons for timeline
+    const icons = {
+      circle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>',
+      package: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
+      navigation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
+      truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>',
+    };
 
     const content = `
       <!DOCTYPE html>
@@ -580,6 +608,54 @@ export default function OrderEditDetail() {
             </div>
           </div>
           ` : ''}
+
+          <div class="card">
+            <div class="card-header">Delivery Timeline</div>
+            <div class="card-content">
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order.pending_at ? 'timeline-dot-amber' : 'timeline-dot-muted'}">${icons.circle}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Pending</div>
+                    <div class="timeline-time">${order.pending_at ? formatDateTime(order.pending_at) : 'Awaiting processing'}</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order.picked_up_at ? 'timeline-dot-blue' : 'timeline-dot-muted'}">${icons.package}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Picked Up & Assigned</div>
+                    <div class="timeline-time">${order.picked_up_at ? formatDateTime(order.picked_up_at) : 'Not yet picked up'}</div>
+                    ${order.picked_up_at && driver ? `<div class="timeline-meta">Assigned to: ${driver.full_name} (${driver.driver_id})</div>` : ''}
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order.confirmed_at ? 'timeline-dot-indigo' : 'timeline-dot-muted'}">${icons.check}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Confirmed</div>
+                    <div class="timeline-time">${order.confirmed_at ? formatDateTime(order.confirmed_at) : 'Awaiting confirmation'}</div>
+                    ${order.confirmed_at && driver ? `<div class="timeline-meta">Confirmed by: ${driver.driver_id}</div>` : ''}
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order.shipped_at || order.in_route_at ? 'timeline-dot-purple' : 'timeline-dot-muted'}">${icons.navigation}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">In Route</div>
+                    <div class="timeline-time">${order.shipped_at || order.in_route_at ? formatDateTime(order.shipped_at || order.in_route_at) : 'Not in route yet'}</div>
+                    ${(order.shipped_at || order.in_route_at) && driver ? `<div class="timeline-meta">In route by: ${driver.driver_id}</div>` : ''}
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot ${order.completed_at ? (order.timeline_status === 'COMPLETED_DELIVERED' ? 'timeline-dot-emerald' : 'timeline-dot-red') : 'timeline-dot-muted'}">${icons.truck}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">${order.timeline_status === 'COMPLETED_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}</div>
+                    <div class="timeline-time">${order.completed_at ? formatDateTime(order.completed_at) : 'Awaiting delivery'}</div>
+                    ${order.delivery_status ? `<span class="badge ${order.timeline_status === 'COMPLETED_DELIVERED' ? 'badge-emerald' : 'badge-red'}" style="margin-top: 4px; display: inline-block;">${order.delivery_status.replace(/_/g, ' ')}</span>` : ''}
+                    ${order.completed_at && driver ? `<div class="timeline-meta">Completed by: ${driver.driver_id}</div>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="card">
             <div class="card-header">Audit Log</div>
@@ -897,6 +973,124 @@ export default function OrderEditDetail() {
                     {!order.nasal_drug_name && !order.nasal_qty && !order.injection_drug_name && !order.injection_qty && (
                       <p className="text-sm text-muted-foreground text-center py-4">No drug information available</p>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Delivery Timeline */}
+                <Card className="lg:col-span-2">
+                  <CardHeader className="pb-3 lg:pb-4">
+                    <CardTitle className="text-base lg:text-lg flex items-center gap-2">
+                      <Clock className="h-4 w-4 lg:h-5 lg:w-5" />
+                      Delivery Timeline
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="relative pl-8">
+                      {/* Timeline line */}
+                      <div className="absolute left-3 top-6 bottom-6 w-0.5 bg-border" />
+                      
+                      {/* Pending */}
+                      <div className="relative pb-6">
+                        <div className={`absolute left-[-20px] w-6 h-6 rounded-full flex items-center justify-center ${order.pending_at ? 'bg-amber-100' : 'bg-muted'}`}>
+                          <div className={`w-2 h-2 rounded-full ${order.pending_at ? 'bg-amber-500' : 'bg-muted-foreground'}`} />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-sm lg:text-base">Pending</p>
+                          <p className="text-xs lg:text-sm text-muted-foreground">
+                            {order.pending_at ? formatDateTime(order.pending_at) : 'Awaiting processing'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Picked Up & Assigned */}
+                      <div className="relative pb-6">
+                        <div className={`absolute left-[-20px] w-6 h-6 rounded-full flex items-center justify-center ${order.picked_up_at ? 'bg-blue-100' : 'bg-muted'}`}>
+                          <Package className={`h-3 w-3 ${order.picked_up_at ? 'text-blue-600' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-sm lg:text-base">Picked Up & Assigned</p>
+                          <p className="text-xs lg:text-sm text-muted-foreground">
+                            {order.picked_up_at ? formatDateTime(order.picked_up_at) : 'Not yet picked up'}
+                          </p>
+                          {order.picked_up_at && driver && (
+                            <p className="text-xs text-primary mt-0.5">Assigned to: {driver.full_name} ({driver.driver_id})</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Confirmed */}
+                      <div className="relative pb-6">
+                        <div className={`absolute left-[-20px] w-6 h-6 rounded-full flex items-center justify-center ${order.confirmed_at ? 'bg-indigo-100' : 'bg-muted'}`}>
+                          <CheckCircle className={`h-3 w-3 ${order.confirmed_at ? 'text-indigo-600' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-sm lg:text-base">Confirmed</p>
+                          <p className="text-xs lg:text-sm text-muted-foreground">
+                            {order.confirmed_at ? formatDateTime(order.confirmed_at) : 'Awaiting confirmation'}
+                          </p>
+                          {order.confirmed_at && driver && (
+                            <p className="text-xs text-primary mt-0.5">Confirmed by: {driver.driver_id}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* In Route */}
+                      <div className="relative pb-6">
+                        <div className={`absolute left-[-20px] w-6 h-6 rounded-full flex items-center justify-center ${order.shipped_at || order.in_route_at ? 'bg-purple-100' : 'bg-muted'}`}>
+                          <Navigation className={`h-3 w-3 ${order.shipped_at || order.in_route_at ? 'text-purple-600' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-sm lg:text-base">In Route</p>
+                          <p className="text-xs lg:text-sm text-muted-foreground">
+                            {order.shipped_at || order.in_route_at ? formatDateTime(order.shipped_at || order.in_route_at) : 'Not in route yet'}
+                          </p>
+                          {(order.shipped_at || order.in_route_at) && driver && (
+                            <p className="text-xs text-primary mt-0.5">In route by: {driver.driver_id}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Delivered / Completed */}
+                      <div className="relative">
+                        <div className={`absolute left-[-20px] w-6 h-6 rounded-full flex items-center justify-center ${
+                          order.completed_at 
+                            ? order.timeline_status === 'COMPLETED_DELIVERED' 
+                              ? 'bg-green-100' 
+                              : 'bg-red-100'
+                            : 'bg-muted'
+                        }`}>
+                          <Truck className={`h-3 w-3 ${
+                            order.completed_at 
+                              ? order.timeline_status === 'COMPLETED_DELIVERED' 
+                                ? 'text-green-600' 
+                                : 'text-red-600'
+                              : 'text-muted-foreground'
+                          }`} />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-sm lg:text-base">
+                            {order.timeline_status === 'COMPLETED_INCOMPLETE' ? 'Delivery Incomplete' : 'Delivered'}
+                          </p>
+                          <p className="text-xs lg:text-sm text-muted-foreground">
+                            {order.completed_at ? formatDateTime(order.completed_at) : 'Awaiting delivery'}
+                          </p>
+                          {order.delivery_status && (
+                            <Badge 
+                              className={`mt-1 text-xs ${
+                                order.timeline_status === 'COMPLETED_DELIVERED' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {order.delivery_status.replace(/_/g, ' ')}
+                            </Badge>
+                          )}
+                          {order.completed_at && driver && (
+                            <p className="text-xs text-primary mt-0.5">Completed by: {driver.driver_id}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 

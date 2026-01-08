@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink } from 'react-router-dom';
-import { Home, Package, Users, Tags, Settings, User, QrCode } from 'lucide-react';
+import { Home, Package, Users, Tags, Settings, User, QrCode, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
@@ -10,8 +10,8 @@ export function MobileNav() {
   const adminLinks = [
     { to: '/dashboard', icon: Home, label: 'Home' },
     { to: '/orders', icon: Package, label: 'Orders' },
+    { to: '/admin/order-edits', icon: Edit, label: 'Edits' },
     { to: '/package-labels', icon: Tags, label: 'Labels' },
-    { to: '/drivers', icon: Users, label: 'Drivers' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 

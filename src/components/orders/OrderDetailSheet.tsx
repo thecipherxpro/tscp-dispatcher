@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown } from 'lucide-react';
+import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,16 @@ import { DriverAssignmentModal } from './DriverAssignmentModal';
 import { PackageLabel } from './PackageLabel';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 interface OrderDetailSheetProps {
   order: Order | null;
   isOpen: boolean;
@@ -28,6 +38,8 @@ export function OrderDetailSheet({
   } = useToast();
   const navigate = useNavigate();
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showUnassignDialog, setShowUnassignDialog] = useState(false);
+  const [isUnassigning, setIsUnassigning] = useState(false);
   const [driver, setDriver] = useState<Profile | null>(null);
 
   // Fetch driver info when order changes
@@ -119,9 +131,64 @@ export function OrderDetailSheet({
     }
   };
   const statusConfig = getStatusConfig(order.timeline_status);
+  
   const handleViewDetails = () => {
     onClose();
     navigate(`/tracking/${order.id}`);
+  };
+
+  const handleUnassignDriver = async () => {
+    if (!order) return;
+    
+    setIsUnassigning(true);
+    try {
+      // Update order to remove driver assignment and reset status
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          assigned_driver_id: null,
+          timeline_status: 'PENDING',
+          picked_up_at: null,
+          assigned_at: null,
+          confirmed_at: null,
+          in_route_at: null,
+          arrived_at: null,
+        })
+        .eq('id', order.id);
+
+      if (orderError) throw orderError;
+
+      // Update public_tracking if exists
+      await supabase
+        .from('public_tracking')
+        .update({
+          driver_id: null,
+          timeline_status: 'PENDING',
+          picked_up_at: null,
+          assigned_at: null,
+          confirmed_at: null,
+          in_route_at: null,
+          arrived_at: null,
+        })
+        .eq('order_id', order.id);
+
+      toast({
+        title: "Driver Unassigned",
+        description: "The driver has been removed from this order.",
+      });
+
+      setShowUnassignDialog(false);
+      onUpdate();
+    } catch (err) {
+      console.error('Error unassigning driver:', err);
+      toast({
+        title: "Error",
+        description: "Failed to unassign driver. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUnassigning(false);
+    }
   };
   return <>
       <Drawer open={isOpen} onOpenChange={onClose}>
@@ -229,14 +296,36 @@ export function OrderDetailSheet({
                         </p>
                       </div>}
                   </div>
-                  {order.assigned_driver_id && driver && <div className="mt-3 pt-3 border-t border-border/50">
+                  {order.assigned_driver_id && driver && isAdmin && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Truck className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Assigned to:</span>
+                          <span className="text-sm font-medium text-foreground">{driver.full_name}</span>
+                          {driver.driver_id && <span className="text-xs font-mono text-primary">({driver.driver_id})</span>}
+                        </div>
+                        <Badge 
+                          variant="outline" 
+                          className="cursor-pointer hover:bg-destructive/10 hover:border-destructive hover:text-destructive transition-colors"
+                          onClick={() => setShowUnassignDialog(true)}
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Unassign
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                  {order.assigned_driver_id && driver && !isAdmin && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">Assigned to:</span>
                         <span className="text-sm font-medium text-foreground">{driver.full_name}</span>
                         {driver.driver_id && <span className="text-xs font-mono text-primary">({driver.driver_id})</span>}
                       </div>
-                    </div>}
+                    </div>
+                  )}
               </div>
             </section>
 
@@ -318,5 +407,27 @@ export function OrderDetailSheet({
       onUpdate();
       onClose();
     }} />
+
+      <AlertDialog open={showUnassignDialog} onOpenChange={setShowUnassignDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unassign Driver</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unassign {driver?.full_name} from this order? 
+              The order will be reset to Pending status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUnassigning}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleUnassignDriver}
+              disabled={isUnassigning}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isUnassigning ? 'Unassigning...' : 'Unassign'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>;
 }

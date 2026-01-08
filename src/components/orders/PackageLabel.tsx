@@ -157,13 +157,13 @@ export function PackageLabel({ order }: PackageLabelProps) {
     
     // Template is portrait 4x6 inches (288 x 432 points)
     // Y=0 is bottom, Y=height is top
+    // Using exact coordinates from spec: FROM Y=320, SHIP TO Y=230, etc.
     
     // ============================================
-    // FROM BLOCK - Below "From:" label area
-    // Position: Left side, below header (~Y: 355 from bottom)
+    // FROM BLOCK - X: 20, Y: 320
     // ============================================
-    const fromX = 22;
-    const fromY = height - 78; // ~354 for 432 height
+    const fromX = 20;
+    const fromY = 320;
     
     page.drawText("CanadaHarmControl", {
       x: fromX,
@@ -222,11 +222,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
     });
     
     // ============================================
-    // SHIP TO BLOCK - Below FROM, next to FRAGILE icon
-    // Position: Left side (~Y: 255 from bottom)
+    // SHIP TO BLOCK - X: 20, Y: 230
     // ============================================
-    const shipToX = 22;
-    const shipToY = height - 168; // ~264 for 432 height
+    const shipToX = 20;
+    const shipToY = 230;
     
     page.drawText(order.client_name || "Customer", {
       x: shipToX,
@@ -257,11 +256,10 @@ export function PackageLabel({ order }: PackageLabelProps) {
     }
     
     // ============================================
-    // ORDER DATE - Right side, first row
-    // Position: (~X: 175, Y: 320 from bottom)
+    // ORDER DATE - X: 170, Y: 300
     // ============================================
-    const rightColX = 175;
-    const orderDateY = height - 112;
+    const rightColX = 170;
+    const orderDateY = 300;
     
     const orderDate = formatDate(order.order_date);
     page.drawText(orderDate, {
@@ -273,10 +271,9 @@ export function PackageLabel({ order }: PackageLabelProps) {
     });
     
     // ============================================
-    // SHIPPED DATE & TIME - Right side, second row
-    // Position: (~X: 175, Y: 295 from bottom)
+    // SHIPPED DATE & TIME - X: 170, Y: 280
     // ============================================
-    const shippedDateY = height - 135;
+    const shippedDateY = 280;
     const shippedDate = formatDate(order.shipped_at);
     const shippedTime = formatTime(order.shipped_at);
     
@@ -299,10 +296,9 @@ export function PackageLabel({ order }: PackageLabelProps) {
     }
     
     // ============================================
-    // SHIPMENT ID - Right side, third row
-    // Position: (~X: 175, Y: 260 from bottom)
+    // SHIPMENT ID - X: 170, Y: 260
     // ============================================
-    const shipmentIdY = height - 162;
+    const shipmentIdY = 260;
     
     page.drawText(order.shipment_id || "N/A", {
       x: rightColX,
@@ -313,35 +309,34 @@ export function PackageLabel({ order }: PackageLabelProps) {
     });
     
     // ============================================
-    // QR CODE - Bottom left, in the QR box area
-    // Position: (~X: 22, Y: 95, Size: 100x100)
+    // QR CODE - X: 20, Y: 70, Size: 120x120
     // ============================================
     try {
       const qrPngBytes = await generateQRCodeImage(qrValue, 120);
       const qrImage = await pdfDoc.embedPng(qrPngBytes);
       
       page.drawImage(qrImage, {
-        x: 22,
-        y: 95,
-        width: 100,
-        height: 100,
+        x: 20,
+        y: 70,
+        width: 120,
+        height: 120,
       });
     } catch (error) {
       console.error("Failed to embed QR code:", error);
     }
     
     // ============================================
-    // TRACKING NUMBER - Bottom center, large bold
-    // Position: (~X: centered, Y: 45)
+    // TRACKING NUMBER - X: 20, Y: 40, Width: 248, Centered
     // ============================================
     const trackingId = order.tracking_id || "N/A";
-    const trackingFontSize = 16;
+    const trackingFontSize = 14;
     const trackingWidth = helveticaBold.widthOfTextAtSize(trackingId, trackingFontSize);
-    const trackingCenterX = (width - trackingWidth) / 2;
+    // Center within 248pt width starting at X=20
+    const trackingCenterX = 20 + (248 - trackingWidth) / 2;
     
     page.drawText(trackingId, {
       x: trackingCenterX,
-      y: 45,
+      y: 40,
       size: trackingFontSize,
       font: helveticaBold,
       color: black,

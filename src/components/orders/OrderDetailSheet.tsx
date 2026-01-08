@@ -271,6 +271,38 @@ export function OrderDetailSheet({
               </div>
             </section>
 
+            {/* Injection Drug Details Section */}
+            {(order.injection_drug_name || order.injection_strength || order.injection_form) && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Injection Drug Details</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {order.injection_drug_name && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Drug Name</p>
+                        <p className="text-sm font-medium text-foreground">{order.injection_drug_name}</p>
+                      </div>
+                    )}
+                    {order.injection_strength && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Strength</p>
+                        <p className="text-sm font-medium text-foreground">{order.injection_strength}</p>
+                      </div>
+                    )}
+                    {order.injection_form && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Form</p>
+                        <p className="text-sm font-medium text-foreground">{order.injection_form}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
 
             {/* Package Label Section */}
             <section>

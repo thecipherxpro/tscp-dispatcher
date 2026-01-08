@@ -258,8 +258,8 @@ export default function AdminTracking() {
                     <FieldValue value={order.shipped_at ? formatDateTime(order.shipped_at) : null} label="Not shipped" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Shipping Date</p>
-                    <FieldValue value={order.shipping_date ? formatDate(order.shipping_date) : null} label="Not set" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Order Date</p>
+                    <FieldValue value={order.order_date ? formatDate(order.order_date) : null} label="Not set" />
                   </div>
                 </div>
               </div>

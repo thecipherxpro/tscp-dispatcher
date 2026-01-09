@@ -5,7 +5,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
-import labelHeaderImage from "@/assets/label-header.png";
+import appLogoImage from "@/assets/app-icon.png";
 import labelFragileImage from "@/assets/label-fragile.png";
 
 interface PackageLabelProps {
@@ -112,42 +112,59 @@ export function PackageLabel({ order }: PackageLabelProps) {
     const contentWidth = width - marginLeft - marginRight;
     
     // ============================================
-    // HEADER - Full size 1200 x 147 px (aspect ratio 8.16:1)
+    // HEADER - Light gray background bar (same size as footer)
     // ============================================
-    const headerWidth = contentWidth; // Use full content width
-    const headerHeight = 35; // Balanced height to avoid stretch
-    const headerY = height - 6 - headerHeight;
-    const headerX = marginLeft;
+    const headerHeight = 32; // Same as footer
+    const headerY = height - headerHeight;
+    
+    // Draw light gray background
+    page.drawRectangle({
+      x: 0,
+      y: headerY,
+      width: width,
+      height: headerHeight,
+      color: rgb(0.9, 0.9, 0.9), // Light gray
+    });
+    
+    // Try to embed app logo on the left
+    const logoSize = 18;
+    const logoX = marginLeft;
+    const logoY = headerY + (headerHeight - logoSize) / 2;
     
     try {
-      const headerBytes = await loadImageAsBytes(labelHeaderImage);
-      const headerImg = await pdfDoc.embedPng(headerBytes);
+      const logoBytes = await loadImageAsBytes(appLogoImage);
+      const logoImg = await pdfDoc.embedPng(logoBytes);
       
-      page.drawImage(headerImg, {
-        x: headerX,
-        y: headerY,
-        width: headerWidth,
-        height: headerHeight,
+      page.drawImage(logoImg, {
+        x: logoX,
+        y: logoY,
+        width: logoSize,
+        height: logoSize,
       });
     } catch (error) {
-      console.error("Failed to embed header:", error);
-      page.drawRectangle({
-        x: headerX,
-        y: headerY,
-        width: headerWidth,
-        height: headerHeight,
-        color: rgb(0.95, 0.95, 0.95),
-        borderColor: lightGray,
-        borderWidth: 1,
-      });
-      page.drawText("CANADA HARM CONTROL", {
-        x: headerX + 8,
-        y: headerY + (headerHeight / 2) - 6,
-        size: 12,
-        font: helveticaBold,
-        color: black,
-      });
+      console.error("Failed to embed logo:", error);
     }
+    
+    // Website URL next to logo
+    const websiteUrl = "www.endoverdose.ca";
+    page.drawText(websiteUrl, {
+      x: logoX + logoSize + 6,
+      y: headerY + (headerHeight / 2) - 4,
+      size: 8,
+      font: helvetica,
+      color: black,
+    });
+    
+    // Email on the right
+    const email = "Info@endoverdose.ca";
+    const emailWidth = helvetica.widthOfTextAtSize(email, 8);
+    page.drawText(email, {
+      x: width - marginRight - emailWidth,
+      y: headerY + (headerHeight / 2) - 4,
+      size: 8,
+      font: helvetica,
+      color: black,
+    });
     
     // ============================================
     // DIVIDER LINE below header

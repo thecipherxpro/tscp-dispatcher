@@ -18,6 +18,7 @@ export function MobileNav() {
   const driverLinks = [
     { to: '/dashboard', icon: Home, label: 'Home' },
     { to: '/my-orders', icon: Package, label: 'Orders' },
+    { to: '/scan', icon: QrCode, label: 'Scan' },
     { to: '/driver/wallet', icon: Wallet, label: 'Wallet' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];

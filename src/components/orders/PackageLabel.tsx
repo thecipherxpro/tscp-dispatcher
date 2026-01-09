@@ -126,9 +126,19 @@ export function PackageLabel({ order }: PackageLabelProps) {
       color: rgb(0.9, 0.9, 0.9), // Light gray
     });
     
-    // Try to embed app logo on the left
+    // Website URL on the left
+    const websiteUrl = "endoverdose.ca";
+    page.drawText(websiteUrl, {
+      x: marginLeft,
+      y: headerY + (headerHeight / 2) - 4,
+      size: 8,
+      font: helvetica,
+      color: black,
+    });
+    
+    // Logo centered
     const logoSize = 18;
-    const logoX = marginLeft;
+    const logoX = (width - logoSize) / 2;
     const logoY = headerY + (headerHeight - logoSize) / 2;
     
     try {
@@ -144,16 +154,6 @@ export function PackageLabel({ order }: PackageLabelProps) {
     } catch (error) {
       console.error("Failed to embed logo:", error);
     }
-    
-    // Website URL next to logo
-    const websiteUrl = "www.endoverdose.ca";
-    page.drawText(websiteUrl, {
-      x: logoX + logoSize + 6,
-      y: headerY + (headerHeight / 2) - 4,
-      size: 8,
-      font: helvetica,
-      color: black,
-    });
     
     // Email on the right
     const email = "Info@endoverdose.ca";

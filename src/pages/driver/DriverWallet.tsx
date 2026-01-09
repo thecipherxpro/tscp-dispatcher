@@ -92,11 +92,11 @@ export default function DriverWallet() {
       {/* Sticky Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border safe-area-bottom z-40">
         <div className="grid grid-cols-2 divide-x divide-border">
-          <Button variant="ghost" onClick={() => setShowPayoutSettings(true)} className="h-16 text-sm font-semibold flex flex-col items-center justify-center gap-1 text-white bg-black border rounded">
+          <Button variant="ghost" onClick={() => setShowPayoutSettings(true)} className="h-16 rounded-2xl font-semibold flex flex-col items-center justify-center gap-1 text-white bg-black rounded-md border-0">
             <DollarSign className="w-5 h-5" />
             Payout Setting
           </Button>
-          <Button variant="ghost" onClick={() => setShowEarnings(true)} className="h-16 rounded-sm text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground flex flex-col items-center justify-center gap-1">
+          <Button variant="ghost" onClick={() => setShowEarnings(true)} className="h-16 rounded-2xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground flex flex-col items-center justify-center gap-1">
             <CheckCircle className="w-5 h-5" />
             Earnings
           </Button>

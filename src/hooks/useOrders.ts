@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, Profile, TimelineStatus } from '@/types/auth';
 import { Json } from '@/integrations/supabase/types';
+import { calculateEarnings } from './useDriverEarnings';
 
 export function useOrders(enableRealtime = true) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -268,7 +269,8 @@ export async function updateOrderStatus(
   reviewData?: {
     review_reason?: string;
     review_notes?: string;
-  }
+  },
+  distanceKm?: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { data: currentOrder } = await supabase
@@ -302,6 +304,11 @@ export async function updateOrderStatus(
     }
     if (reviewData?.review_notes) {
       updateData.review_notes = reviewData.review_notes;
+    }
+
+    // Add distance if provided (for completed orders)
+    if (distanceKm !== undefined) {
+      updateData.delivery_distance_km = distanceKm;
     }
 
     const { error: orderError } = await supabase
@@ -355,6 +362,36 @@ export async function updateOrderStatus(
           review_notes: reviewData?.review_notes
         } as Json
       }]);
+
+    // Create driver earnings record when order is completed
+    if ((newStatus === 'COMPLETED_DELIVERED' || newStatus === 'COMPLETED_INCOMPLETE') && userId) {
+      // Get order details for earnings
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('shipment_id, assigned_driver_id, delivery_distance_km')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (orderData && orderData.assigned_driver_id) {
+        const distance = distanceKm ?? orderData.delivery_distance_km ?? 0;
+        const earnings = calculateEarnings(distance);
+
+        await supabase
+          .from('driver_earnings')
+          .insert({
+            driver_id: orderData.assigned_driver_id,
+            order_id: orderId,
+            shipment_id: orderData.shipment_id,
+            distance_km: distance,
+            base_rate: earnings.baseRate,
+            per_km_rate: earnings.perKmRate,
+            distance_earnings: earnings.distanceEarnings,
+            total_earnings: earnings.totalEarnings,
+            completed_at: now,
+            payout_status: 'pending',
+          });
+      }
+    }
 
     return { success: true };
   } catch (error) {

@@ -122,7 +122,7 @@ export default function DriverWallet() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Distance Pay:</span>
-                          <span className="text-foreground">54.1 × $0.50 = $27.05</span>
+                          <span className="text-foreground text-right">54.1 × $0.50 = $27.05</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Base Rate:</span>

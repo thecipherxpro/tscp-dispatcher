@@ -10,6 +10,7 @@ import labelFragileImage from "@/assets/label-fragile.png";
 
 interface PackageLabelProps {
   order: Order;
+  variant?: 'full' | 'icon';
 }
 
 const formatDate = (date: string | null): string => {
@@ -84,7 +85,7 @@ const loadImageAsBytes = async (imageSrc: string): Promise<Uint8Array> => {
   return new Uint8Array(buffer);
 };
 
-export function PackageLabel({ order }: PackageLabelProps) {
+export function PackageLabel({ order, variant = 'full' }: PackageLabelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
@@ -534,6 +535,43 @@ export function PackageLabel({ order }: PackageLabelProps) {
     }
   }, [generatePDFFromScratch, toast]);
 
+  // Icon variant - just a button
+  if (variant === 'icon') {
+    if (!canGenerateLabel) {
+      return (
+        <Button variant="outline" size="sm" disabled className="h-8 w-8 p-0">
+          <FileDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+        </Button>
+      );
+    }
+    
+    return (
+      <>
+        {/* Hidden QR Code for capture */}
+        <div id="qr-code-container" style={{ position: "absolute", left: "-9999px" }}>
+          <QRCodeSVG 
+            value={qrValue}
+            size={120}
+            level="M"
+            includeMargin={false}
+            bgColor="#ffffff"
+            fgColor="#000000"
+          />
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-8 w-8 p-0"
+          onClick={generatePDF}
+          disabled={isGenerating}
+        >
+          <FileDown className="w-3.5 h-3.5" />
+        </Button>
+      </>
+    );
+  }
+
+  // Full variant (default)
   if (!canGenerateLabel) {
     return (
       <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-border">

@@ -38,6 +38,161 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_earnings: {
+        Row: {
+          base_rate: number
+          completed_at: string
+          created_at: string | null
+          distance_earnings: number
+          distance_km: number
+          driver_id: string
+          id: string
+          order_id: string
+          payout_period_end: string | null
+          payout_period_start: string | null
+          payout_status: string | null
+          per_km_rate: number
+          shipment_id: string | null
+          total_earnings: number
+        }
+        Insert: {
+          base_rate?: number
+          completed_at: string
+          created_at?: string | null
+          distance_earnings?: number
+          distance_km?: number
+          driver_id: string
+          id?: string
+          order_id: string
+          payout_period_end?: string | null
+          payout_period_start?: string | null
+          payout_status?: string | null
+          per_km_rate?: number
+          shipment_id?: string | null
+          total_earnings?: number
+        }
+        Update: {
+          base_rate?: number
+          completed_at?: string
+          created_at?: string | null
+          distance_earnings?: number
+          distance_km?: number
+          driver_id?: string
+          id?: string
+          order_id?: string
+          payout_period_end?: string | null
+          payout_period_start?: string | null
+          payout_status?: string | null
+          per_km_rate?: number
+          shipment_id?: string | null
+          total_earnings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_pay_stubs: {
+        Row: {
+          driver_id: string
+          generated_at: string | null
+          id: string
+          is_auto_generated: boolean | null
+          period_end: string
+          period_start: string
+          stub_data: Json | null
+          total_distance_km: number | null
+          total_earnings: number | null
+          total_orders: number | null
+        }
+        Insert: {
+          driver_id: string
+          generated_at?: string | null
+          id?: string
+          is_auto_generated?: boolean | null
+          period_end: string
+          period_start: string
+          stub_data?: Json | null
+          total_distance_km?: number | null
+          total_earnings?: number | null
+          total_orders?: number | null
+        }
+        Update: {
+          driver_id?: string
+          generated_at?: string | null
+          id?: string
+          is_auto_generated?: boolean | null
+          period_end?: string
+          period_start?: string
+          stub_data?: Json | null
+          total_distance_km?: number | null
+          total_earnings?: number | null
+          total_orders?: number | null
+        }
+        Relationships: []
+      }
+      driver_payout_settings: {
+        Row: {
+          account_number: string | null
+          auto_deposit: boolean | null
+          bank_name: string | null
+          created_at: string | null
+          driver_id: string
+          e_transfer_email: string | null
+          first_order_completed_at: string | null
+          id: string
+          institution_name: string | null
+          institution_number: string | null
+          legal_name: string | null
+          payout_method: string | null
+          security_answer: string | null
+          security_question: string | null
+          transit_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          auto_deposit?: boolean | null
+          bank_name?: string | null
+          created_at?: string | null
+          driver_id: string
+          e_transfer_email?: string | null
+          first_order_completed_at?: string | null
+          id?: string
+          institution_name?: string | null
+          institution_number?: string | null
+          legal_name?: string | null
+          payout_method?: string | null
+          security_answer?: string | null
+          security_question?: string | null
+          transit_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          auto_deposit?: boolean | null
+          bank_name?: string | null
+          created_at?: string | null
+          driver_id?: string
+          e_transfer_email?: string | null
+          first_order_completed_at?: string | null
+          id?: string
+          institution_name?: string | null
+          institution_number?: string | null
+          legal_name?: string | null
+          payout_method?: string | null
+          security_answer?: string | null
+          security_question?: string | null
+          transit_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       order_audit_logs: {
         Row: {
           access_location: string | null
@@ -138,6 +293,7 @@ export type Database = {
           confirmed_at: string | null
           country: string | null
           created_at: string | null
+          delivery_distance_km: number | null
           delivery_route_snapshot_status: string | null
           delivery_route_snapshot_url: string | null
           delivery_status: Database["public"]["Enums"]["delivery_status"] | null
@@ -191,6 +347,7 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string | null
+          delivery_distance_km?: number | null
           delivery_route_snapshot_status?: string | null
           delivery_route_snapshot_url?: string | null
           delivery_status?:
@@ -248,6 +405,7 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string | null
+          delivery_distance_km?: number | null
           delivery_route_snapshot_status?: string | null
           delivery_route_snapshot_url?: string | null
           delivery_status?:

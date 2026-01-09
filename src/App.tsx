@@ -30,6 +30,7 @@ import OrderEdits from "./pages/admin/OrderEdits";
 import OrderEditDetail from "./pages/admin/OrderEditDetail";
 import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
+import DriverWallet from "./pages/driver/DriverWallet";
 import TrackShipment from "./pages/TrackShipment";
 import NotFound from "./pages/NotFound";
 
@@ -265,6 +266,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['driver']}>
             <DriverScan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/driver/wallet"
+        element={
+          <ProtectedRoute allowedRoles={['driver']}>
+            <DriverWallet />
           </ProtectedRoute>
         }
       />

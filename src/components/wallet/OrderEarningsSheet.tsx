@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Package, MapPin, Receipt, DollarSign, Route, Calendar, Clock, CheckCircle } from 'lucide-react';
+import { Package, Receipt, DollarSign, Route, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { DriverEarning, BASE_RATE, PER_KM_RATE } from '@/hooks/useDriverEarnings';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -70,9 +69,6 @@ export function OrderEarningsSheet({ earning, open, onOpenChange }: OrderEarning
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-              Paid
-            </Badge>
           </div>
         </DrawerHeader>
 
@@ -102,17 +98,6 @@ export function OrderEarningsSheet({ earning, open, onOpenChange }: OrderEarning
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Time of Delivery</p>
                   <p className="font-medium text-foreground text-sm">{formattedTime}</p>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="flex items-center gap-3 p-3">
-                <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
-                  <MapPin className="w-4 h-4 text-orange-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Delivery Location</p>
-                  <p className="font-medium text-foreground text-sm">{locationDisplay}</p>
                 </div>
               </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Truck, CheckCircle, DollarSign, Loader2, Wallet } from "lucide-react";
+import { ArrowLeft, Package, Truck, CheckCircle, DollarSign, Loader2, Wallet, ChevronDown, MapPin, Calculator, Info } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +26,7 @@ export default function DriverWallet() {
   const [showOrderSheet, setShowOrderSheet] = useState(false);
   const [showPayoutSettings, setShowPayoutSettings] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
+  const [payRateOpen, setPayRateOpen] = useState(false);
   const handleOrderClick = (earning: DriverEarning) => {
     setSelectedEarning(earning);
     setShowOrderSheet(true);
@@ -67,6 +69,76 @@ export default function DriverWallet() {
                 <StatCard title="Weekly Earnings" value={`$${summary.weeklyEarnings.toFixed(2)}`} subtitle="Last 7 days" variant="primary" />
               </>}
           </div>
+
+          {/* Pay Rate Policy Collapsible */}
+          <Collapsible open={payRateOpen} onOpenChange={setPayRateOpen}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Info className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="font-semibold text-foreground">Pay Rate Policy</span>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${payRateOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-3 bg-card rounded-xl border border-border p-4 space-y-4">
+                {/* Rate Per Order */}
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Base Rate per Order</p>
+                    <p className="text-sm text-muted-foreground">$4.00 CAD for each completed delivery</p>
+                  </div>
+                </div>
+
+                {/* Rate Per KM */}
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Distance Rate</p>
+                    <p className="text-sm text-muted-foreground">$0.50 CAD per kilometer traveled</p>
+                  </div>
+                </div>
+
+                {/* Example Calculation */}
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Calculator className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground mb-2">Example Calculation</p>
+                      <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Distance:</span>
+                          <span className="text-foreground">54.1 km</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Distance Pay:</span>
+                          <span className="text-foreground">54.1 × $0.50 = $27.05</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Base Rate:</span>
+                          <span className="text-foreground">$4.00</span>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t border-border pt-1 mt-1">
+                          <span className="text-foreground">Total Pay:</span>
+                          <span className="text-primary">$31.05 CAD</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Completed Orders Section */}
           <div className="space-y-3">

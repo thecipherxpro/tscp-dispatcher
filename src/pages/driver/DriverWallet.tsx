@@ -73,10 +73,10 @@ export default function DriverWallet() {
           {/* Pay Rate Policy Collapsible */}
           <Collapsible open={payRateOpen} onOpenChange={setPayRateOpen}>
             <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border">
+              <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border py-[4px]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Info className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary text-white">
+                    <Info className="w-5 h-5 bg-white/0 text-white" />
                   </div>
                   <span className="font-semibold text-foreground">Pay Rate Policy</span>
                 </div>

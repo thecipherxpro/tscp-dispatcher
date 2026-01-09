@@ -5,67 +5,56 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { 
-  useDriverEarnings, 
-  usePayoutSettings, 
-  usePayStubs,
-  getPayoutPeriod,
-  PAYOUT_INTERVAL_DAYS 
-} from '@/hooks/useDriverEarnings';
+import { useDriverEarnings, usePayoutSettings, usePayStubs, getPayoutPeriod, PAYOUT_INTERVAL_DAYS } from '@/hooks/useDriverEarnings';
 import { toast } from 'sonner';
-
 interface EarningsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
-  const { earnings, summary, isLoading } = useDriverEarnings();
-  const { settings } = usePayoutSettings();
-  const { stubs, generateStub, isLoading: stubsLoading } = usePayStubs();
+export function EarningsSheet({
+  open,
+  onOpenChange
+}: EarningsSheetProps) {
+  const {
+    earnings,
+    summary,
+    isLoading
+  } = useDriverEarnings();
+  const {
+    settings
+  } = usePayoutSettings();
+  const {
+    stubs,
+    generateStub,
+    isLoading: stubsLoading
+  } = usePayStubs();
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Calculate payout period
-  const firstOrderDate = settings?.first_order_completed_at 
-    ? new Date(settings.first_order_completed_at)
-    : earnings.length > 0 
-      ? new Date(earnings[earnings.length - 1].completed_at)
-      : null;
-
+  const firstOrderDate = settings?.first_order_completed_at ? new Date(settings.first_order_completed_at) : earnings.length > 0 ? new Date(earnings[earnings.length - 1].completed_at) : null;
   const payoutPeriod = getPayoutPeriod(firstOrderDate);
 
   // Calculate current period stats
-  const currentPeriodEarnings = payoutPeriod 
-    ? earnings.filter(e => {
-        const date = new Date(e.completed_at);
-        return date >= payoutPeriod.start && date <= addDays(payoutPeriod.end, 1);
-      })
-    : [];
-
+  const currentPeriodEarnings = payoutPeriod ? earnings.filter(e => {
+    const date = new Date(e.completed_at);
+    return date >= payoutPeriod.start && date <= addDays(payoutPeriod.end, 1);
+  }) : [];
   const periodTotalEarnings = currentPeriodEarnings.reduce((sum, e) => sum + e.total_earnings, 0);
   const periodTotalOrders = currentPeriodEarnings.length;
   const periodTotalDistance = currentPeriodEarnings.reduce((sum, e) => sum + e.distance_km, 0);
-
-  const progressPercentage = payoutPeriod 
-    ? ((PAYOUT_INTERVAL_DAYS - payoutPeriod.daysRemaining) / PAYOUT_INTERVAL_DAYS) * 100
-    : 0;
-
+  const progressPercentage = payoutPeriod ? (PAYOUT_INTERVAL_DAYS - payoutPeriod.daysRemaining) / PAYOUT_INTERVAL_DAYS * 100 : 0;
   const handleGenerateStub = async () => {
     if (!payoutPeriod) return;
-    
     setIsGenerating(true);
     const result = await generateStub(payoutPeriod.start, payoutPeriod.end);
     setIsGenerating(false);
-    
     if (result.success) {
       toast.success('Pay stub generated successfully');
     } else {
       toast.error('Failed to generate pay stub: ' + result.error);
     }
   };
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+  return <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl">
         <SheetHeader className="pb-4">
           <SheetTitle>Earnings</SheetTitle>
@@ -73,8 +62,7 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
 
         <div className="space-y-6 overflow-y-auto pb-8">
           {/* Current Pay Period */}
-          {payoutPeriod && (
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-5 border border-primary/20">
+          {payoutPeriod && <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-5 border border-primary/20">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
@@ -97,8 +85,7 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
                   {format(payoutPeriod.nextPayoutDate, 'MMM d, yyyy')}
                 </span>
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Period Stats */}
           <div className="grid grid-cols-2 gap-3">
@@ -106,7 +93,7 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
               <div className="w-10 h-10 rounded-full bg-green-500/10 mx-auto mb-2 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-green-500" />
               </div>
-              <p className="text-2xl font-bold text-foreground">${periodTotalEarnings.toFixed(2)}</p>
+              <p className="font-bold text-foreground text-xl">${periodTotalEarnings.toFixed(2)}</p>
               <p className="text-xs text-muted-foreground">Total Earnings</p>
             </div>
             
@@ -114,7 +101,7 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
               <div className="w-10 h-10 rounded-full bg-blue-500/10 mx-auto mb-2 flex items-center justify-center">
                 <Package className="w-5 h-5 text-blue-500" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{periodTotalOrders}</p>
+              <p className="font-bold text-foreground text-xl">{periodTotalOrders}</p>
               <p className="text-xs text-muted-foreground">Orders Completed</p>
             </div>
             
@@ -122,7 +109,7 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
               <div className="w-10 h-10 rounded-full bg-purple-500/10 mx-auto mb-2 flex items-center justify-center">
                 <Route className="w-5 h-5 text-purple-500" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{periodTotalDistance.toFixed(1)}</p>
+              <p className="font-bold text-foreground text-xl">{periodTotalDistance.toFixed(1)}</p>
               <p className="text-xs text-muted-foreground">Total Kilometers</p>
             </div>
             
@@ -130,7 +117,7 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
               <div className="w-10 h-10 rounded-full bg-amber-500/10 mx-auto mb-2 flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-amber-500" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{PAYOUT_INTERVAL_DAYS}</p>
+              <p className="font-bold text-foreground text-xl">{PAYOUT_INTERVAL_DAYS}</p>
               <p className="text-xs text-muted-foreground">Day Interval</p>
             </div>
           </div>
@@ -144,45 +131,27 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
                 <FileText className="w-5 h-5 text-muted-foreground" />
                 <h3 className="font-semibold text-foreground">Pay Stubs</h3>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateStub}
-                disabled={isGenerating || !payoutPeriod}
-              >
-                {isGenerating ? (
-                  <>
+              <Button variant="outline" size="sm" onClick={handleGenerateStub} disabled={isGenerating || !payoutPeriod}>
+                {isGenerating ? <>
                     <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                     Generating...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Download className="w-4 h-4 mr-1" />
                     Generate Now
-                  </>
-                )}
+                  </>}
               </Button>
             </div>
 
-            {stubsLoading ? (
-              <div className="flex items-center justify-center py-8">
+            {stubsLoading ? <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : stubs.length === 0 ? (
-              <div className="text-center py-8 bg-muted/30 rounded-xl">
+              </div> : stubs.length === 0 ? <div className="text-center py-8 bg-muted/30 rounded-xl">
                 <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">No pay stubs yet</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Generate one or wait for automatic generation at the end of pay period
                 </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {stubs.map((stub) => (
-                  <div
-                    key={stub.id}
-                    className="bg-card border border-border rounded-xl p-4 flex items-center justify-between"
-                  >
+              </div> : <div className="space-y-2">
+                {stubs.map(stub => <div key={stub.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
                     <div>
                       <p className="font-medium text-foreground text-sm">
                         {format(new Date(stub.period_start), 'MMM d')} - {format(new Date(stub.period_end), 'MMM d, yyyy')}
@@ -193,19 +162,14 @@ export function EarningsSheet({ open, onOpenChange }: EarningsSheetProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-bold text-primary">${stub.total_earnings?.toFixed(2)}</p>
-                      {stub.is_auto_generated && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                      {stub.is_auto_generated && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                           Auto
-                        </span>
-                      )}
+                        </span>}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  </div>)}
+              </div>}
           </div>
         </div>
       </SheetContent>
-    </Sheet>
-  );
+    </Sheet>;
 }

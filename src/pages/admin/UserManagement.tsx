@@ -31,7 +31,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Search, UserCog, Shield, Truck, ChevronLeft, Plus, Trash2 } from 'lucide-react';
+import { Search, UserCog, Shield, Truck, ChevronLeft, Plus, Trash2, Pencil } from 'lucide-react';
+import { UserProfileEditSheet } from '@/components/admin/UserProfileEditSheet';
 import { useNavigate } from 'react-router-dom';
 import { AppRole } from '@/types/auth';
 
@@ -58,6 +59,7 @@ export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AppRole | ''>('');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -173,6 +175,11 @@ export default function UserManagement() {
     setIsRoleDialogOpen(true);
   };
 
+  const openEditSheet = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setIsEditSheetOpen(true);
+  };
+
   const getInitials = (name: string | null) => {
     if (!name) return '??';
     return name
@@ -215,15 +222,26 @@ export default function UserManagement() {
                   </p>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0 h-8 px-2"
-                onClick={() => openRoleDialog(user)}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only sm:ml-1">Add</span>
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => openEditSheet(user)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Edit profile</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2"
+                  onClick={() => openRoleDialog(user)}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="sr-only sm:not-sr-only sm:ml-1">Add</span>
+                </Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
               {user.roles.length === 0 ? (
@@ -257,6 +275,8 @@ export default function UserManagement() {
       </CardContent>
     </Card>
   );
+
+
 
   return (
     <AppLayout title="User Management" showBackButton>
@@ -402,14 +422,25 @@ export default function UserManagement() {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openRoleDialog(user)}
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add Role
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openEditSheet(user)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit profile</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openRoleDialog(user)}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add Role
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -474,6 +505,14 @@ export default function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Profile Edit Sheet */}
+      <UserProfileEditSheet
+        user={selectedUser}
+        open={isEditSheetOpen}
+        onOpenChange={setIsEditSheetOpen}
+        onUserUpdated={fetchUsers}
+      />
     </AppLayout>
   );
 }

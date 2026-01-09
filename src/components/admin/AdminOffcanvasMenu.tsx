@@ -46,7 +46,7 @@ export function AdminOffcanvasMenu() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
+        <Button variant="default" size="icon" className="h-9 w-9">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Open menu</span>
         </Button>

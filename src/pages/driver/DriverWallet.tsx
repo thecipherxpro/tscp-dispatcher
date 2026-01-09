@@ -1,22 +1,22 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Truck, CheckCircle, DollarSign, Loader2, Wallet } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
-import { useDriverEarnings, DriverEarning } from '@/hooks/useDriverEarnings';
-import { StatCard } from '@/components/wallet/StatCard';
-import { EarningsOrderCard } from '@/components/wallet/EarningsOrderCard';
-import { OrderEarningsSheet } from '@/components/wallet/OrderEarningsSheet';
-import { PayoutSettingsSheet } from '@/components/wallet/PayoutSettingsSheet';
-import { EarningsSheet } from '@/components/wallet/EarningsSheet';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Package, Truck, CheckCircle, DollarSign, Loader2, Wallet } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDriverEarnings, DriverEarning } from "@/hooks/useDriverEarnings";
+import { StatCard } from "@/components/wallet/StatCard";
+import { EarningsOrderCard } from "@/components/wallet/EarningsOrderCard";
+import { OrderEarningsSheet } from "@/components/wallet/OrderEarningsSheet";
+import { PayoutSettingsSheet } from "@/components/wallet/PayoutSettingsSheet";
+import { EarningsSheet } from "@/components/wallet/EarningsSheet";
 
 export default function DriverWallet() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { earnings, summary, isLoading } = useDriverEarnings();
-  
+
   const [selectedEarning, setSelectedEarning] = useState<DriverEarning | null>(null);
   const [showOrderSheet, setShowOrderSheet] = useState(false);
   const [showPayoutSettings, setShowPayoutSettings] = useState(false);
@@ -28,8 +28,13 @@ export default function DriverWallet() {
   };
 
   const getInitials = (name: string | null) => {
-    if (!name) return 'D';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    if (!name) return "D";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -38,8 +43,8 @@ export default function DriverWallet() {
       <header className="sticky top-0 z-50 bg-background border-b border-border px-4 py-3 safe-area-top">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate('/dashboard')}
+            <button
+              onClick={() => navigate("/dashboard")}
               className="w-10 h-10 rounded-full bg-primary flex items-center justify-center"
             >
               <ArrowLeft className="w-5 h-5 text-primary-foreground" />
@@ -48,9 +53,7 @@ export default function DriverWallet() {
           </div>
           <Avatar className="w-10 h-10">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-muted">
-              {getInitials(profile?.full_name || null)}
-            </AvatarFallback>
+            <AvatarFallback className="bg-muted">{getInitials(profile?.full_name || null)}</AvatarFallback>
           </Avatar>
         </div>
       </header>
@@ -72,19 +75,19 @@ export default function DriverWallet() {
                 <StatCard
                   title="Pending Orders"
                   value={summary.pendingOrders}
-                  subtitle="Awaiting confirmation"
+                  subtitle="Awaiting Delivery"
                   variant="warning"
                 />
                 <StatCard
                   title="In Progress"
                   value={summary.inProgressOrders}
-                  subtitle="Being packaged & processed"
+                  subtitle="Started Jobs"
                   variant="primary"
                 />
                 <StatCard
                   title="Completed"
                   value={summary.completedOrders}
-                  subtitle="Delivered successfully"
+                  subtitle="Delivered Jobs"
                   variant="success"
                 />
                 <StatCard
@@ -100,7 +103,7 @@ export default function DriverWallet() {
           {/* Completed Orders Section */}
           <div className="space-y-3">
             <h2 className="text-lg font-semibold text-foreground">Completed Orders</h2>
-            
+
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
@@ -120,11 +123,7 @@ export default function DriverWallet() {
             ) : (
               <div className="space-y-2">
                 {earnings.map((earning) => (
-                  <EarningsOrderCard
-                    key={earning.id}
-                    earning={earning}
-                    onClick={() => handleOrderClick(earning)}
-                  />
+                  <EarningsOrderCard key={earning.id} earning={earning} onClick={() => handleOrderClick(earning)} />
                 ))}
               </div>
             )}
@@ -155,21 +154,11 @@ export default function DriverWallet() {
       </div>
 
       {/* Sheets */}
-      <OrderEarningsSheet
-        earning={selectedEarning}
-        open={showOrderSheet}
-        onOpenChange={setShowOrderSheet}
-      />
-      
-      <PayoutSettingsSheet
-        open={showPayoutSettings}
-        onOpenChange={setShowPayoutSettings}
-      />
-      
-      <EarningsSheet
-        open={showEarnings}
-        onOpenChange={setShowEarnings}
-      />
+      <OrderEarningsSheet earning={selectedEarning} open={showOrderSheet} onOpenChange={setShowOrderSheet} />
+
+      <PayoutSettingsSheet open={showPayoutSettings} onOpenChange={setShowPayoutSettings} />
+
+      <EarningsSheet open={showEarnings} onOpenChange={setShowEarnings} />
     </div>
   );
 }

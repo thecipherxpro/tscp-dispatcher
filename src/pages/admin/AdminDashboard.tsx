@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, Clock, CheckCircle, AlertCircle, Users, UserCog, LogOut } from 'lucide-react';
+import { Package, Truck, Clock, CheckCircle, AlertCircle, Users, UserCog } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { AdminOffcanvasMenu } from '@/components/admin/AdminOffcanvasMenu';
 
 interface DashboardStats {
   totalOrders: number;
@@ -69,20 +69,10 @@ export default function AdminDashboard() {
     { label: 'Drivers', value: stats.totalDrivers, icon: Users, color: 'text-primary' },
   ];
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate('/auth');
-      toast.success('Logged out successfully');
-    } catch (error) {
-      toast.error('Failed to log out');
-    }
-  };
-
   return (
     <AppLayout title="Dashboard">
       <div className="p-4 space-y-6">
-        {/* Welcome Card */}
+        {/* Welcome Card with Menu */}
         <Card className="bg-gradient-to-br from-primary to-primary/80 border-0 overflow-hidden">
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
@@ -95,13 +85,7 @@ export default function AdminDashboard() {
                   Admin Portal
                 </Badge>
               </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 transition-colors"
-                aria-label="Logout"
-              >
-                <LogOut className="w-5 h-5 text-primary-foreground" />
-              </button>
+              <AdminOffcanvasMenu />
             </div>
           </CardContent>
         </Card>

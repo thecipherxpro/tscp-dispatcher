@@ -314,8 +314,50 @@ export function DriverPayrollSheet({ open, onOpenChange, driver }: DriverPayroll
                       <>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Legal Name</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              {payoutSettings.legal_name || '-'}
+                            </span>
+                            {payoutSettings.legal_name && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6"
+                                onClick={() => copyToClipboard(payoutSettings.legal_name!, 'Legal Name')}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Bank Name</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              {payoutSettings.bank_name || '-'}
+                            </span>
+                            {payoutSettings.bank_name && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6"
+                                onClick={() => copyToClipboard(payoutSettings.bank_name!, 'Bank Name')}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Email</span>
+                            <span className="text-sm text-muted-foreground">E-Transfer Email</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-foreground">
@@ -373,11 +415,32 @@ export function DriverPayrollSheet({ open, onOpenChange, driver }: DriverPayroll
                       <>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Legal Name</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              {payoutSettings.legal_name || '-'}
+                            </span>
+                            {payoutSettings.legal_name && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6"
+                                onClick={() => copyToClipboard(payoutSettings.legal_name!, 'Legal Name')}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
                             <Building2 className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Bank</span>
+                            <span className="text-sm text-muted-foreground">Institution Name</span>
                           </div>
                           <span className="text-sm font-medium text-foreground">
-                            {payoutSettings.bank_name || payoutSettings.institution_name || '-'}
+                            {payoutSettings.institution_name || '-'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">

@@ -70,6 +70,7 @@ export default function DriverDeliveryDetail() {
     duration: string;
     arrivalTime: string;
   } | null>(null);
+  const [routeDistanceKm, setRouteDistanceKm] = useState<number>(0);
   const [destinationCoords, setDestinationCoords] = useState<{
     lat: number;
     lng: number;
@@ -153,6 +154,11 @@ export default function DriverDeliveryDetail() {
   // Handle route info from Mapbox component
   const handleRouteInfo = useCallback((info: { distance: string; duration: string; arrivalTime: string }) => {
     setRouteInfo(info);
+    // Parse the distance string to get km value (e.g., "54.1 km" -> 54.1)
+    const distanceMatch = info.distance.match(/([\d.]+)\s*km/i);
+    if (distanceMatch) {
+      setRouteDistanceKm(parseFloat(distanceMatch[1]));
+    }
   }, []);
 
   // Geocode address if no coordinates (using Nominatim - free geocoding)
@@ -242,7 +248,16 @@ export default function DriverDeliveryDetail() {
     setIsUpdating(true);
     try {
       const newStatus = isDelivered ? 'COMPLETED_DELIVERED' : 'COMPLETED_INCOMPLETE';
-      await updateOrderStatus(order.id, order.tracking_id || null, newStatus as any, outcome, locationData || undefined);
+      // Pass the route distance for earnings calculation
+      await updateOrderStatus(
+        order.id, 
+        order.tracking_id || null, 
+        newStatus as any, 
+        outcome, 
+        locationData || undefined,
+        undefined,
+        routeDistanceKm > 0 ? routeDistanceKm : undefined
+      );
       toast({
         title: isDelivered ? 'Delivery Complete' : 'Delivery Incomplete',
         description: 'Order status updated successfully.'

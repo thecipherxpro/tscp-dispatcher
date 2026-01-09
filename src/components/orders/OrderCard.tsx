@@ -1,9 +1,10 @@
-import { MapPin, Calendar, Package, User, Eye } from 'lucide-react';
+import { MapPin, Calendar, Package, User, Eye, FileDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Order } from '@/types/auth';
 import { format } from 'date-fns';
+import { PackageLabel } from './PackageLabel';
 
 interface OrderCardProps {
   order: Order;
@@ -151,11 +152,11 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
 
         {/* View Order Button - Admin only */}
         {!isDriver && !actionButton && (
-          <div className="pt-2">
+          <div className="pt-2 flex gap-2">
             <Button 
               variant="outline" 
               size="sm" 
-              className="w-full h-8 text-xs"
+              className="flex-1 h-8 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onClick();
@@ -164,6 +165,9 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
               <Eye className="w-3.5 h-3.5 mr-1.5" />
               View Order
             </Button>
+            <div onClick={(e) => e.stopPropagation()}>
+              <PackageLabel order={order} variant="icon" />
+            </div>
           </div>
         )}
       </div>

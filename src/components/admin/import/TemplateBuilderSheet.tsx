@@ -292,28 +292,29 @@ export function TemplateBuilderSheet({
   if (!isOpen) return null;
 
   const content = (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden">
           {/* Sticky Header */}
-          <header className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <header className="sticky top-0 z-10 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shrink-0">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={onClose}
-              className="shrink-0"
+              className="shrink-0 h-8 w-8 sm:h-9 sm:w-9"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold text-foreground truncate">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">
                 {isEditing ? 'Edit Template' : 'New Import Template'}
               </h1>
               {templateName && (
-                <p className="text-sm text-muted-foreground truncate">{templateName}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{templateName}</p>
               )}
             </div>
             <Button 
               onClick={handleSave}
               disabled={!templateName.trim() || isSaving}
+              size={isMobile ? "sm" : "default"}
               className="shrink-0"
             >
               {isSaving ? 'Saving...' : 'Save'}
@@ -321,10 +322,10 @@ export function TemplateBuilderSheet({
           </header>
           
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 overflow-hidden">
             <div className={cn(
-              "mx-auto w-full pb-8",
-              isMobile ? "px-4 py-4" : "max-w-4xl px-6 py-6"
+              "mx-auto w-full pb-8 overflow-hidden",
+              isMobile ? "px-3 py-3" : "max-w-4xl px-6 py-6"
             )}>
               <div className="space-y-4">
                 {/* Section 1: Template Information */}
@@ -573,14 +574,14 @@ export function TemplateBuilderSheet({
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <CardContent className={cn("pt-0", isMobile ? "pb-3 px-3" : "pb-4 px-4")}>
-                          <Separator className="mb-4" />
+                        <CardContent className={cn("pt-0 overflow-hidden", isMobile ? "pb-3 px-2" : "pb-4 px-4")}>
+                          <Separator className="mb-3 sm:mb-4" />
                           
                           {/* Mapped Columns Section */}
                           {mappedColumns.length > 0 && (
-                            <div className="mb-6">
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                            <div className="mb-4 sm:mb-6">
+                              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
                                 <h4 className={cn(
                                   "font-medium text-orange-600 dark:text-orange-400",
                                   isMobile ? "text-xs" : "text-sm"
@@ -589,7 +590,7 @@ export function TemplateBuilderSheet({
                                 </h4>
                               </div>
                               <div className={cn(
-                                "grid gap-3",
+                                "grid gap-2 sm:gap-3",
                                 isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
                               )}>
                                 {mappedColumns.map((column) => (
@@ -600,6 +601,7 @@ export function TemplateBuilderSheet({
                                     onMappingChange={handleMappingChange}
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
+                                    isMobile={isMobile}
                                   />
                                 ))}
                               </div>
@@ -609,8 +611,8 @@ export function TemplateBuilderSheet({
                           {/* Unmapped Columns Section */}
                           {unmappedColumns.length > 0 && (
                             <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
                                 <h4 className={cn(
                                   "font-medium text-muted-foreground",
                                   isMobile ? "text-xs" : "text-sm"
@@ -619,7 +621,7 @@ export function TemplateBuilderSheet({
                                 </h4>
                               </div>
                               <div className={cn(
-                                "grid gap-3",
+                                "grid gap-2 sm:gap-3",
                                 isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
                               )}>
                                 {unmappedColumns.map((column) => (
@@ -630,6 +632,7 @@ export function TemplateBuilderSheet({
                                     onMappingChange={handleMappingChange}
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
+                                    isMobile={isMobile}
                                   />
                                 ))}
                               </div>

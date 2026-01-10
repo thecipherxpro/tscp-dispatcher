@@ -19,6 +19,7 @@ interface ColumnMappingCardProps {
   onMappingChange: (csvColumn: string, fieldKey: string) => void;
   drugTypes: DrugType[];
   usedFields: Map<string, string>;
+  isMobile?: boolean;
 }
 
 export function ColumnMappingCard({
@@ -27,6 +28,7 @@ export function ColumnMappingCard({
   onMappingChange,
   drugTypes,
   usedFields,
+  isMobile = false,
 }: ColumnMappingCardProps) {
   const isMapped = mappedTo && mappedTo !== 'skip';
 
@@ -88,34 +90,44 @@ export function ColumnMappingCard({
 
   return (
     <Card className={cn(
-      "transition-all duration-200",
+      "transition-all duration-200 overflow-hidden",
       isMapped 
         ? "border-orange-400/60 bg-orange-50 dark:bg-orange-950/20 shadow-sm ring-1 ring-orange-400/30" 
         : "border-border bg-card hover:border-muted-foreground/30"
     )}>
-      <CardContent className="p-3">
+      <CardContent className={cn("overflow-hidden", isMobile ? "p-2.5" : "p-3")}>
         {/* Column Header with Status */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+        <div className={cn("flex items-start justify-between gap-2 overflow-hidden", isMobile ? "mb-2" : "mb-3")}>
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 overflow-hidden">
               {isMapped ? (
-                <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3 text-white" />
+                <div className={cn(
+                  "rounded-full bg-orange-500 flex items-center justify-center shrink-0",
+                  isMobile ? "w-4 h-4" : "w-5 h-5"
+                )}>
+                  <Check className={cn("text-white", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
                 </div>
               ) : (
-                <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <X className="w-3 h-3 text-muted-foreground" />
+                <div className={cn(
+                  "rounded-full bg-muted flex items-center justify-center shrink-0",
+                  isMobile ? "w-4 h-4" : "w-5 h-5"
+                )}>
+                  <X className={cn("text-muted-foreground", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
                 </div>
               )}
               <p className={cn(
-                "font-mono text-sm font-medium truncate",
+                "font-mono font-medium truncate max-w-full",
+                isMobile ? "text-xs" : "text-sm",
                 columnTextColor
               )}>
                 {column.name}
               </p>
             </div>
             {column.sampleData && (
-              <p className="text-xs text-muted-foreground truncate ml-7">
+              <p className={cn(
+                "text-muted-foreground truncate",
+                isMobile ? "text-[10px] ml-5" : "text-xs ml-7"
+              )}>
                 Sample: <span className="font-medium">{column.sampleData}</span>
               </p>
             )}
@@ -124,16 +136,21 @@ export function ColumnMappingCard({
         
         {/* Mapping Indicator */}
         {isMapped && (
-          <div className="flex items-center gap-2 mb-3 ml-7">
+          <div className={cn(
+            "flex items-center gap-1.5 sm:gap-2 overflow-hidden",
+            isMobile ? "mb-2 ml-5" : "mb-3 ml-7"
+          )}>
             <ArrowRight className={cn(
-              "w-3 h-3 shrink-0",
+              "shrink-0",
+              isMobile ? "w-2.5 h-2.5" : "w-3 h-3",
               drugTypeBadge?.key === 'injection' && "text-blue-600 dark:text-blue-400",
               drugTypeBadge?.key === 'nasal' && "text-purple-600 dark:text-purple-400",
               !drugTypeBadge && "text-orange-500"
             )} />
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0 overflow-hidden">
               <span className={cn(
-                "text-sm font-medium truncate",
+                "font-medium truncate",
+                isMobile ? "text-xs" : "text-sm",
                 drugTypeBadge?.key === 'injection' && "text-blue-600 dark:text-blue-400",
                 drugTypeBadge?.key === 'nasal' && "text-purple-600 dark:text-purple-400",
                 !drugTypeBadge && "text-orange-600 dark:text-orange-400"
@@ -144,7 +161,8 @@ export function ColumnMappingCard({
                 <Badge 
                   variant="secondary" 
                   className={cn(
-                    "text-[10px] px-1.5 py-0 h-4",
+                    "px-1 py-0 shrink-0",
+                    isMobile ? "text-[9px] h-3.5" : "text-[10px] h-4 px-1.5",
                     drugTypeBadge.key === 'injection' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
                     drugTypeBadge.key === 'nasal' && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                   )}
@@ -163,13 +181,14 @@ export function ColumnMappingCard({
         >
           <SelectTrigger className={cn(
             "w-full",
+            isMobile ? "h-8 text-xs" : "",
             isMapped 
               ? "border-primary/30 bg-background" 
               : "border-input bg-background"
           )}>
             <SelectValue placeholder="Select field..." />
           </SelectTrigger>
-          <SelectContent className="max-h-[300px] bg-popover z-[100]">
+          <SelectContent className="max-h-[250px] sm:max-h-[300px] bg-popover z-[100]">
             <SelectItem value="skip" className="text-muted-foreground">
               — Do not import —
             </SelectItem>

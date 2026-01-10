@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, X, FileSpreadsheet, Check, AlertCircle } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Upload, X, FileSpreadsheet, Check, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, Columns } from 'lucide-react';
+import { Dialog, DialogContent, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ColumnMappingCard } from './ColumnMappingCard';
 import { DataPreviewTable } from './DataPreviewTable';
 import { 
@@ -21,6 +23,7 @@ import {
   STANDARD_ORDER_FIELDS 
 } from '@/types/import';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface TemplateBuilderSheetProps {
   isOpen: boolean;
@@ -53,7 +56,7 @@ function autoMatchColumn(columnName: string, drugTypes: DrugType[]): string | nu
     }
   }
   
-  // Check drug type fields with prefixes (e.g., INJ_RX -> injection_rx_number)
+  // Check drug type fields with prefixes
   for (const drugType of drugTypes) {
     const prefix = drugType.drug_type_key.slice(0, 3).toUpperCase();
     
@@ -61,7 +64,6 @@ function autoMatchColumn(columnName: string, drugTypes: DrugType[]): string | nu
       const fieldKey = `${drugType.drug_type_key}_${field.key}`;
       const fieldNorm = normalizeColumnName(field.label);
       
-      // Match by prefix (e.g., INJ_RX_NUMBER)
       if (normalized.startsWith(prefix.toLowerCase() + '_')) {
         const rest = normalized.slice(prefix.length + 1);
         if (rest === field.key || rest === fieldNorm) {
@@ -69,7 +71,6 @@ function autoMatchColumn(columnName: string, drugTypes: DrugType[]): string | nu
         }
       }
       
-      // Match by full drug type prefix
       if (normalized.startsWith(drugType.drug_type_key + '_')) {
         const rest = normalized.slice(drugType.drug_type_key.length + 1);
         if (rest === field.key || rest === fieldNorm) {
@@ -97,6 +98,14 @@ export function TemplateBuilderSheet({
   const [isDefault, setIsDefault] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
+  // Collapsible sections state
+  const [sectionsOpen, setSectionsOpen] = useState({
+    info: true,
+    file: true,
+    mapping: true,
+    preview: false
+  });
+  
   // File parsing state
   const [fileName, setFileName] = useState<string | null>(null);
   const [parseResult, setParseResult] = useState<FileParseResult | null>(null);
@@ -110,7 +119,6 @@ export function TemplateBuilderSheet({
       setDescription(template.description || '');
       setIsDefault(template.is_default);
       
-      // Restore mappings from template
       const mappings = new Map<string, string>();
       template.column_mappings.forEach(m => {
         mappings.set(m.csv_column, m.field_key);
@@ -124,6 +132,7 @@ export function TemplateBuilderSheet({
     }
     setFileName(null);
     setParseResult(null);
+    setSectionsOpen({ info: true, file: true, mapping: true, preview: false });
   }, [template, isOpen]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,10 +162,8 @@ export function TemplateBuilderSheet({
         
         if (jsonData.length === 0) return;
         
-        // Extract columns with sample data
         const headers = Object.keys(jsonData[0]);
         const columns: ParsedFileColumn[] = headers.map(name => {
-          // Find first non-empty value
           let sampleData = '';
           for (const row of jsonData.slice(0, 5)) {
             if (row[name] !== '' && row[name] !== null && row[name] !== undefined) {
@@ -173,7 +180,6 @@ export function TemplateBuilderSheet({
           rawData: jsonData,
         });
         
-        // Auto-match columns if not editing
         if (!isEditing || columnMappings.size === 0) {
           const newMappings = new Map<string, string>();
           columns.forEach(col => {
@@ -209,7 +215,6 @@ export function TemplateBuilderSheet({
     setColumnMappings(newMappings);
   };
 
-  // Build used fields map for disabling already-used options
   const usedFields = new Map<string, string>();
   columnMappings.forEach((fieldKey, csvColumn) => {
     if (fieldKey !== 'skip') {
@@ -217,23 +222,19 @@ export function TemplateBuilderSheet({
     }
   });
 
-  // Build column mappings array for saving
   const buildColumnMappingsArray = (): ColumnMapping[] => {
     const mappings: ColumnMapping[] = [];
     
     columnMappings.forEach((fieldKey, csvColumn) => {
       if (fieldKey === 'skip') return;
       
-      // Find label for the field
       let fieldLabel = fieldKey;
       let drugTypeKey: string | undefined;
       
-      // Check standard fields
       const standardField = STANDARD_ORDER_FIELDS.find(f => f.key === fieldKey);
       if (standardField) {
         fieldLabel = standardField.label;
       } else {
-        // Check drug type fields
         for (const dt of drugTypes) {
           const prefix = `${dt.drug_type_key}_`;
           if (fieldKey.startsWith(prefix)) {
@@ -277,179 +278,342 @@ export function TemplateBuilderSheet({
   };
 
   const mappedCount = columnMappings.size;
-  const skippedCount = (parseResult?.columns.length || 0) - mappedCount;
+  const totalColumns = parseResult?.columns.length || 0;
+  const skippedCount = totalColumns - mappedCount;
+
+  // Separate mapped and unmapped columns for better organization
+  const mappedColumns = parseResult?.columns.filter(col => columnMappings.has(col.name)) || [];
+  const unmappedColumns = parseResult?.columns.filter(col => !columnMappings.has(col.name)) || [];
+
+  const toggleSection = (section: keyof typeof sectionsOpen) => {
+    setSectionsOpen(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl p-0">
-        <div className="flex flex-col h-full">
-          <SheetHeader className="p-4 pb-2 border-b border-border">
-            <SheetTitle>{isEditing ? 'Edit Template' : 'New Import Template'}</SheetTitle>
-          </SheetHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogPortal>
+        <DialogOverlay className="bg-background/80 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-50 flex flex-col bg-background">
+          {/* Sticky Header */}
+          <header className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold text-foreground truncate">
+                {isEditing ? 'Edit Template' : 'New Import Template'}
+              </h1>
+              {templateName && (
+                <p className="text-sm text-muted-foreground truncate">{templateName}</p>
+              )}
+            </div>
+            <Button 
+              onClick={handleSave}
+              disabled={!templateName.trim() || isSaving}
+              className="shrink-0"
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </header>
           
+          {/* Scrollable Content */}
           <ScrollArea className="flex-1">
-            <div className="p-4 space-y-6 pb-24">
-              {/* Section 1: Template Information */}
+            <div className={cn(
+              "mx-auto w-full pb-8",
+              isMobile ? "px-4 py-4" : "max-w-4xl px-6 py-6"
+            )}>
               <div className="space-y-4">
-                <h3 className="font-medium text-foreground">Template Information</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="templateName">Template Name *</Label>
-                  <Input
-                    id="templateName"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                    placeholder="e.g., PharmaDocs Standard Import"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Optional description"
-                    rows={2}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="isDefault">Set as Default</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Auto-selected when importing orders
-                    </p>
-                  </div>
-                  <Switch
-                    id="isDefault"
-                    checked={isDefault}
-                    onCheckedChange={setIsDefault}
-                  />
-                </div>
-              </div>
-              
-              <Separator />
-              
-              {/* Section 2: Sample File Upload */}
-              <div className="space-y-4">
-                <h3 className="font-medium text-foreground">Sample File</h3>
-                <p className="text-sm text-muted-foreground">
-                  Upload a sample CSV or Excel file to configure column mappings
-                </p>
-                
-                {!fileName ? (
-                  <div
-                    className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      Click to upload CSV or Excel file
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{fileName}</p>
-                        {parseResult && (
-                          <p className="text-xs text-muted-foreground">
-                            {parseResult.columns.length} columns, {parseResult.rowCount} rows
-                          </p>
+                {/* Section 1: Template Information */}
+                <Collapsible open={sectionsOpen.info} onOpenChange={() => toggleSection('info')}>
+                  <Card className="border-border">
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">1</span>
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-foreground">Template Information</h3>
+                            <p className="text-xs text-muted-foreground">Name and description</p>
+                          </div>
+                        </div>
+                        {sectionsOpen.info ? (
+                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
                         )}
                       </div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={clearFile}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0 pb-4 px-4 space-y-4">
+                        <Separator className="mb-4" />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="templateName">Template Name *</Label>
+                            <Input
+                              id="templateName"
+                              value={templateName}
+                              onChange={(e) => setTemplateName(e.target.value)}
+                              placeholder="e.g., Naloxone Kit Template"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Input
+                              id="description"
+                              value={description}
+                              onChange={(e) => setDescription(e.target.value)}
+                              placeholder="Optional description"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div>
+                            <Label htmlFor="isDefault" className="cursor-pointer">Set as Default</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Auto-selected when importing orders
+                            </p>
+                          </div>
+                          <Switch
+                            id="isDefault"
+                            checked={isDefault}
+                            onCheckedChange={setIsDefault}
+                          />
+                        </div>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+                
+                {/* Section 2: Sample File Upload */}
+                <Collapsible open={sectionsOpen.file} onOpenChange={() => toggleSection('file')}>
+                  <Card className="border-border">
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">2</span>
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-foreground">Sample File</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {fileName ? fileName : 'Upload CSV or Excel'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {fileName && (
+                            <Badge variant="secondary" className="gap-1">
+                              <FileSpreadsheet className="w-3 h-3" />
+                              Loaded
+                            </Badge>
+                          )}
+                          {sectionsOpen.file ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0 pb-4 px-4">
+                        <Separator className="mb-4" />
+                        
+                        {!fileName ? (
+                          <div
+                            className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                            <p className="font-medium text-foreground mb-1">
+                              Click to upload sample file
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              CSV or Excel (.xlsx, .xls)
+                            </p>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".csv,.xlsx,.xls"
+                              className="hidden"
+                              onChange={handleFileSelect}
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <FileSpreadsheet className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">{fileName}</p>
+                                {parseResult && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {parseResult.columns.length} columns • {parseResult.rowCount} rows
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={clearFile}>
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+                
+                {/* Section 3: Column Mapping */}
+                {parseResult && parseResult.columns.length > 0 && (
+                  <Collapsible open={sectionsOpen.mapping} onOpenChange={() => toggleSection('mapping')}>
+                    <Card className="border-border">
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="text-sm font-medium text-primary">3</span>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-foreground">Column Mapping</h3>
+                              <p className="text-xs text-muted-foreground">
+                                Map CSV columns to order fields
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {mappedCount > 0 && (
+                              <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border-0">
+                                <Check className="w-3 h-3" />
+                                {mappedCount} mapped
+                              </Badge>
+                            )}
+                            {skippedCount > 0 && (
+                              <Badge variant="secondary" className="gap-1">
+                                {skippedCount} skipped
+                              </Badge>
+                            )}
+                            {sectionsOpen.mapping ? (
+                              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0 pb-4 px-4">
+                          <Separator className="mb-4" />
+                          
+                          {/* Mapped Columns Section */}
+                          {mappedColumns.length > 0 && (
+                            <div className="mb-6">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                <h4 className="text-sm font-medium text-foreground">
+                                  Mapped Columns ({mappedColumns.length})
+                                </h4>
+                              </div>
+                              <div className={cn(
+                                "grid gap-3",
+                                isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
+                              )}>
+                                {mappedColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || 'skip'}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Unmapped Columns Section */}
+                          {unmappedColumns.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                                <h4 className="text-sm font-medium text-muted-foreground">
+                                  Unmapped Columns ({unmappedColumns.length})
+                                </h4>
+                              </div>
+                              <div className={cn(
+                                "grid gap-3",
+                                isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
+                              )}>
+                                {unmappedColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || 'skip'}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                )}
+                
+                {/* Section 4: Data Preview */}
+                {parseResult && mappedCount > 0 && (
+                  <Collapsible open={sectionsOpen.preview} onOpenChange={() => toggleSection('preview')}>
+                    <Card className="border-border">
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="text-sm font-medium text-primary">4</span>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-foreground">Data Preview</h3>
+                              <p className="text-xs text-muted-foreground">
+                                Preview how data will be imported
+                              </p>
+                            </div>
+                          </div>
+                          {sectionsOpen.preview ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0 pb-4 px-4">
+                          <Separator className="mb-4" />
+                          <div className="border border-border rounded-lg overflow-hidden">
+                            <DataPreviewTable
+                              data={parseResult.rawData}
+                              mappings={buildColumnMappingsArray()}
+                            />
+                          </div>
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
                 )}
               </div>
-              
-              {/* Section 3: Column Mapping */}
-              {parseResult && parseResult.columns.length > 0 && (
-                <>
-                  <Separator />
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-foreground">Column Mapping</h3>
-                      <div className="flex gap-2">
-                        {mappedCount > 0 && (
-                          <Badge variant="default" className="gap-1">
-                            <Check className="w-3 h-3" />
-                            {mappedCount} mapped
-                          </Badge>
-                        )}
-                        {skippedCount > 0 && (
-                          <Badge variant="secondary">
-                            {skippedCount} skipped
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {parseResult.columns.map((column) => (
-                        <ColumnMappingCard
-                          key={column.name}
-                          column={column}
-                          mappedTo={columnMappings.get(column.name) || 'skip'}
-                          onMappingChange={handleMappingChange}
-                          drugTypes={drugTypes}
-                          usedFields={usedFields}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              {/* Section 4: Data Preview */}
-              {parseResult && mappedCount > 0 && (
-                <>
-                  <Separator />
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-medium text-foreground">Data Preview</h3>
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <DataPreviewTable
-                        data={parseResult.rawData}
-                        mappings={buildColumnMappingsArray()}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </ScrollArea>
-          
-          {/* Fixed Footer */}
-          <div className="p-4 bg-background border-t border-border">
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1" 
-                onClick={handleSave}
-                disabled={!templateName.trim() || isSaving}
-              >
-                {isSaving ? 'Saving...' : isEditing ? 'Update Template' : 'Save Template'}
-              </Button>
-            </div>
-          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogPortal>
+    </Dialog>
   );
 }

@@ -90,34 +90,34 @@ export function ColumnMappingCard({
 
   return (
     <Card className={cn(
-      "transition-all duration-200 overflow-hidden",
+      "transition-all duration-200 overflow-hidden w-full max-w-full",
       isMapped 
         ? "border-orange-400/60 bg-orange-50 dark:bg-orange-950/20 shadow-sm ring-1 ring-orange-400/30" 
         : "border-border bg-card hover:border-muted-foreground/30"
     )}>
-      <CardContent className={cn("overflow-hidden", isMobile ? "p-2.5" : "p-3")}>
+      <CardContent className={cn("overflow-hidden w-full max-w-full", isMobile ? "p-2" : "p-3")}>
         {/* Column Header with Status */}
-        <div className={cn("flex items-start justify-between gap-2 overflow-hidden", isMobile ? "mb-2" : "mb-3")}>
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 overflow-hidden">
+        <div className={cn("flex items-start justify-between gap-1.5 overflow-hidden w-full max-w-full", isMobile ? "mb-1.5" : "mb-3")}>
+          <div className="flex-1 min-w-0 overflow-hidden w-full max-w-full">
+            <div className="flex items-center gap-1.5 mb-0.5 overflow-hidden w-full max-w-full">
               {isMapped ? (
                 <div className={cn(
                   "rounded-full bg-orange-500 flex items-center justify-center shrink-0",
-                  isMobile ? "w-4 h-4" : "w-5 h-5"
+                  isMobile ? "w-3.5 h-3.5" : "w-5 h-5"
                 )}>
-                  <Check className={cn("text-white", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
+                  <Check className={cn("text-white", isMobile ? "w-2 h-2" : "w-3 h-3")} />
                 </div>
               ) : (
                 <div className={cn(
                   "rounded-full bg-muted flex items-center justify-center shrink-0",
-                  isMobile ? "w-4 h-4" : "w-5 h-5"
+                  isMobile ? "w-3.5 h-3.5" : "w-5 h-5"
                 )}>
-                  <X className={cn("text-muted-foreground", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
+                  <X className={cn("text-muted-foreground", isMobile ? "w-2 h-2" : "w-3 h-3")} />
                 </div>
               )}
               <p className={cn(
-                "font-mono font-medium truncate max-w-full",
-                isMobile ? "text-xs" : "text-sm",
+                "font-mono font-medium truncate flex-1 min-w-0",
+                isMobile ? "text-[11px]" : "text-sm",
                 columnTextColor
               )}>
                 {column.name}
@@ -125,10 +125,10 @@ export function ColumnMappingCard({
             </div>
             {column.sampleData && (
               <p className={cn(
-                "text-muted-foreground truncate",
+                "text-muted-foreground truncate w-full max-w-full",
                 isMobile ? "text-[10px] ml-5" : "text-xs ml-7"
               )}>
-                Sample: <span className="font-medium">{column.sampleData}</span>
+                Sample: <span className="font-medium truncate">{column.sampleData}</span>
               </p>
             )}
           </div>
@@ -137,8 +137,8 @@ export function ColumnMappingCard({
         {/* Mapping Indicator */}
         {isMapped && (
           <div className={cn(
-            "flex items-center gap-1.5 sm:gap-2 overflow-hidden",
-            isMobile ? "mb-2 ml-5" : "mb-3 ml-7"
+            "flex items-center gap-1 overflow-hidden w-full max-w-full",
+            isMobile ? "mb-1.5 ml-5" : "mb-3 ml-7"
           )}>
             <ArrowRight className={cn(
               "shrink-0",
@@ -147,10 +147,10 @@ export function ColumnMappingCard({
               drugTypeBadge?.key === 'nasal' && "text-purple-600 dark:text-purple-400",
               !drugTypeBadge && "text-orange-500"
             )} />
-            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0 overflow-hidden">
+            <div className="flex items-center gap-1 flex-wrap min-w-0 overflow-hidden flex-1 max-w-full">
               <span className={cn(
-                "font-medium truncate",
-                isMobile ? "text-xs" : "text-sm",
+                "font-medium truncate flex-1 min-w-0",
+                isMobile ? "text-[11px]" : "text-sm",
                 drugTypeBadge?.key === 'injection' && "text-blue-600 dark:text-blue-400",
                 drugTypeBadge?.key === 'nasal' && "text-purple-600 dark:text-purple-400",
                 !drugTypeBadge && "text-orange-600 dark:text-orange-400"
@@ -162,7 +162,7 @@ export function ColumnMappingCard({
                   variant="secondary" 
                   className={cn(
                     "px-1 py-0 shrink-0",
-                    isMobile ? "text-[9px] h-3.5" : "text-[10px] h-4 px-1.5",
+                    isMobile ? "text-[8px] h-3" : "text-[10px] h-4 px-1.5",
                     drugTypeBadge.key === 'injection' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
                     drugTypeBadge.key === 'nasal' && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                   )}
@@ -180,15 +180,15 @@ export function ColumnMappingCard({
           onValueChange={(value) => onMappingChange(column.name, value)}
         >
           <SelectTrigger className={cn(
-            "w-full",
-            isMobile ? "h-8 text-xs" : "",
+            "w-full max-w-full",
+            isMobile ? "h-7 text-[11px]" : "",
             isMapped 
               ? "border-primary/30 bg-background" 
               : "border-input bg-background"
           )}>
             <SelectValue placeholder="Select field..." />
           </SelectTrigger>
-          <SelectContent className="max-h-[250px] sm:max-h-[300px] bg-popover z-[100]">
+          <SelectContent className="max-h-[200px] sm:max-h-[300px] bg-popover z-[100]">
             <SelectItem value="skip" className="text-muted-foreground">
               — Do not import —
             </SelectItem>

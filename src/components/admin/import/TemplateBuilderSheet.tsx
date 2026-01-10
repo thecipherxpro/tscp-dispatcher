@@ -292,9 +292,9 @@ export function TemplateBuilderSheet({
   if (!isOpen) return null;
 
   const content = (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden w-full max-w-full">
           {/* Sticky Header */}
-          <header className="sticky top-0 z-10 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shrink-0">
+          <header className="sticky top-0 z-10 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shrink-0 w-full max-w-full">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -322,12 +322,12 @@ export function TemplateBuilderSheet({
           </header>
           
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1 overflow-hidden">
+          <ScrollArea className="flex-1 w-full max-w-full">
             <div className={cn(
-              "mx-auto w-full pb-8 overflow-hidden",
-              isMobile ? "px-3 py-3" : "max-w-4xl px-6 py-6"
+              "mx-auto pb-8 w-full max-w-full box-border",
+              isMobile ? "px-2 py-3" : "max-w-4xl px-6 py-6"
             )}>
-              <div className="space-y-4">
+              <div className="space-y-4 w-full max-w-full overflow-hidden">
                 {/* Section 1: Template Information */}
                 <Collapsible open={sectionsOpen.info} onOpenChange={() => toggleSection('info')}>
                   <Card className="border-border">
@@ -574,7 +574,7 @@ export function TemplateBuilderSheet({
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <CardContent className={cn("pt-0 overflow-hidden", isMobile ? "pb-3 px-2" : "pb-4 px-4")}>
+                        <CardContent className={cn("pt-0 overflow-hidden w-full max-w-full", isMobile ? "pb-3 px-1.5" : "pb-4 px-4")}>
                           <Separator className="mb-3 sm:mb-4" />
                           
                           {/* Mapped Columns Section */}
@@ -590,7 +590,7 @@ export function TemplateBuilderSheet({
                                 </h4>
                               </div>
                               <div className={cn(
-                                "grid gap-2 sm:gap-3",
+                                "grid gap-2 sm:gap-3 w-full max-w-full",
                                 isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
                               )}>
                                 {mappedColumns.map((column) => (
@@ -621,7 +621,7 @@ export function TemplateBuilderSheet({
                                 </h4>
                               </div>
                               <div className={cn(
-                                "grid gap-2 sm:gap-3",
+                                "grid gap-2 sm:gap-3 w-full max-w-full",
                                 isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
                               )}>
                                 {unmappedColumns.map((column) => (

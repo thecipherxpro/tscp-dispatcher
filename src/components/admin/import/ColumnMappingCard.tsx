@@ -65,11 +65,32 @@ export function ColumnMappingCard({
 
   const drugTypeBadge = getDrugTypeBadge();
 
+  // Get text color based on drug type
+  const getColumnTextColor = (): string => {
+    if (!isMapped) return 'text-foreground';
+    
+    for (const drugType of drugTypes) {
+      const prefix = `${drugType.drug_type_key}_`;
+      if (mappedTo.startsWith(prefix)) {
+        if (drugType.drug_type_key === 'injection') {
+          return 'text-blue-600 dark:text-blue-400';
+        }
+        if (drugType.drug_type_key === 'nasal') {
+          return 'text-purple-600 dark:text-purple-400';
+        }
+      }
+    }
+    
+    return 'text-foreground';
+  };
+
+  const columnTextColor = getColumnTextColor();
+
   return (
     <Card className={cn(
       "transition-all duration-200",
       isMapped 
-        ? "border-primary/40 bg-primary/5 shadow-sm" 
+        ? "border-orange-400/60 bg-orange-50 dark:bg-orange-950/20 shadow-sm ring-1 ring-orange-400/30" 
         : "border-border bg-card hover:border-muted-foreground/30"
     )}>
       <CardContent className="p-3">
@@ -78,15 +99,18 @@ export function ColumnMappingCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               {isMapped ? (
-                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3 text-primary-foreground" />
+                <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
+                  <Check className="w-3 h-3 text-white" />
                 </div>
               ) : (
                 <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
                   <X className="w-3 h-3 text-muted-foreground" />
                 </div>
               )}
-              <p className="font-mono text-sm font-medium text-foreground truncate">
+              <p className={cn(
+                "font-mono text-sm font-medium truncate",
+                columnTextColor
+              )}>
                 {column.name}
               </p>
             </div>
@@ -101,9 +125,19 @@ export function ColumnMappingCard({
         {/* Mapping Indicator */}
         {isMapped && (
           <div className="flex items-center gap-2 mb-3 ml-7">
-            <ArrowRight className="w-3 h-3 text-primary shrink-0" />
+            <ArrowRight className={cn(
+              "w-3 h-3 shrink-0",
+              drugTypeBadge?.key === 'injection' && "text-blue-600 dark:text-blue-400",
+              drugTypeBadge?.key === 'nasal' && "text-purple-600 dark:text-purple-400",
+              !drugTypeBadge && "text-orange-500"
+            )} />
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-sm font-medium text-primary truncate">
+              <span className={cn(
+                "text-sm font-medium truncate",
+                drugTypeBadge?.key === 'injection' && "text-blue-600 dark:text-blue-400",
+                drugTypeBadge?.key === 'nasal' && "text-purple-600 dark:text-purple-400",
+                !drugTypeBadge && "text-orange-600 dark:text-orange-400"
+              )}>
                 {getMappedLabel().split(': ').pop()}
               </span>
               {drugTypeBadge && (

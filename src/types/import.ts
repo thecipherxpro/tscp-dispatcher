@@ -59,6 +59,19 @@ export const STANDARD_ORDER_FIELDS: StandardField[] = [
   { key: 'doctor_name', label: 'Doctor Name', type: 'text' },
 ];
 
+// Extended column mapping with position-based detection for duplicate headers
+export interface ExtendedColumnMapping extends ColumnMapping {
+  drug_type_key?: string;
+  position_anchor?: boolean;
+  position_offset?: number;
+}
+
+// Drug type mapping for positional detection
+export interface DrugTypeMapping {
+  drug_type_key: string;
+  anchor_column: string;
+}
+
 export const DEFAULT_DRUG_FIELDS: DrugFieldSchema[] = [
   { key: 'rx_number', label: 'Rx Number', type: 'text', required: true },
   { key: 'din', label: 'DIN', type: 'text', required: false },

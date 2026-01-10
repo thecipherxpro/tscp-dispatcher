@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, ArrowRight, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
@@ -9,7 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { ParsedFileColumn, DrugType, STANDARD_ORDER_FIELDS } from '@/types/import';
+import { cn } from '@/lib/utils';
 
 interface ColumnMappingCardProps {
   column: ParsedFileColumn;
@@ -28,39 +30,120 @@ export function ColumnMappingCard({
 }: ColumnMappingCardProps) {
   const isMapped = mappedTo && mappedTo !== 'skip';
 
+  // Get the display label for the mapped field
+  const getMappedLabel = (): string => {
+    if (!isMapped) return 'Not mapped';
+    
+    const standardField = STANDARD_ORDER_FIELDS.find(f => f.key === mappedTo);
+    if (standardField) return standardField.label;
+    
+    for (const drugType of drugTypes) {
+      const prefix = `${drugType.drug_type_key}_`;
+      if (mappedTo.startsWith(prefix)) {
+        const fieldName = mappedTo.slice(prefix.length);
+        const field = drugType.field_schema.find(f => f.key === fieldName);
+        if (field) return `${drugType.display_name}: ${field.label}`;
+      }
+    }
+    
+    return mappedTo;
+  };
+
+  // Get drug type info for badge
+  const getDrugTypeBadge = (): { label: string; key: string } | null => {
+    if (!isMapped) return null;
+    
+    for (const drugType of drugTypes) {
+      const prefix = `${drugType.drug_type_key}_`;
+      if (mappedTo.startsWith(prefix)) {
+        return { label: drugType.display_name, key: drugType.drug_type_key };
+      }
+    }
+    
+    return null;
+  };
+
+  const drugTypeBadge = getDrugTypeBadge();
+
   return (
-    <Card className={`bg-card border-border ${isMapped ? 'border-primary/50' : ''}`}>
+    <Card className={cn(
+      "transition-all duration-200",
+      isMapped 
+        ? "border-primary/40 bg-primary/5 shadow-sm" 
+        : "border-border bg-card hover:border-muted-foreground/30"
+    )}>
       <CardContent className="p-3">
-        <div className="flex items-center gap-2 mb-2">
-          {isMapped && (
-            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-              <Check className="w-3 h-3 text-primary-foreground" />
-            </div>
-          )}
+        {/* Column Header with Status */}
+        <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex-1 min-w-0">
-            <p className="font-mono text-sm font-medium text-foreground truncate">
-              {column.name}
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              {isMapped ? (
+                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+                  <Check className="w-3 h-3 text-primary-foreground" />
+                </div>
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </div>
+              )}
+              <p className="font-mono text-sm font-medium text-foreground truncate">
+                {column.name}
+              </p>
+            </div>
             {column.sampleData && (
-              <p className="text-xs text-muted-foreground truncate">
-                e.g., {column.sampleData}
+              <p className="text-xs text-muted-foreground truncate ml-7">
+                Sample: <span className="font-medium">{column.sampleData}</span>
               </p>
             )}
           </div>
         </div>
         
+        {/* Mapping Indicator */}
+        {isMapped && (
+          <div className="flex items-center gap-2 mb-3 ml-7">
+            <ArrowRight className="w-3 h-3 text-primary shrink-0" />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-medium text-primary truncate">
+                {getMappedLabel().split(': ').pop()}
+              </span>
+              {drugTypeBadge && (
+                <Badge 
+                  variant="secondary" 
+                  className={cn(
+                    "text-[10px] px-1.5 py-0 h-4",
+                    drugTypeBadge.key === 'injection' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                    drugTypeBadge.key === 'nasal' && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                  )}
+                >
+                  {drugTypeBadge.label}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Select Dropdown */}
         <Select
           value={mappedTo || 'skip'}
           onValueChange={(value) => onMappingChange(column.name, value)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className={cn(
+            "w-full",
+            isMapped 
+              ? "border-primary/30 bg-background" 
+              : "border-input bg-background"
+          )}>
             <SelectValue placeholder="Select field..." />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="skip">— Do not import —</SelectItem>
+          <SelectContent className="max-h-[300px] bg-popover z-[100]">
+            <SelectItem value="skip" className="text-muted-foreground">
+              — Do not import —
+            </SelectItem>
             
             <SelectGroup>
-              <SelectLabel>Standard Fields</SelectLabel>
+              <SelectLabel className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">
+                Standard Fields
+              </SelectLabel>
               {STANDARD_ORDER_FIELDS.map((field) => {
                 const usedBy = usedFields.get(field.key);
                 const isUsed = usedBy && usedBy !== column.name;
@@ -69,9 +152,16 @@ export function ColumnMappingCard({
                     key={field.key}
                     value={field.key}
                     disabled={isUsed}
+                    className={cn(isUsed && "opacity-50")}
                   >
-                    {field.label}
-                    {isUsed && ` (used by ${usedBy})`}
+                    <span className="flex items-center gap-2">
+                      {field.label}
+                      {isUsed && (
+                        <span className="text-[10px] text-muted-foreground">
+                          (used)
+                        </span>
+                      )}
+                    </span>
                   </SelectItem>
                 );
               })}
@@ -79,7 +169,13 @@ export function ColumnMappingCard({
             
             {drugTypes.map((drugType) => (
               <SelectGroup key={drugType.id}>
-                <SelectLabel>{drugType.display_name}</SelectLabel>
+                <SelectLabel className={cn(
+                  "text-xs font-semibold uppercase tracking-wide",
+                  drugType.drug_type_key === 'injection' && "text-blue-600 dark:text-blue-400",
+                  drugType.drug_type_key === 'nasal' && "text-purple-600 dark:text-purple-400"
+                )}>
+                  {drugType.display_name}
+                </SelectLabel>
                 {drugType.field_schema.map((field) => {
                   const fieldKey = `${drugType.drug_type_key}_${field.key}`;
                   const usedBy = usedFields.get(fieldKey);
@@ -89,9 +185,16 @@ export function ColumnMappingCard({
                       key={fieldKey}
                       value={fieldKey}
                       disabled={isUsed}
+                      className={cn(isUsed && "opacity-50")}
                     >
-                      {field.label}
-                      {isUsed && ` (used by ${usedBy})`}
+                      <span className="flex items-center gap-2">
+                        {field.label}
+                        {isUsed && (
+                          <span className="text-[10px] text-muted-foreground">
+                            (used)
+                          </span>
+                        )}
+                      </span>
                     </SelectItem>
                   );
                 })}

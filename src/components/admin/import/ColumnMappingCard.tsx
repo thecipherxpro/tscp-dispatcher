@@ -95,7 +95,7 @@ export function ColumnMappingCard({
         ? "border-orange-400/60 bg-orange-50 dark:bg-orange-950/20 shadow-sm ring-1 ring-orange-400/30" 
         : "border-border bg-card hover:border-muted-foreground/30"
     )}>
-      <CardContent className={cn("overflow-hidden w-full max-w-full", isMobile ? "p-2" : "p-3")}>
+      <CardContent className={cn("overflow-hidden w-full max-w-full", isMobile ? "p-3" : "p-4")}>
         {/* Column Header with Status */}
         <div className={cn("flex items-start justify-between gap-1.5 overflow-hidden w-full max-w-full", isMobile ? "mb-1.5" : "mb-3")}>
           <div className="flex-1 min-w-0 overflow-hidden w-full max-w-full">

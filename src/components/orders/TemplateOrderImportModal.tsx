@@ -130,12 +130,30 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
+        const workbook = XLSX.read(data, { type: 'binary', cellDates: true, cellNF: false });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const rawData: ParsedRow[] = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
         
-        if (rawData.length === 0) {
+        // Get headers as array to preserve order and handle duplicates
+        const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+        const headers: string[] = [];
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c });
+          const cell = worksheet[cellAddress];
+          headers.push(cell ? String(cell.v || '').trim() : '');
+        }
+        
+        // Parse data rows with array format to match header indices
+        const rawDataWithArrays: any[][] = XLSX.utils.sheet_to_json(worksheet, { 
+          raw: false, 
+          defval: '', 
+          header: 1 
+        });
+        
+        // Skip header row
+        const dataRows = rawDataWithArrays.slice(1);
+        
+        if (dataRows.length === 0) {
           toast({
             title: "Empty file",
             description: "The file contains no data rows.",
@@ -144,30 +162,87 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
           return;
         }
 
-        setParsedData(rawData);
+        // Build anchor position map for drug type columns
+        const anchorPositions: Record<string, number> = {};
+        const drugTypeMappings = template.drug_type_mappings as any[];
         
-        // Map columns based on template
-        const headers = Object.keys(rawData[0]);
-        const matchedColumns = template.column_mappings.filter(m => 
-          headers.some(h => h.toLowerCase() === m.csv_column.toLowerCase())
-        );
+        if (drugTypeMappings && drugTypeMappings.length > 0) {
+          drugTypeMappings.forEach((dtm: any) => {
+            const anchorIndex = headers.findIndex(h => 
+              h.toLowerCase() === dtm.anchor_column.toLowerCase()
+            );
+            if (anchorIndex !== -1) {
+              anchorPositions[dtm.drug_type_key] = anchorIndex;
+            }
+          });
+        }
+
+        // Map columns based on template with position-aware logic
+        const mappings = template.column_mappings as any[];
+        let matchedCount = 0;
+        
+        // Check which mappings can be matched
+        mappings.forEach((mapping: any) => {
+          if (mapping.position_anchor || mapping.position_offset !== undefined) {
+            // Position-based mapping - check if anchor exists
+            const drugKey = mapping.drug_type_key;
+            if (drugKey && anchorPositions[drugKey] !== undefined) {
+              const targetIndex = mapping.position_anchor 
+                ? anchorPositions[drugKey]
+                : anchorPositions[drugKey] + (mapping.position_offset || 0);
+              if (targetIndex >= 0 && targetIndex < headers.length) {
+                matchedCount++;
+              }
+            }
+          } else {
+            // Name-based mapping
+            if (headers.some(h => h.toLowerCase() === mapping.csv_column.toLowerCase())) {
+              matchedCount++;
+            }
+          }
+        });
         
         setColumnMatchInfo({
-          matched: matchedColumns.length,
-          total: template.column_mappings.length
+          matched: matchedCount,
+          total: mappings.length
         });
         
         // Transform data according to mappings
-        const transformed = rawData.map(row => {
+        const transformed = dataRows.map((row: any[]) => {
           const mappedRow: ParsedRow = {};
           
-          template.column_mappings.forEach(mapping => {
-            const csvValue = Object.entries(row).find(
-              ([key]) => key.toLowerCase() === mapping.csv_column.toLowerCase()
-            )?.[1];
+          mappings.forEach((mapping: any) => {
+            let value: any;
             
-            if (csvValue !== undefined && csvValue !== '') {
-              mappedRow[mapping.field_key] = csvValue;
+            if (mapping.position_anchor) {
+              // This is an anchor column - get value at anchor position
+              const drugKey = mapping.drug_type_key;
+              const anchorIndex = anchorPositions[drugKey];
+              if (anchorIndex !== undefined && anchorIndex < row.length) {
+                value = row[anchorIndex];
+              }
+            } else if (mapping.position_offset !== undefined && mapping.drug_type_key) {
+              // This is a positional offset column
+              const drugKey = mapping.drug_type_key;
+              const anchorIndex = anchorPositions[drugKey];
+              if (anchorIndex !== undefined) {
+                const targetIndex = anchorIndex + mapping.position_offset;
+                if (targetIndex >= 0 && targetIndex < row.length) {
+                  value = row[targetIndex];
+                }
+              }
+            } else {
+              // Standard name-based mapping
+              const columnIndex = headers.findIndex(h => 
+                h.toLowerCase() === mapping.csv_column.toLowerCase()
+              );
+              if (columnIndex !== -1 && columnIndex < row.length) {
+                value = row[columnIndex];
+              }
+            }
+            
+            if (value !== undefined && value !== '') {
+              mappedRow[mapping.field_key] = value;
             }
           });
           
@@ -179,6 +254,18 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
           Object.values(row).some(v => v !== '' && v !== undefined && v !== null)
         );
         
+        // Store raw data for preview (convert arrays to objects)
+        const rawDataAsObjects = dataRows.map((row: any[]) => {
+          const obj: ParsedRow = {};
+          headers.forEach((h, i) => {
+            if (h && row[i] !== undefined) {
+              obj[h] = row[i];
+            }
+          });
+          return obj;
+        });
+        
+        setParsedData(rawDataAsObjects);
         setMappedData(validRows);
       } catch (error) {
         console.error('Parse error:', error);

@@ -8,6 +8,7 @@ import {
   Truck, 
   History,
   DollarSign,
+  FileSpreadsheet,
   LogOut
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 
 const menuItems = [
   { to: '/admin/payroll', icon: DollarSign, label: 'Payroll' },
+  { to: '/admin/import-templates', icon: FileSpreadsheet, label: 'Import Templates' },
   { to: '/track', icon: MapPin, label: 'Tracking List' },
   { to: '/drivers', icon: Truck, label: 'Drivers' },
   { to: '/users', icon: Users, label: 'User Management' },

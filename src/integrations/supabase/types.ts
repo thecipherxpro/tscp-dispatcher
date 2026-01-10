@@ -193,6 +193,78 @@ export type Database = {
         }
         Relationships: []
       }
+      drug_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_name: string
+          drug_type_key: string
+          field_schema: Json
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          drug_type_key: string
+          field_schema?: Json
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          drug_type_key?: string
+          field_schema?: Json
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      import_templates: {
+        Row: {
+          column_mappings: Json
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          drug_type_mappings: Json
+          id: string
+          is_default: boolean | null
+          template_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          column_mappings?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          drug_type_mappings?: Json
+          id?: string
+          is_default?: boolean | null
+          template_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          column_mappings?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          drug_type_mappings?: Json
+          id?: string
+          is_default?: boolean | null
+          template_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       order_audit_logs: {
         Row: {
           access_location: string | null

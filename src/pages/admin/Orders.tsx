@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useOrders } from '@/hooks/useOrders';
-import { OrderImportModal } from '@/components/orders/OrderImportModal';
+import { TemplateOrderImportModal } from '@/components/orders/TemplateOrderImportModal';
 import { OrderDetailSheet } from '@/components/orders/OrderDetailSheet';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { BulkAssignmentModal } from '@/components/orders/BulkAssignmentModal';
@@ -374,7 +374,7 @@ export default function Orders() {
       </PullToRefresh>
 
       {/* Modals */}
-      <OrderImportModal
+      <TemplateOrderImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onSuccess={() => {

@@ -261,8 +261,10 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
         const now = new Date().toISOString();
         
         // Build order data from mapped fields
+        // Note: shipped_at is NOT set on import - it's only set when driver starts transit
         const orderData: any = {
           timeline_status: 'PENDING',
+          pending_at: now,
           shipment_id: shipmentId,
           tracking_id: trackingId,
           tracking_url: trackingUrl,
@@ -270,7 +272,6 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
           longitude: geoData.longitude,
           geo_zone: geoData.geo_zone,
           country: geoData.country,
-          shipped_at: now,
         };
         
         // Map standard fields
@@ -319,6 +320,7 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
         }
 
         // Create public tracking
+        // Note: shipped_at is NOT set on import - only when driver starts transit
         await supabase.from('public_tracking').insert({
           tracking_id: trackingId,
           tracking_url: trackingUrl,
@@ -334,7 +336,6 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
           geo_zone: geoData.geo_zone,
           timeline_status: 'PENDING',
           pending_at: now,
-          shipped_at: now,
         });
 
         success++;

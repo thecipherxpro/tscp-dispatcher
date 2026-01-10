@@ -364,13 +364,14 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
           nasal_qty: order.nasal_qty || null,
           nasal_billing_date: order.nasal_billing_date || null,
           // System fields - set on import with tracking
+          // Note: shipped_at is NOT set on import - only when driver starts transit
           timeline_status: 'PENDING',
+          pending_at: now,
           assigned_driver_id: null,
           shipment_id: shipmentId,
           tracking_id: trackingId,
           tracking_url: trackingUrl,
           delivery_status: null,
-          shipped_at: now,
         }).select('id').single();
 
         if (orderError) {
@@ -380,6 +381,7 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
         }
 
         // Create public tracking entry
+        // Note: shipped_at is NOT set on import - only when driver starts transit
         const { error: trackingError } = await supabase
           .from('public_tracking')
           .insert({
@@ -397,7 +399,6 @@ export function OrderImportModal({ isOpen, onClose, onSuccess }: OrderImportModa
             geo_zone: geoData.geo_zone,
             timeline_status: 'PENDING',
             pending_at: now,
-            shipped_at: now,
           });
 
         if (trackingError) {

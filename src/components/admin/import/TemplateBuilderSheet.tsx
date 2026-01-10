@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -322,39 +322,50 @@ export function TemplateBuilderSheet({
           </header>
           
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1 w-full max-w-full">
-            <div className={cn(
-              "mx-auto pb-8 w-full max-w-full box-border",
-              isMobile ? "px-2 py-3" : "max-w-4xl px-6 py-6"
-            )}>
+          <div className="flex-1 w-full max-w-full overflow-y-auto overscroll-contain">
+            <div
+              className={cn(
+                "mx-auto pb-8 w-full max-w-full box-border",
+                isMobile ? "px-2 py-3" : "max-w-4xl px-6 py-6",
+              )}
+            >
               <div className="space-y-4 w-full max-w-full overflow-hidden">
                 {/* Section 1: Template Information */}
                 <Collapsible open={sectionsOpen.info} onOpenChange={() => toggleSection('info')}>
                   <Card className="border-border">
                     <CollapsibleTrigger asChild>
-                      <div className={cn(
-                        "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
-                        isMobile ? "p-3 gap-2" : "p-4 gap-3"
-                      )}>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
+                          isMobile ? "p-3 gap-2" : "p-4 gap-3",
+                        )}
+                      >
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div className={cn(
-                            "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
-                            isMobile ? "w-6 h-6" : "w-8 h-8"
-                          )}>
-                            <span className={cn(
-                              "font-medium text-primary",
-                              isMobile ? "text-xs" : "text-sm"
-                            )}>1</span>
+                          <div
+                            className={cn(
+                              "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
+                              isMobile ? "w-6 h-6" : "w-8 h-8",
+                            )}
+                          >
+                            <span className={cn("font-medium text-primary", isMobile ? "text-xs" : "text-sm")}>1</span>
                           </div>
                           <div className="min-w-0">
-                            <h3 className={cn(
-                              "font-medium text-foreground truncate",
-                              isMobile ? "text-sm" : "text-base"
-                            )}>Template Information</h3>
-                            <p className={cn(
-                              "text-muted-foreground truncate",
-                              isMobile ? "text-[10px]" : "text-xs"
-                            )}>Name and description</p>
+                            <h3
+                              className={cn(
+                                "font-medium text-foreground truncate",
+                                isMobile ? "text-sm" : "text-base",
+                              )}
+                            >
+                              Template Information
+                            </h3>
+                            <p
+                              className={cn(
+                                "text-muted-foreground truncate",
+                                isMobile ? "text-[10px]" : "text-xs",
+                              )}
+                            >
+                              Name and description
+                            </p>
                           </div>
                         </div>
                         {sectionsOpen.info ? (
@@ -365,14 +376,18 @@ export function TemplateBuilderSheet({
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <CardContent className={cn(
-                        "pt-0 space-y-4",
-                        isMobile ? "pb-3 px-3" : "pb-4 px-4"
-                      )}>
+                      <CardContent
+                        className={cn(
+                          "pt-0 space-y-4",
+                          isMobile ? "pb-3 px-3" : "pb-4 px-4",
+                        )}
+                      >
                         <Separator className="mb-4" />
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
-                            <Label htmlFor="templateName" className={isMobile ? "text-sm" : ""}>Template Name *</Label>
+                            <Label htmlFor="templateName" className={isMobile ? "text-sm" : ""}>
+                              Template Name *
+                            </Label>
                             <Input
                               id="templateName"
                               value={templateName}
@@ -382,7 +397,9 @@ export function TemplateBuilderSheet({
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="description" className={isMobile ? "text-sm" : ""}>Description</Label>
+                            <Label htmlFor="description" className={isMobile ? "text-sm" : ""}>
+                              Description
+                            </Label>
                             <Input
                               id="description"
                               value={description}
@@ -392,62 +409,72 @@ export function TemplateBuilderSheet({
                             />
                           </div>
                         </div>
-                        
-                        <div className={cn(
-                          "flex items-center justify-between bg-muted/50 rounded-lg",
-                          isMobile ? "p-2.5" : "p-3"
-                        )}>
+
+                        <div
+                          className={cn(
+                            "flex items-center justify-between bg-muted/50 rounded-lg",
+                            isMobile ? "p-2.5" : "p-3",
+                          )}
+                        >
                           <div className="min-w-0">
-                            <Label htmlFor="isDefault" className={cn("cursor-pointer", isMobile && "text-sm")}>Set as Default</Label>
+                            <Label htmlFor="isDefault" className={cn("cursor-pointer", isMobile && "text-sm")}>
+                              Set as Default
+                            </Label>
                             <p className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-xs")}>
                               Auto-selected when importing orders
                             </p>
                           </div>
-                          <Switch
-                            id="isDefault"
-                            checked={isDefault}
-                            onCheckedChange={setIsDefault}
-                          />
+                          <Switch id="isDefault" checked={isDefault} onCheckedChange={setIsDefault} />
                         </div>
                       </CardContent>
                     </CollapsibleContent>
                   </Card>
                 </Collapsible>
-                
+
                 {/* Section 2: Sample File Upload */}
                 <Collapsible open={sectionsOpen.file} onOpenChange={() => toggleSection('file')}>
                   <Card className="border-border">
                     <CollapsibleTrigger asChild>
-                      <div className={cn(
-                        "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
-                        isMobile ? "p-3 gap-2" : "p-4 gap-3"
-                      )}>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
+                          isMobile ? "p-3 gap-2" : "p-4 gap-3",
+                        )}
+                      >
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div className={cn(
-                            "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
-                            isMobile ? "w-6 h-6" : "w-8 h-8"
-                          )}>
-                            <span className={cn(
-                              "font-medium text-primary",
-                              isMobile ? "text-xs" : "text-sm"
-                            )}>2</span>
+                          <div
+                            className={cn(
+                              "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
+                              isMobile ? "w-6 h-6" : "w-8 h-8",
+                            )}
+                          >
+                            <span className={cn("font-medium text-primary", isMobile ? "text-xs" : "text-sm")}>2</span>
                           </div>
                           <div className="min-w-0">
-                            <h3 className={cn(
-                              "font-medium text-foreground truncate",
-                              isMobile ? "text-sm" : "text-base"
-                            )}>Sample File</h3>
-                            <p className={cn(
-                              "text-muted-foreground truncate",
-                              isMobile ? "text-[10px]" : "text-xs"
-                            )}>
+                            <h3
+                              className={cn(
+                                "font-medium text-foreground truncate",
+                                isMobile ? "text-sm" : "text-base",
+                              )}
+                            >
+                              Sample File
+                            </h3>
+                            <p
+                              className={cn(
+                                "text-muted-foreground truncate",
+                                isMobile ? "text-[10px]" : "text-xs",
+                              )}
+                            >
                               {fileName ? fileName : 'Upload CSV or Excel'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                           {fileName && (
-                            <Badge variant="secondary" className={cn("gap-1", isMobile && "text-[10px] px-1.5 py-0")}>
+                            <Badge
+                              variant="secondary"
+                              className={cn("gap-1", isMobile && "text-[10px] px-1.5 py-0")}
+                            >
                               <FileSpreadsheet className={isMobile ? "w-2.5 h-2.5" : "w-3 h-3"} />
                               Loaded
                             </Badge>
@@ -463,16 +490,21 @@ export function TemplateBuilderSheet({
                     <CollapsibleContent>
                       <CardContent className={cn("pt-0", isMobile ? "pb-3 px-3" : "pb-4 px-4")}>
                         <Separator className="mb-4" />
-                        
+
                         {!fileName ? (
                           <div
                             className={cn(
                               "border-2 border-dashed border-border rounded-lg text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors",
-                              isMobile ? "p-5" : "p-8"
+                              isMobile ? "p-5" : "p-8",
                             )}
                             onClick={() => fileInputRef.current?.click()}
                           >
-                            <Upload className={cn("mx-auto mb-3 text-muted-foreground", isMobile ? "w-8 h-8" : "w-10 h-10")} />
+                            <Upload
+                              className={cn(
+                                "mx-auto mb-3 text-muted-foreground",
+                                isMobile ? "w-8 h-8" : "w-10 h-10",
+                              )}
+                            />
                             <p className={cn("font-medium text-foreground mb-1", isMobile && "text-sm")}>
                               Click to upload sample file
                             </p>
@@ -488,19 +520,25 @@ export function TemplateBuilderSheet({
                             />
                           </div>
                         ) : (
-                          <div className={cn(
-                            "flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg",
-                            isMobile ? "p-3 gap-2" : "p-4 gap-3"
-                          )}>
+                          <div
+                            className={cn(
+                              "flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg",
+                              isMobile ? "p-3 gap-2" : "p-4 gap-3",
+                            )}
+                          >
                             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                              <div className={cn(
-                                "rounded-lg bg-primary/10 flex items-center justify-center shrink-0",
-                                isMobile ? "w-8 h-8" : "w-10 h-10"
-                              )}>
+                              <div
+                                className={cn(
+                                  "rounded-lg bg-primary/10 flex items-center justify-center shrink-0",
+                                  isMobile ? "w-8 h-8" : "w-10 h-10",
+                                )}
+                              >
                                 <FileSpreadsheet className={cn("text-primary", isMobile ? "w-4 h-4" : "w-5 h-5")} />
                               </div>
                               <div className="min-w-0">
-                                <p className={cn("font-medium text-foreground truncate", isMobile && "text-sm")}>{fileName}</p>
+                                <p className={cn("font-medium text-foreground truncate", isMobile && "text-sm")}>
+                                  {fileName}
+                                </p>
                                 {parseResult && (
                                   <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
                                     {parseResult.columns.length} columns • {parseResult.rowCount} rows
@@ -508,7 +546,12 @@ export function TemplateBuilderSheet({
                                 )}
                               </div>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={clearFile} className={isMobile ? "h-8 w-8" : ""}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={clearFile}
+                              className={isMobile ? "h-8 w-8" : ""}
+                            >
                               <X className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"} />
                             </Button>
                           </div>
@@ -517,51 +560,63 @@ export function TemplateBuilderSheet({
                     </CollapsibleContent>
                   </Card>
                 </Collapsible>
-                
+
                 {/* Section 3: Column Mapping */}
                 {parseResult && parseResult.columns.length > 0 && (
                   <Collapsible open={sectionsOpen.mapping} onOpenChange={() => toggleSection('mapping')}>
                     <Card className="border-border">
                       <CollapsibleTrigger asChild>
-                        <div className={cn(
-                          "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
-                          isMobile ? "p-3 gap-2" : "p-4 gap-3"
-                        )}>
+                        <div
+                          className={cn(
+                            "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
+                            isMobile ? "p-3 gap-2" : "p-4 gap-3",
+                          )}
+                        >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                            <div className={cn(
-                              "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
-                              isMobile ? "w-6 h-6" : "w-8 h-8"
-                            )}>
-                              <span className={cn(
-                                "font-medium text-primary",
-                                isMobile ? "text-xs" : "text-sm"
-                              )}>3</span>
+                            <div
+                              className={cn(
+                                "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
+                                isMobile ? "w-6 h-6" : "w-8 h-8",
+                              )}
+                            >
+                              <span className={cn("font-medium text-primary", isMobile ? "text-xs" : "text-sm")}>3</span>
                             </div>
                             <div className="min-w-0">
-                              <h3 className={cn(
-                                "font-medium text-foreground truncate",
-                                isMobile ? "text-sm" : "text-base"
-                              )}>Column Mapping</h3>
-                              <p className={cn(
-                                "text-muted-foreground truncate",
-                                isMobile ? "text-[10px]" : "text-xs"
-                              )}>
+                              <h3
+                                className={cn(
+                                  "font-medium text-foreground truncate",
+                                  isMobile ? "text-sm" : "text-base",
+                                )}
+                              >
+                                Column Mapping
+                              </h3>
+                              <p
+                                className={cn(
+                                  "text-muted-foreground truncate",
+                                  isMobile ? "text-[10px]" : "text-xs",
+                                )}
+                              >
                                 Map CSV columns to order fields
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             {mappedCount > 0 && (
-                              <Badge className={cn(
-                                "gap-1 bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 border-0",
-                                isMobile && "text-[10px] px-1.5 py-0"
-                              )}>
+                              <Badge
+                                className={cn(
+                                  "gap-1 bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 border-0",
+                                  isMobile && "text-[10px] px-1.5 py-0",
+                                )}
+                              >
                                 <Check className={isMobile ? "w-2.5 h-2.5" : "w-3 h-3"} />
                                 {mappedCount} mapped
                               </Badge>
                             )}
                             {skippedCount > 0 && (
-                              <Badge variant="secondary" className={cn("gap-1", isMobile && "text-[10px] px-1.5 py-0")}>
+                              <Badge
+                                variant="secondary"
+                                className={cn("gap-1", isMobile && "text-[10px] px-1.5 py-0")}
+                              >
                                 {skippedCount} skipped
                               </Badge>
                             )}
@@ -574,25 +629,34 @@ export function TemplateBuilderSheet({
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <CardContent className={cn("pt-0 overflow-hidden w-full max-w-full", isMobile ? "pb-3 px-1.5" : "pb-4 px-4")}>
+                        <CardContent
+                          className={cn(
+                            "pt-0 overflow-hidden w-full max-w-full",
+                            isMobile ? "pb-3 px-1.5" : "pb-4 px-4",
+                          )}
+                        >
                           <Separator className="mb-3 sm:mb-4" />
-                          
+
                           {/* Mapped Columns Section */}
                           {mappedColumns.length > 0 && (
                             <div className="mb-4 sm:mb-6">
                               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                                 <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
-                                <h4 className={cn(
-                                  "font-medium text-orange-600 dark:text-orange-400",
-                                  isMobile ? "text-xs" : "text-sm"
-                                )}>
+                                <h4
+                                  className={cn(
+                                    "font-medium text-orange-600 dark:text-orange-400",
+                                    isMobile ? "text-xs" : "text-sm",
+                                  )}
+                                >
                                   Mapped Columns ({mappedColumns.length})
                                 </h4>
                               </div>
-                              <div className={cn(
-                                "grid gap-2 sm:gap-3 w-full max-w-full",
-                                isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
-                              )}>
+                              <div
+                                className={cn(
+                                  "grid gap-2 sm:gap-3 w-full max-w-full",
+                                  isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
+                                )}
+                              >
                                 {mappedColumns.map((column) => (
                                   <ColumnMappingCard
                                     key={column.name}
@@ -607,23 +671,27 @@ export function TemplateBuilderSheet({
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Unmapped Columns Section */}
                           {unmappedColumns.length > 0 && (
                             <div>
                               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                                 <div className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
-                                <h4 className={cn(
-                                  "font-medium text-muted-foreground",
-                                  isMobile ? "text-xs" : "text-sm"
-                                )}>
+                                <h4
+                                  className={cn(
+                                    "font-medium text-muted-foreground",
+                                    isMobile ? "text-xs" : "text-sm",
+                                  )}
+                                >
                                   Unmapped Columns ({unmappedColumns.length})
                                 </h4>
                               </div>
-                              <div className={cn(
-                                "grid gap-2 sm:gap-3 w-full max-w-full",
-                                isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
-                              )}>
+                              <div
+                                className={cn(
+                                  "grid gap-2 sm:gap-3 w-full max-w-full",
+                                  isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
+                                )}
+                              >
                                 {unmappedColumns.map((column) => (
                                   <ColumnMappingCard
                                     key={column.name}
@@ -643,35 +711,42 @@ export function TemplateBuilderSheet({
                     </Card>
                   </Collapsible>
                 )}
-                
+
                 {/* Section 4: Data Preview */}
                 {parseResult && mappedCount > 0 && (
                   <Collapsible open={sectionsOpen.preview} onOpenChange={() => toggleSection('preview')}>
                     <Card className="border-border">
                       <CollapsibleTrigger asChild>
-                        <div className={cn(
-                          "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
-                          isMobile ? "p-3 gap-2" : "p-4 gap-3"
-                        )}>
+                        <div
+                          className={cn(
+                            "flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
+                            isMobile ? "p-3 gap-2" : "p-4 gap-3",
+                          )}
+                        >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                            <div className={cn(
-                              "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
-                              isMobile ? "w-6 h-6" : "w-8 h-8"
-                            )}>
-                              <span className={cn(
-                                "font-medium text-primary",
-                                isMobile ? "text-xs" : "text-sm"
-                              )}>4</span>
+                            <div
+                              className={cn(
+                                "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
+                                isMobile ? "w-6 h-6" : "w-8 h-8",
+                              )}
+                            >
+                              <span className={cn("font-medium text-primary", isMobile ? "text-xs" : "text-sm")}>4</span>
                             </div>
                             <div className="min-w-0">
-                              <h3 className={cn(
-                                "font-medium text-foreground truncate",
-                                isMobile ? "text-sm" : "text-base"
-                              )}>Data Preview</h3>
-                              <p className={cn(
-                                "text-muted-foreground truncate",
-                                isMobile ? "text-[10px]" : "text-xs"
-                              )}>
+                              <h3
+                                className={cn(
+                                  "font-medium text-foreground truncate",
+                                  isMobile ? "text-sm" : "text-base",
+                                )}
+                              >
+                                Data Preview
+                              </h3>
+                              <p
+                                className={cn(
+                                  "text-muted-foreground truncate",
+                                  isMobile ? "text-[10px]" : "text-xs",
+                                )}
+                              >
                                 Preview how data will be imported
                               </p>
                             </div>
@@ -687,10 +762,7 @@ export function TemplateBuilderSheet({
                         <CardContent className={cn("pt-0", isMobile ? "pb-3 px-3" : "pb-4 px-4")}>
                           <Separator className="mb-4" />
                           <div className="border border-border rounded-lg overflow-hidden">
-                            <DataPreviewTable
-                              data={parseResult.rawData}
-                              mappings={buildColumnMappingsArray()}
-                            />
+                            <DataPreviewTable data={parseResult.rawData} mappings={buildColumnMappingsArray()} />
                           </div>
                         </CardContent>
                       </CollapsibleContent>
@@ -699,7 +771,7 @@ export function TemplateBuilderSheet({
                 )}
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </div>
   );
 

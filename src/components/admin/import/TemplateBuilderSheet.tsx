@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { Upload, X, FileSpreadsheet, Check, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, Columns } from 'lucide-react';
-import { Dialog, DialogContent, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -289,11 +289,10 @@ export function TemplateBuilderSheet({
     setSectionsOpen(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogPortal>
-        <DialogOverlay className="bg-background/80 backdrop-blur-sm" />
-        <div className="fixed inset-0 z-50 flex flex-col bg-background">
+  if (!isOpen) return null;
+
+  const content = (
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
           {/* Sticky Header */}
           <header className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
             <Button 
@@ -613,7 +612,7 @@ export function TemplateBuilderSheet({
             </div>
           </ScrollArea>
         </div>
-      </DialogPortal>
-    </Dialog>
   );
+
+  return createPortal(content, document.body);
 }

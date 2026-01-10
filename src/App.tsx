@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import { InstallPromptBanner } from "@/components/pwa/InstallPromptBanner";
-import { OfflineReadyToast } from "@/components/pwa/OfflineReadyToast";
+import { UpdateBanner } from "@/components/pwa/UpdateBanner";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -320,8 +320,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <UpdateBanner />
           <InstallPromptBanner />
-          <OfflineReadyToast />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

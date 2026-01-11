@@ -31,6 +31,7 @@ import OrderEdits from "./pages/admin/OrderEdits";
 import OrderEditDetail from "./pages/admin/OrderEditDetail";
 import AdminPayroll from "./pages/admin/AdminPayroll";
 import ImportTemplates from "./pages/admin/ImportTemplates";
+import CustomOrders from "./pages/admin/CustomOrders";
 import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
 import DriverWallet from "./pages/driver/DriverWallet";
@@ -243,6 +244,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['pharmacy_admin']}>
             <ImportTemplates />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/custom-orders"
+        element={
+          <ProtectedRoute allowedRoles={['pharmacy_admin']}>
+            <CustomOrders />
           </ProtectedRoute>
         }
       />

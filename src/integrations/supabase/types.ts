@@ -38,6 +38,126 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_orders: {
+        Row: {
+          address_line_1: string | null
+          address_line_2: string | null
+          authorizing_doctor_name: string | null
+          client_name: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          geo_zone: string | null
+          health_card_no: string | null
+          id: string
+          injection_billing_date: string | null
+          injection_din: string | null
+          injection_drug_name: string | null
+          injection_form: string | null
+          injection_package: string | null
+          injection_qty: number | null
+          injection_rx_number: string | null
+          injection_strength: string | null
+          label_delivered_at: string | null
+          label_shipped_at: string | null
+          label_status: string | null
+          latitude: number | null
+          longitude: number | null
+          nasal_billing_date: string | null
+          nasal_din: string | null
+          nasal_drug_name: string | null
+          nasal_package: string | null
+          nasal_qty: number | null
+          nasal_rx_number: string | null
+          notes: string | null
+          order_date: string | null
+          shipment_id: string | null
+          shipping_date: string | null
+          tracking_id: string | null
+          tracking_url: string | null
+          updated_at: string | null
+          warehouse_address: string | null
+        }
+        Insert: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          authorizing_doctor_name?: string | null
+          client_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          geo_zone?: string | null
+          health_card_no?: string | null
+          id?: string
+          injection_billing_date?: string | null
+          injection_din?: string | null
+          injection_drug_name?: string | null
+          injection_form?: string | null
+          injection_package?: string | null
+          injection_qty?: number | null
+          injection_rx_number?: string | null
+          injection_strength?: string | null
+          label_delivered_at?: string | null
+          label_shipped_at?: string | null
+          label_status?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          nasal_billing_date?: string | null
+          nasal_din?: string | null
+          nasal_drug_name?: string | null
+          nasal_package?: string | null
+          nasal_qty?: number | null
+          nasal_rx_number?: string | null
+          notes?: string | null
+          order_date?: string | null
+          shipment_id?: string | null
+          shipping_date?: string | null
+          tracking_id?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          warehouse_address?: string | null
+        }
+        Update: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          authorizing_doctor_name?: string | null
+          client_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          geo_zone?: string | null
+          health_card_no?: string | null
+          id?: string
+          injection_billing_date?: string | null
+          injection_din?: string | null
+          injection_drug_name?: string | null
+          injection_form?: string | null
+          injection_package?: string | null
+          injection_qty?: number | null
+          injection_rx_number?: string | null
+          injection_strength?: string | null
+          label_delivered_at?: string | null
+          label_shipped_at?: string | null
+          label_status?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          nasal_billing_date?: string | null
+          nasal_din?: string | null
+          nasal_drug_name?: string | null
+          nasal_package?: string | null
+          nasal_qty?: number | null
+          nasal_rx_number?: string | null
+          notes?: string | null
+          order_date?: string | null
+          shipment_id?: string | null
+          shipping_date?: string | null
+          tracking_id?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          warehouse_address?: string | null
+        }
+        Relationships: []
+      }
       driver_earnings: {
         Row: {
           base_rate: number

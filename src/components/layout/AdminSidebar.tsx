@@ -17,6 +17,10 @@ const mainNavItems = [{
   icon: Package,
   label: 'Orders'
 }, {
+  to: '/admin/custom-orders',
+  icon: Package,
+  label: 'Custom Orders'
+}, {
   to: '/admin/order-edits',
   icon: Edit,
   label: 'Order Edits'

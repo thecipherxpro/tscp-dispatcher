@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import { InstallPromptBanner } from "@/components/pwa/InstallPromptBanner";
 import { UpdateBanner } from "@/components/pwa/UpdateBanner";
+import { LocationPermissionBanner } from "@/components/pwa/LocationPermissionBanner";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -320,6 +321,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <LocationPermissionBanner />
           <UpdateBanner />
           <InstallPromptBanner />
         </AuthProvider>

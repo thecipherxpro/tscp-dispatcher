@@ -571,7 +571,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                       {/* Mapped Columns Section */}
                       {mappedColumns.length > 0 && (
                         <div className="mb-4 sm:mb-6">
-                          <div className="flex items-center gap-2 mb-4 sm:mb-4 px-[25px]">
+                          <div className="flex items-center gap-4 mb-4 sm:mb-4 px-[25px]">
                             <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
                             <h4
                               className={cn(

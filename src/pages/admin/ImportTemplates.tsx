@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Plus, FileSpreadsheet, Pill, Loader2 } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,8 +21,10 @@ import { DrugTypeSheet } from '@/components/admin/import/DrugTypeSheet';
 import { TemplateCard } from '@/components/admin/import/TemplateCard';
 import { TemplateBuilderSheet } from '@/components/admin/import/TemplateBuilderSheet';
 import { DrugType, ImportTemplate } from '@/types/import';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function ImportTemplates() {
+  const isMobile = useIsMobile();
   const { 
     drugTypes, 
     isLoading: isDrugTypesLoading, 
@@ -109,13 +110,18 @@ export default function ImportTemplates() {
     }
   };
 
-  const isLoading = isDrugTypesLoading || isTemplatesLoading;
-
   return (
-    <AppLayout title="Import Templates" showBackButton>
-      <div className="p-4 space-y-4 pb-24">
+    <AdminLayout title="Import Templates" showBackButton={isMobile}>
+      <div className={isMobile ? "p-4 space-y-4 pb-24" : "p-6 lg:p-8 space-y-6"}>
+        {!isMobile && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">Import Templates</h2>
+            <p className="text-muted-foreground">Configure column mappings and drug types for CSV imports</p>
+          </div>
+        )}
+        
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="templates" className="gap-2">
               <FileSpreadsheet className="w-4 h-4" />
               Templates
@@ -172,7 +178,7 @@ export default function ImportTemplates() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className={isMobile ? "space-y-3" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
                 {templates.map((template) => (
                   <TemplateCard
                     key={template.id}
@@ -232,7 +238,7 @@ export default function ImportTemplates() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className={isMobile ? "space-y-3" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
                 {drugTypes.map((drugType) => (
                   <DrugTypeCard
                     key={drugType.id}
@@ -308,6 +314,6 @@ export default function ImportTemplates() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppLayout>
+    </AdminLayout>
   );
 }

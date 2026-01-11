@@ -5,7 +5,7 @@ import JsBarcode from "jsbarcode";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-import { AppLayout } from "@/components/layout/AppLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,9 +15,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useOrders, generateTrackingForOrders } from "@/hooks/useOrders";
 import { useLabelSettings, type PackageLabelSettings } from "@/hooks/useLabelSettings";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Order } from "@/types/auth";
 import { cn } from "@/lib/utils";
 
@@ -131,15 +133,6 @@ function OrderSelectCard({
                   {order.nasal_rx_number || order.injection_rx_number || "N/A"}
                 </p>
               </div>
-              {(order.nasal_qty || order.injection_qty) && (
-                <div className="col-span-2">
-                  <p className="text-muted-foreground mb-1">Quantities</p>
-                  <div className="flex gap-2">
-                    {order.nasal_qty && <Badge variant="secondary">Nasal: {order.nasal_qty}</Badge>}
-                    {order.injection_qty && <Badge variant="secondary">Injectable: {order.injection_qty}</Badge>}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </CollapsibleContent>
@@ -188,7 +181,6 @@ function LabelCard({
           className="shrink-0 mt-1"
         />
         <div className="flex-1 min-w-0">
-          {/* Mini Label Preview */}
           <div className="bg-white rounded border p-2 mb-2">
             <div className="text-xs">
               <p className="font-bold text-black truncate">{label.order.client_name}</p>
@@ -209,10 +201,57 @@ function LabelCard({
   );
 }
 
+// PDF generation helper function
+async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSettings) {
+  const pdf = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: [100, 150] // 4x6 inch label
+  });
+
+  for (let i = 0; i < orders.length; i++) {
+    if (i > 0) {
+      pdf.addPage([100, 150], 'landscape');
+    }
+    
+    const order = orders[i];
+    
+    // Add label content
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(labelSettings.from_company, 10, 15);
+    
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(labelSettings.from_tagline, 10, 20);
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TO:', 10, 35);
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(order.client_name || 'Unknown', 10, 42);
+    pdf.text(order.address_line_1 || '', 10, 48);
+    pdf.text(order.geo_zone || '', 10, 54);
+    
+    if (order.tracking_id) {
+      pdf.setFontSize(8);
+      pdf.text(`Tracking: ${order.tracking_id}`, 10, 70);
+    }
+    
+    if (order.shipment_id) {
+      pdf.text(`Shipment: ${order.shipment_id}`, 10, 76);
+    }
+  }
+  
+  pdf.save(`labels-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+}
+
 export default function PackageLabels() {
   const { orders, isLoading, refetch } = useOrders();
   const { settings: labelSettings, isLoading: isLoadingSettings } = useLabelSettings();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [activeTab, setActiveTab] = useState("orders");
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
@@ -240,7 +279,6 @@ export default function PackageLabels() {
   // Apply filters
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      // Date filter - single date
       if (singleDate) {
         const orderDate = order.shipping_date || order.created_at;
         if (orderDate) {
@@ -254,7 +292,6 @@ export default function PackageLabels() {
         }
       }
 
-      // Date filter - range
       if (dateRange.from && dateRange.to) {
         const orderDate = order.shipping_date || order.created_at;
         if (orderDate) {
@@ -268,7 +305,6 @@ export default function PackageLabels() {
         }
       }
 
-      // RX filter
       if (rxFilter.trim()) {
         const rx = rxFilter.toLowerCase();
         const nasalMatch = order.nasal_rx_number?.toLowerCase().includes(rx);
@@ -282,7 +318,6 @@ export default function PackageLabels() {
     });
   }, [orders, singleDate, dateRange, rxFilter]);
 
-  // Selection handlers
   const handleSelectOrder = useCallback((orderId: string, selected: boolean) => {
     setSelectedOrderIds(prev => {
       const next = new Set(prev);
@@ -307,7 +342,6 @@ export default function PackageLabels() {
     }
   }, [filteredOrders, selectedOrderIds.size]);
 
-  // Generate tracking for selected orders that don't have it
   const handleGenerateTracking = useCallback(async () => {
     const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id) && (!o.tracking_id || !o.shipment_id));
     if (selectedOrders.length === 0) {
@@ -362,7 +396,6 @@ export default function PackageLabels() {
     }
   }, [generatedLabels, selectedLabelIds.size]);
 
-  // Generate labels for selected orders
   const generateLabels = useCallback(() => {
     const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id));
     const newLabels: GeneratedLabel[] = selectedOrders.map(order => ({
@@ -371,7 +404,6 @@ export default function PackageLabels() {
     }));
     
     setGeneratedLabels(prev => {
-      // Avoid duplicates
       const existingIds = new Set(prev.map(l => l.order.id));
       const uniqueNew = newLabels.filter(l => !existingIds.has(l.order.id));
       return [...prev, ...uniqueNew];
@@ -386,7 +418,6 @@ export default function PackageLabels() {
     });
   }, [orders, selectedOrderIds, toast]);
 
-  // Generate and download labels immediately
   const generateAndDownload = useCallback(async () => {
     const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id));
     if (selectedOrders.length === 0) return;
@@ -396,7 +427,6 @@ export default function PackageLabels() {
     try {
       await downloadLabelsPDF(selectedOrders, labelSettings);
       
-      // Also add to generated labels
       const newLabels: GeneratedLabel[] = selectedOrders.map(order => ({
         order,
         generatedAt: new Date(),
@@ -426,7 +456,6 @@ export default function PackageLabels() {
     }
   }, [orders, selectedOrderIds, labelSettings, toast]);
 
-  // Download selected labels from Labels tab
   const downloadSelectedLabels = useCallback(async () => {
     const selectedLabels = generatedLabels.filter(l => selectedLabelIds.has(l.order.id));
     if (selectedLabels.length === 0) return;
@@ -453,7 +482,6 @@ export default function PackageLabels() {
     }
   }, [generatedLabels, selectedLabelIds, labelSettings, toast]);
 
-  // Clear filters
   const clearFilters = useCallback(() => {
     setDateRange({ from: undefined, to: undefined });
     setSingleDate(undefined);
@@ -463,10 +491,17 @@ export default function PackageLabels() {
   const hasActiveFilters = singleDate || dateRange.from || rxFilter.trim();
 
   return (
-    <AppLayout title="Package Labels">
-      <div className="p-4 pb-24">
+    <AdminLayout title="Package Labels" showBackButton={isMobile}>
+      <div className={isMobile ? "p-4 pb-24" : "p-6 lg:p-8"}>
+        {!isMobile && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">Package Labels</h2>
+            <p className="text-muted-foreground">Generate and download shipping labels</p>
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-4 max-w-md">
             <TabsTrigger value="orders" className="gap-2">
               Orders
               {labelReadyOrders.length > 0 && (
@@ -497,8 +532,8 @@ export default function PackageLabels() {
               </Button>
               
               {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
-                  <X className="w-3 h-3" />
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-1" />
                   Clear
                 </Button>
               )}
@@ -506,134 +541,76 @@ export default function PackageLabels() {
 
             {/* Filters Panel */}
             {showFilters && (
-              <div className="bg-muted/30 rounded-lg p-4 space-y-4 border border-border">
-                {/* Single Date */}
-                <div className="space-y-2">
-                  <Label className="text-sm flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Single Date
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal">
-                        {singleDate ? format(singleDate, "PPP") : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={singleDate}
-                        onSelect={(date) => {
-                          setSingleDate(date);
-                          setDateRange({ from: undefined, to: undefined });
-                        }}
-                        initialFocus
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Single Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {singleDate ? format(singleDate, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={singleDate}
+                            onSelect={setSingleDate}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>RX Number</Label>
+                      <Input
+                        placeholder="Search RX..."
+                        value={rxFilter}
+                        onChange={(e) => setRxFilter(e.target.value)}
                       />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Date Range */}
-                <div className="space-y-2">
-                  <Label className="text-sm flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Date Range
-                  </Label>
-                  <div className="flex gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1 justify-start text-left font-normal">
-                          {dateRange.from ? format(dateRange.from, "MMM d") : "From"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={dateRange.from}
-                          onSelect={(date) => {
-                            setDateRange(prev => ({ ...prev, from: date }));
-                            setSingleDate(undefined);
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1 justify-start text-left font-normal">
-                          {dateRange.to ? format(dateRange.to, "MMM d") : "To"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={dateRange.to}
-                          onSelect={(date) => {
-                            setDateRange(prev => ({ ...prev, to: date }));
-                            setSingleDate(undefined);
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    </div>
                   </div>
-                </div>
-
-                {/* RX Filter */}
-                <div className="space-y-2">
-                  <Label className="text-sm flex items-center gap-2">
-                    <Pill className="w-4 h-4" />
-                    Filter by RX
-                  </Label>
-                  <Input
-                    placeholder="Enter RX number..."
-                    value={rxFilter}
-                    onChange={(e) => setRxFilter(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Select All & Actions */}
-            <div className="flex items-center justify-between gap-2 py-2 border-b border-border">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSelectAllOrders(true)}
-                className="gap-2"
-                disabled={filteredOrders.length === 0}
-              >
-                <Checkbox
-                  checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0}
-                  className="pointer-events-none"
-                />
-                {selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0 ? "Deselect All" : "Select All"}
-                <span className="text-muted-foreground">({filteredOrders.length})</span>
-              </Button>
-              
-              {selectedOrderIds.size > 0 && (
-                <Badge>{selectedOrderIds.size} selected</Badge>
-              )}
-            </div>
+            {/* Selection Actions */}
+            {selectedOrderIds.size > 0 && (
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium">{selectedOrderIds.size} orders selected</p>
+                    <p className="text-sm text-muted-foreground">Ready to generate labels</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={generateLabels}>
+                      Generate Labels
+                    </Button>
+                    <Button onClick={generateAndDownload} disabled={isGenerating}>
+                      {isGenerating ? "Generating..." : "Download PDF"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Order List */}
+            {/* Orders List */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
               </div>
             ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>No orders found</p>
-                {hasActiveFilters && (
-                  <Button variant="link" onClick={clearFilters} className="mt-2">
-                    Clear filters
-                  </Button>
-                )}
-              </div>
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Tag className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-foreground font-medium">No orders found</p>
+                </CardContent>
+              </Card>
             ) : (
-              <div className="space-y-2">
-                {filteredOrders.map(order => (
+              <div className={isMobile ? "space-y-3" : "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"}>
+                {filteredOrders.map((order) => (
                   <OrderSelectCard
                     key={order.id}
                     order={order}
@@ -644,252 +621,47 @@ export default function PackageLabels() {
                 ))}
               </div>
             )}
-
-            {/* Action Buttons */}
-            {selectedOrderIds.size > 0 && (
-              <div className="fixed bottom-20 left-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-30">
-                {/* Check if any selected orders need tracking */}
-                {(() => {
-                  const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id));
-                  const needsTracking = selectedOrders.some(o => !o.tracking_id || !o.shipment_id);
-                  const allHaveTracking = selectedOrders.every(o => o.tracking_id && o.shipment_id);
-                  
-                  return (
-                    <div className="flex flex-col gap-2">
-                      {needsTracking && (
-                        <Button
-                          variant="secondary"
-                          className="w-full gap-2"
-                          onClick={handleGenerateTracking}
-                          disabled={isGeneratingTracking}
-                        >
-                          {isGeneratingTracking ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                          ) : (
-                            <Tag className="w-4 h-4" />
-                          )}
-                          Generate Tracking First ({selectedOrders.filter(o => !o.tracking_id || !o.shipment_id).length})
-                        </Button>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={generateLabels}
-                          disabled={isGenerating || !allHaveTracking}
-                        >
-                          <FileDown className="w-4 h-4" />
-                          Generate Labels
-                        </Button>
-                        <Button
-                          className="flex-1 gap-2"
-                          onClick={generateAndDownload}
-                          disabled={isGenerating || !allHaveTracking}
-                        >
-                          {isGenerating ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                          Generate & Download
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
           </TabsContent>
 
           {/* Labels Tab */}
           <TabsContent value="labels" className="space-y-4">
-            {generatedLabels.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileDown className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No labels generated yet</p>
-                <p className="text-sm mt-1">Select orders and generate labels first</p>
-              </div>
-            ) : (
-              <>
-                {/* Select All & Actions */}
-                <div className="flex items-center justify-between gap-2 py-2 border-b border-border">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSelectAllLabels}
-                    className="gap-2"
-                  >
-                    <Checkbox
-                      checked={selectedLabelIds.size === generatedLabels.length && generatedLabels.length > 0}
-                      className="pointer-events-none"
-                    />
-                    {selectedLabelIds.size === generatedLabels.length ? "Deselect All" : "Select All"}
-                    <span className="text-muted-foreground">({generatedLabels.length})</span>
+            {selectedLabelIds.size > 0 && (
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <p className="font-medium">{selectedLabelIds.size} labels selected</p>
+                  <Button onClick={downloadSelectedLabels} disabled={isGenerating}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Selected
                   </Button>
-                  
-                  {selectedLabelIds.size > 0 && (
-                    <Badge>{selectedLabelIds.size} selected</Badge>
-                  )}
-                </div>
+                </CardContent>
+              </Card>
+            )}
 
-                {/* Labels Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {generatedLabels.map(label => (
-                    <LabelCard
-                      key={label.order.id}
-                      label={label}
-                      isSelected={selectedLabelIds.has(label.order.id)}
-                      onSelect={(selected) => handleSelectLabel(label.order.id, selected)}
-                    />
-                  ))}
-                </div>
-
-                {/* Export Actions */}
-                {selectedLabelIds.size > 0 && (
-                  <div className="fixed bottom-20 left-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-30">
-                    <Button
-                      className="w-full gap-2"
-                      onClick={downloadSelectedLabels}
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? (
-                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                      ) : (
-                        <Download className="w-4 h-4" />
-                      )}
-                      Export {selectedLabelIds.size} Label{selectedLabelIds.size > 1 ? "s" : ""} as PDF
-                    </Button>
-                  </div>
-                )}
-              </>
+            {generatedLabels.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <FileDown className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-foreground font-medium">No labels generated</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select orders and generate labels to see them here
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className={isMobile ? "space-y-3" : "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"}>
+                {generatedLabels.map((label) => (
+                  <LabelCard
+                    key={label.order.id}
+                    label={label}
+                    isSelected={selectedLabelIds.has(label.order.id)}
+                    onSelect={(selected) => handleSelectLabel(label.order.id, selected)}
+                  />
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </AdminLayout>
   );
-}
-
-// Helper function to generate PDF for multiple orders
-async function downloadLabelsPDF(orders: Order[], labelSettings: PackageLabelSettings) {
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "in",
-    format: [4, 6],
-  });
-
-  for (let i = 0; i < orders.length; i++) {
-    const order = orders[i];
-    
-    if (i > 0) {
-      pdf.addPage([4, 6]);
-    }
-
-    // Create a temporary container for the label
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.left = "-9999px";
-    container.style.top = "0";
-    document.body.appendChild(container);
-
-    // Create the label HTML
-    const address = order.geo_zone || order.address_line_1 || "";
-    const formatDate = (date: string | null): string => {
-      if (!date) return "N/A";
-      return new Date(date).toLocaleDateString("en-CA", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    };
-
-    // Use tracking_id for barcode, with fallback to shipment_id if tracking_id is empty
-    const barcodeValue = order.tracking_id || order.shipment_id || `ORD-${order.id.slice(0, 8)}`;
-
-    container.innerHTML = `
-      <div style="width: 384px; height: 576px; padding: 16px; background-color: #ffffff; font-family: system-ui, -apple-system, sans-serif;">
-        <div style="height: 12px; background-color: #F97316; margin: -16px -16px 12px -16px;"></div>
-        
-        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #d1d5db; padding-bottom: 10px; margin-bottom: 10px;">
-          <div>
-            <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">FROM</p>
-            <p style="font-size: 14px; font-weight: 600; color: #000000; margin-bottom: 1px;">${labelSettings.from_company}</p>
-            <p style="font-size: 11px; color: #374151; margin-bottom: 1px;">${labelSettings.from_tagline}</p>
-            <p style="font-size: 9px; color: #6b7280;">${labelSettings.from_website}</p>
-          </div>
-          <div style="text-align: right;">
-            <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">CONTACT</p>
-            <p style="font-size: 11px; color: #000000; margin-bottom: 1px;">${labelSettings.contact_address}</p>
-            <p style="font-size: 11px; color: #000000; margin-bottom: 1px;">${labelSettings.contact_phone}</p>
-            <p style="font-size: 10px; color: #374151;">${labelSettings.contact_email}</p>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d5db; padding-bottom: 10px; margin-bottom: 10px;">
-          <div>
-            <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Shipment ID</p>
-            <p style="font-size: 14px; font-family: monospace; font-weight: bold; color: #000000;">${order.shipment_id}</p>
-          </div>
-          <div style="text-align: right;">
-            <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Ship Date</p>
-            <p style="font-size: 13px; font-weight: 600; color: #000000;">${formatDate(order.shipping_date)}</p>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 10px;">
-          <div style="background-color: #dc2626; border: 2px solid #b91c1c; border-radius: 4px; padding: 4px 8px; display: inline-block;">
-            <span style="color: #ffffff; font-size: 9px; font-weight: bold;">⚠️ FRAGILE</span>
-          </div>
-        </div>
-
-        <div style="background-color: #000000; border-radius: 4px; padding: 4px 8px; display: inline-block; margin-bottom: 8px;">
-          <span style="color: #ffffff; font-size: 10px; font-weight: bold; letter-spacing: 0.5px;">SHIP TO</span>
-        </div>
-
-        <div style="margin-bottom: 4px;">
-          <p style="font-size: 16px; font-weight: bold; color: #000000; margin: 0;">${order.client_name || "Customer"}</p>
-          <p style="font-size: 13px; color: #000000; margin: 2px 0;">${order.address_line_1 || ""}</p>
-          ${order.address_line_2 ? `<p style="font-size: 13px; color: #000000; margin: 2px 0;">${order.address_line_2}</p>` : ""}
-          <p style="font-size: 13px; color: #000000; margin: 2px 0;">${address}</p>
-        </div>
-
-        <div style="border-top: 1px solid #d1d5db; padding-top: 10px; margin-top: auto;">
-          <p style="font-size: 10px; font-weight: bold; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 6px;">TRACKING #</p>
-          <div id="barcode-container-${i}" style="display: flex; justify-content: center;"></div>
-        </div>
-      </div>
-    `;
-
-    // Generate barcode - create SVG element properly with namespace
-    const barcodeContainer = container.querySelector(`#barcode-container-${i}`);
-    if (barcodeContainer && barcodeValue) {
-      try {
-        // Create SVG element with proper namespace
-        const svgNS = "http://www.w3.org/2000/svg";
-        const barcodeSvg = document.createElementNS(svgNS, "svg");
-        barcodeSvg.style.maxWidth = "280px";
-        barcodeSvg.style.width = "100%";
-        barcodeContainer.appendChild(barcodeSvg);
-        
-        // Generate barcode
-        JsBarcode(barcodeSvg, barcodeValue, BARCODE_CONFIG);
-      } catch (error) {
-        console.error("Barcode generation error for order:", order.id, error);
-        // Add fallback text if barcode fails
-        barcodeContainer.innerHTML = `<p style="font-size: 14px; font-family: monospace; font-weight: bold; color: #000000; text-align: center;">${barcodeValue}</p>`;
-      }
-    }
-
-    // Wait for DOM to update before capturing
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-    // Render to canvas and add to PDF
-    const canvas = await html2canvas(container.firstElementChild as HTMLElement, CANVAS_OPTIONS);
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 4, 6);
-
-    // Cleanup
-    document.body.removeChild(container);
-  }
-
-  pdf.save(`labels-${format(new Date(), "yyyy-MM-dd-HHmm")}.pdf`);
 }

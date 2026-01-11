@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useOrders } from '@/hooks/useOrders';
 import { TemplateOrderImportModal } from '@/components/orders/TemplateOrderImportModal';
 import { OrderDetailSheet } from '@/components/orders/OrderDetailSheet';
+import { OrderDetailDialog } from '@/components/orders/OrderDetailDialog';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { BulkAssignmentModal } from '@/components/orders/BulkAssignmentModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -659,13 +660,24 @@ export default function Orders() {
         }}
       />
 
-      <OrderDetailSheet
-        order={selectedOrder}
-        isOpen={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
-        onUpdate={refetch}
-        isAdmin={true}
-      />
+      {/* Use Dialog for desktop, Sheet for mobile */}
+      {isMobile ? (
+        <OrderDetailSheet
+          order={selectedOrder}
+          isOpen={!!selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onUpdate={refetch}
+          isAdmin={true}
+        />
+      ) : (
+        <OrderDetailDialog
+          order={selectedOrder}
+          isOpen={!!selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onUpdate={refetch}
+          isAdmin={true}
+        />
+      )}
 
       <BulkAssignmentModal
         orders={getSelectedOrders()}

@@ -382,17 +382,15 @@ export default function UserManagement() {
         </Dialog>
 
         {/* Edit Profile Sheet */}
-        {selectedUser && (
-          <UserProfileEditSheet
-            open={isEditSheetOpen}
-            onClose={() => {
-              setIsEditSheetOpen(false);
-              setSelectedUser(null);
-            }}
-            userId={selectedUser.id}
-            onSuccess={fetchUsers}
-          />
-        )}
+        <UserProfileEditSheet
+          user={selectedUser}
+          open={isEditSheetOpen}
+          onOpenChange={(open) => {
+            setIsEditSheetOpen(open);
+            if (!open) setSelectedUser(null);
+          }}
+          onUserUpdated={fetchUsers}
+        />
       </AdminLayout>
     );
   }
@@ -572,17 +570,15 @@ export default function UserManagement() {
       </Dialog>
 
       {/* Edit Profile Sheet */}
-      {selectedUser && (
-        <UserProfileEditSheet
-          open={isEditSheetOpen}
-          onClose={() => {
-            setIsEditSheetOpen(false);
-            setSelectedUser(null);
-          }}
-          userId={selectedUser.id}
-          onSuccess={fetchUsers}
-        />
-      )}
+      <UserProfileEditSheet
+        user={selectedUser}
+        open={isEditSheetOpen}
+        onOpenChange={(open) => {
+          setIsEditSheetOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+        onUserUpdated={fetchUsers}
+      />
     </AdminLayout>
   );
 }

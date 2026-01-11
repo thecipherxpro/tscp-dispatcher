@@ -115,13 +115,13 @@ export function ColumnMappingCard({
           </SelectTrigger>
           <SelectContent className="max-h-[280px] sm:max-h-[320px] bg-popover z-[100] overflow-y-auto">
             {/* Skip Option */}
-            <SelectItem value="skip" className="text-muted-foreground py-1.5 text-xs sm:text-sm">
+            <SelectItem value="skip" className="text-muted-foreground">
               — Do not import —
             </SelectItem>
             
             {/* Standard Fields Group */}
             <SelectGroup>
-              <SelectLabel className="py-1 px-2 text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider bg-muted/50 sticky top-0">
+              <SelectLabel className="text-[11px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider bg-muted sticky top-0 z-10 border-b border-border">
                 📋 Standard Fields
               </SelectLabel>
               {STANDARD_ORDER_FIELDS.map(field => {
@@ -133,13 +133,12 @@ export function ColumnMappingCard({
                     value={field.key} 
                     disabled={isUsed} 
                     className={cn(
-                      "py-1 sm:py-1.5 pl-4 text-xs sm:text-sm",
                       isUsed && "opacity-50"
                     )}
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <span className="truncate">{field.label}</span>
-                      {isUsed && <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">(used)</span>}
+                      {isUsed && <span className="text-[10px] text-muted-foreground shrink-0">(used)</span>}
                     </span>
                   </SelectItem>
                 );
@@ -150,10 +149,10 @@ export function ColumnMappingCard({
             {drugTypes.map(drugType => (
               <SelectGroup key={drugType.id}>
                 <SelectLabel className={cn(
-                  "py-1 px-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider sticky top-0",
-                  drugType.drug_type_key === 'injection' && "bg-blue-100/80 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-                  drugType.drug_type_key === 'nasal' && "bg-purple-100/80 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300",
-                  !['injection', 'nasal'].includes(drugType.drug_type_key) && "bg-muted/50 text-muted-foreground"
+                  "text-[11px] sm:text-xs font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-border",
+                  drugType.drug_type_key === 'injection' && "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300",
+                  drugType.drug_type_key === 'nasal' && "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300",
+                  !['injection', 'nasal'].includes(drugType.drug_type_key) && "bg-muted text-muted-foreground"
                 )}>
                   {drugType.drug_type_key === 'injection' && '💉 '}
                   {drugType.drug_type_key === 'nasal' && '👃 '}
@@ -169,13 +168,12 @@ export function ColumnMappingCard({
                       value={fieldKey} 
                       disabled={isUsed} 
                       className={cn(
-                        "py-1 sm:py-1.5 pl-4 text-xs sm:text-sm",
                         isUsed && "opacity-50",
-                        drugType.drug_type_key === 'injection' && "border-l-2 border-blue-400/50 ml-1",
-                        drugType.drug_type_key === 'nasal' && "border-l-2 border-purple-400/50 ml-1"
+                        drugType.drug_type_key === 'injection' && "border-l-2 border-blue-400 ml-1",
+                        drugType.drug_type_key === 'nasal' && "border-l-2 border-purple-400 ml-1"
                       )}
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-2">
                         <span className={cn(
                           "truncate",
                           drugType.drug_type_key === 'injection' && "text-blue-700 dark:text-blue-300",
@@ -183,7 +181,7 @@ export function ColumnMappingCard({
                         )}>
                           {field.label}
                         </span>
-                        {isUsed && <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">(used)</span>}
+                        {isUsed && <span className="text-[10px] text-muted-foreground shrink-0">(used)</span>}
                       </span>
                     </SelectItem>
                   );

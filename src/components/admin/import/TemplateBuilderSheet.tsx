@@ -127,9 +127,19 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
       
       template.column_mappings.forEach((m) => {
         mappings.set(m.csv_column, m.field_key);
+        
+        // Get display label for sample data
+        let displayLabel = m.field_label;
+        if (m.drug_type_key) {
+          const dt = drugTypes.find(d => d.drug_type_key === m.drug_type_key);
+          if (dt) {
+            displayLabel = `${dt.display_name}: ${m.field_label}`;
+          }
+        }
+        
         columns.push({
           name: m.csv_column,
-          sampleData: `Mapped to: ${m.field_label}`,
+          sampleData: displayLabel,
         });
       });
       
@@ -150,7 +160,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
       mapping: true,
       preview: false,
     });
-  }, [template, isOpen]);
+  }, [template, isOpen, drugTypes]);
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -293,8 +303,27 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
   const mappedColumns = displayColumns.filter((col) => columnMappings.has(col.name));
   const unmappedColumns = displayColumns.filter((col) => !columnMappings.has(col.name));
   
+  // Group columns by category (Standard, Injection, Nasal) for editing view
+  const getColumnCategory = (colName: string): 'standard' | 'injection' | 'nasal' | 'other' => {
+    const fieldKey = columnMappings.get(colName);
+    if (!fieldKey) return 'other';
+    if (fieldKey.startsWith('injection_')) return 'injection';
+    if (fieldKey.startsWith('nasal_')) return 'nasal';
+    // Check if it's a standard field
+    const isStandard = STANDARD_ORDER_FIELDS.some(f => f.key === fieldKey);
+    if (isStandard) return 'standard';
+    return 'other';
+  };
+  
+  const standardColumns = mappedColumns.filter(col => getColumnCategory(col.name) === 'standard');
+  const injectionColumns = mappedColumns.filter(col => getColumnCategory(col.name) === 'injection');
+  const nasalColumns = mappedColumns.filter(col => getColumnCategory(col.name) === 'nasal');
+  
   // Show mapping section if we have file parsed OR if editing with saved mappings
   const showMappingSection = displayColumns.length > 0;
+  
+  // Use grouped view when editing without file upload
+  const useGroupedView = isEditing && !parseResult && savedMappingColumns.length > 0;
   
   const toggleSection = (section: keyof typeof sectionsOpen) => {
     setSectionsOpen((prev) => ({
@@ -591,69 +620,151 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                     >
                       <Separator className="mb-3 sm:mb-4" />
 
-                      {/* Mapped Columns Section */}
-                      {mappedColumns.length > 0 && (
-                        <div className="mb-4 sm:mb-6">
-                          <div className="flex items-center gap-3 mb-4 sm:mb-4 px-0">
-                            <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
-                            <h4
-                              className={cn(
-                                "font-medium text-orange-600 dark:text-orange-400",
-                                isMobile ? "text-xs" : "text-sm",
-                              )}
-                            >
-                              Mapped Columns ({mappedColumns.length})
-                            </h4>
-                          </div>
-                          <div
-                            className={cn(
-                              "grid gap-4 sm:gap-4 w-full max-w-full",
-                              isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
-                            )}
-                          >
-                            {mappedColumns.map((column) => (
-                              <ColumnMappingCard
-                                key={column.name}
-                                column={column}
-                                mappedTo={columnMappings.get(column.name) || "skip"}
-                                onMappingChange={handleMappingChange}
-                                drugTypes={drugTypes}
-                                usedFields={usedFields}
-                                isMobile={isMobile}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {/* Grouped View for Editing */}
+                      {useGroupedView ? (
+                        <div className="space-y-6">
+                          {/* Standard Fields */}
+                          {standardColumns.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3 px-0">
+                                <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+                                <h4 className={cn("font-medium text-orange-600 dark:text-orange-400", isMobile ? "text-xs" : "text-sm")}>
+                                  📋 Standard Fields ({standardColumns.length})
+                                </h4>
+                              </div>
+                              <div className={cn("grid gap-3 sm:gap-4 w-full max-w-full", isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3")}>
+                                {standardColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || "skip"}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                    isMobile={isMobile}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Unmapped Columns Section */}
-                      {unmappedColumns.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                            <div className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
-                            <h4 className={cn("font-medium text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
-                              Unmapped Columns ({unmappedColumns.length})
-                            </h4>
-                          </div>
-                          <div
-                            className={cn(
-                              "grid gap-4 sm:gap-4 w-full max-w-full",
-                              isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
-                            )}
-                          >
-                            {unmappedColumns.map((column) => (
-                              <ColumnMappingCard
-                                key={column.name}
-                                column={column}
-                                mappedTo={columnMappings.get(column.name) || "skip"}
-                                onMappingChange={handleMappingChange}
-                                drugTypes={drugTypes}
-                                usedFields={usedFields}
-                                isMobile={isMobile}
-                              />
-                            ))}
-                          </div>
+                          {/* Injection Fields */}
+                          {injectionColumns.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3 px-0">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                <h4 className={cn("font-medium text-blue-600 dark:text-blue-400", isMobile ? "text-xs" : "text-sm")}>
+                                  💉 Injection Fields ({injectionColumns.length})
+                                </h4>
+                              </div>
+                              <div className={cn("grid gap-3 sm:gap-4 w-full max-w-full", isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3")}>
+                                {injectionColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || "skip"}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                    isMobile={isMobile}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Nasal Fields */}
+                          {nasalColumns.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3 px-0">
+                                <div className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                                <h4 className={cn("font-medium text-purple-600 dark:text-purple-400", isMobile ? "text-xs" : "text-sm")}>
+                                  👃 Nasal Fields ({nasalColumns.length})
+                                </h4>
+                              </div>
+                              <div className={cn("grid gap-3 sm:gap-4 w-full max-w-full", isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3")}>
+                                {nasalColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || "skip"}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                    isMobile={isMobile}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      ) : (
+                        <>
+                          {/* Mapped Columns Section - for file upload view */}
+                          {mappedColumns.length > 0 && (
+                            <div className="mb-4 sm:mb-6">
+                              <div className="flex items-center gap-3 mb-4 sm:mb-4 px-0">
+                                <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+                                <h4
+                                  className={cn(
+                                    "font-medium text-orange-600 dark:text-orange-400",
+                                    isMobile ? "text-xs" : "text-sm",
+                                  )}
+                                >
+                                  Mapped Columns ({mappedColumns.length})
+                                </h4>
+                              </div>
+                              <div
+                                className={cn(
+                                  "grid gap-4 sm:gap-4 w-full max-w-full",
+                                  isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
+                                )}
+                              >
+                                {mappedColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || "skip"}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                    isMobile={isMobile}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Unmapped Columns Section */}
+                          {unmappedColumns.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
+                                <h4 className={cn("font-medium text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
+                                  Unmapped Columns ({unmappedColumns.length})
+                                </h4>
+                              </div>
+                              <div
+                                className={cn(
+                                  "grid gap-4 sm:gap-4 w-full max-w-full",
+                                  isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
+                                )}
+                              >
+                                {unmappedColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || "skip"}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                    isMobile={isMobile}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </CardContent>
                   </CollapsibleContent>

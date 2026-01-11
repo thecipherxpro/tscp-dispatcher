@@ -111,22 +111,36 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
   const [fileName, setFileName] = useState<string | null>(null);
   const [parseResult, setParseResult] = useState<FileParseResult | null>(null);
   const [columnMappings, setColumnMappings] = useState<Map<string, string>>(new Map());
+  
+  // Store saved mappings from template for editing without file upload
+  const [savedMappingColumns, setSavedMappingColumns] = useState<ParsedFileColumn[]>([]);
+  
   const isEditing = !!template;
+  
   useEffect(() => {
     if (template) {
       setTemplateName(template.template_name);
       setDescription(template.description || "");
       setIsDefault(template.is_default);
       const mappings = new Map<string, string>();
+      const columns: ParsedFileColumn[] = [];
+      
       template.column_mappings.forEach((m) => {
         mappings.set(m.csv_column, m.field_key);
+        columns.push({
+          name: m.csv_column,
+          sampleData: `Mapped to: ${m.field_label}`,
+        });
       });
+      
       setColumnMappings(mappings);
+      setSavedMappingColumns(columns);
     } else {
       setTemplateName("");
       setDescription("");
       setIsDefault(false);
       setColumnMappings(new Map());
+      setSavedMappingColumns([]);
     }
     setFileName(null);
     setParseResult(null);
@@ -269,12 +283,19 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
     }
   };
   const mappedCount = columnMappings.size;
-  const totalColumns = parseResult?.columns.length || 0;
+  
+  // Use parseResult columns if file is uploaded, otherwise use saved mappings for editing
+  const displayColumns = parseResult?.columns || (isEditing ? savedMappingColumns : []);
+  const totalColumns = displayColumns.length;
   const skippedCount = totalColumns - mappedCount;
 
   // Separate mapped and unmapped columns for better organization
-  const mappedColumns = parseResult?.columns.filter((col) => columnMappings.has(col.name)) || [];
-  const unmappedColumns = parseResult?.columns.filter((col) => !columnMappings.has(col.name)) || [];
+  const mappedColumns = displayColumns.filter((col) => columnMappings.has(col.name));
+  const unmappedColumns = displayColumns.filter((col) => !columnMappings.has(col.name));
+  
+  // Show mapping section if we have file parsed OR if editing with saved mappings
+  const showMappingSection = displayColumns.length > 0;
+  
   const toggleSection = (section: keyof typeof sectionsOpen) => {
     setSectionsOpen((prev) => ({
       ...prev,
@@ -456,10 +477,12 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                           className={cn("mx-auto mb-3 text-muted-foreground", isMobile ? "w-8 h-8" : "w-10 h-10")}
                         />
                         <p className={cn("font-medium text-foreground mb-1", isMobile && "text-sm")}>
-                          Click to upload sample file
+                          {isEditing ? "Upload new file to update columns" : "Click to upload sample file"}
                         </p>
                         <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
-                          CSV or Excel (.xlsx, .xls)
+                          {isEditing 
+                            ? "Optional - existing mappings are preserved below" 
+                            : "CSV or Excel (.xlsx, .xls)"}
                         </p>
                         <input
                           ref={fileInputRef}
@@ -507,7 +530,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
             </Collapsible>
 
             {/* Section 3: Column Mapping */}
-            {parseResult && parseResult.columns.length > 0 && (
+            {showMappingSection && (
               <Collapsible open={sectionsOpen.mapping} onOpenChange={() => toggleSection("mapping")}>
                 <Card className="border-border">
                   <CollapsibleTrigger asChild>

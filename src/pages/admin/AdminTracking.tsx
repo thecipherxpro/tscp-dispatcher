@@ -409,49 +409,88 @@ export default function AdminTracking() {
               </div>
             </section>
 
-            {/* Medication Section */}
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Package className="w-4 h-4 text-muted-foreground" />
-                <h3 className="text-sm font-semibold text-foreground">Medication</h3>
-              </div>
-              <div className="bg-muted/30 rounded-xl p-3 space-y-3">
-                <div className="text-center pb-2">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Naloxone Kit</p>
+            {/* Medication Details Section */}
+            {(order.nasal_qty || order.injection_qty) && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Medication Details</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-background rounded-lg p-3 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-xs font-bold text-blue-700">N</span>
+                <div className="space-y-3">
+                  {/* Nasal Card */}
+                  {order.nasal_qty && order.nasal_qty > 0 && (
+                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                          <span className="text-sm font-bold text-blue-700 dark:text-blue-300">N</span>
+                        </div>
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">Nasal</h4>
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground">Nasal</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">{order.nasal_qty || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">qty</p>
-                    {order.nasal_rx_number && <div className="mt-2 pt-2 border-t border-border">
-                        <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
-                        <p className="text-xs font-mono text-foreground">{order.nasal_rx_number}</p>
-                      </div>}
-                  </div>
-                  
-                  <div className="bg-background rounded-lg p-3 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <span className="text-xs font-bold text-emerald-700">I</span>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div>
+                          <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Rx</p>
+                          <p className="text-sm font-mono font-medium text-blue-900 dark:text-blue-100">{order.nasal_rx_number || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">DIN</p>
+                          <p className="text-sm font-mono font-medium text-blue-900 dark:text-blue-100">{order.nasal_din || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Qty</p>
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">{order.nasal_qty}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Drug</p>
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">{order.nasal_drug_name || '—'}</p>
+                        </div>
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground">Injectable</span>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{order.injection_qty || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">qty</p>
-                    {order.injection_rx_number && <div className="mt-2 pt-2 border-t border-border">
-                        <p className="text-[10px] text-muted-foreground uppercase">RX #</p>
-                        <p className="text-xs font-mono text-foreground">{order.injection_rx_number}</p>
-                      </div>}
-                  </div>
+                  )}
+
+                  {/* Injectable Card */}
+                  {order.injection_qty && order.injection_qty > 0 && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                          <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">I</span>
+                        </div>
+                        <h4 className="font-semibold text-emerald-900 dark:text-emerald-100">Injectable</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wide font-medium">Rx</p>
+                          <p className="text-sm font-mono font-medium text-emerald-900 dark:text-emerald-100">{order.injection_rx_number || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wide font-medium">DIN</p>
+                          <p className="text-sm font-mono font-medium text-emerald-900 dark:text-emerald-100">{order.injection_din || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wide font-medium">Qty</p>
+                          <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{order.injection_qty}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wide font-medium">Drug</p>
+                          <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{order.injection_drug_name || '—'}</p>
+                        </div>
+                        {order.injection_strength && (
+                          <div>
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wide font-medium">Strength</p>
+                            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{order.injection_strength}</p>
+                          </div>
+                        )}
+                        {order.injection_form && (
+                          <div>
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wide font-medium">Form</p>
+                            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{order.injection_form}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             {/* Warehouse & Doctor Section */}
             <section>

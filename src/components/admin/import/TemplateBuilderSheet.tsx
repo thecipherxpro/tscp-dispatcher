@@ -436,7 +436,7 @@ export function TemplateBuilderSheet({
 
                           {/* Mapped Columns Section */}
                           {mappedColumns.length > 0 && <div className="mb-4 sm:mb-6">
-                              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                              <div className="flex items-center gap-2 mb-4 sm:mb-4 px-[25px]">
                                 <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
                                 <h4 className={cn("font-medium text-orange-600 dark:text-orange-400", isMobile ? "text-xs" : "text-sm")}>
                                   Mapped Columns ({mappedColumns.length})

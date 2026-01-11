@@ -113,47 +113,83 @@ export function ColumnMappingCard({
           <SelectTrigger className={cn("w-full max-w-full", isMobile ? "h-7 text-[11px]" : "", isMapped ? "border-primary/30 bg-background" : "border-input bg-background")}>
             <SelectValue placeholder="Select field..." />
           </SelectTrigger>
-          <SelectContent className="max-h-[200px] sm:max-h-[300px] bg-popover z-[100]">
-            <SelectItem value="skip" className="text-muted-foreground">
+          <SelectContent className="max-h-[280px] sm:max-h-[320px] bg-popover z-[100] overflow-y-auto">
+            {/* Skip Option */}
+            <SelectItem value="skip" className="text-muted-foreground py-1.5 text-xs sm:text-sm">
               — Do not import —
             </SelectItem>
             
+            {/* Standard Fields Group */}
             <SelectGroup>
-              <SelectLabel className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">
-                Standard Fields
+              <SelectLabel className="py-1 px-2 text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider bg-muted/50 sticky top-0">
+                📋 Standard Fields
               </SelectLabel>
               {STANDARD_ORDER_FIELDS.map(field => {
-              const usedBy = usedFields.get(field.key);
-              const isUsed = usedBy && usedBy !== column.name;
-              return <SelectItem key={field.key} value={field.key} disabled={isUsed} className={cn(isUsed && "opacity-50")}>
-                    <span className="flex items-center gap-2">
-                      {field.label}
-                      {isUsed && <span className="text-[10px] text-muted-foreground">
-                          (used)
-                        </span>}
+                const usedBy = usedFields.get(field.key);
+                const isUsed = usedBy && usedBy !== column.name;
+                return (
+                  <SelectItem 
+                    key={field.key} 
+                    value={field.key} 
+                    disabled={isUsed} 
+                    className={cn(
+                      "py-1 sm:py-1.5 pl-4 text-xs sm:text-sm",
+                      isUsed && "opacity-50"
+                    )}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate">{field.label}</span>
+                      {isUsed && <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">(used)</span>}
                     </span>
-                  </SelectItem>;
-            })}
+                  </SelectItem>
+                );
+              })}
             </SelectGroup>
             
-            {drugTypes.map(drugType => <SelectGroup key={drugType.id}>
-                <SelectLabel className={cn("text-xs font-semibold uppercase tracking-wide", drugType.drug_type_key === 'injection' && "text-blue-600 dark:text-blue-400", drugType.drug_type_key === 'nasal' && "text-purple-600 dark:text-purple-400")}>
+            {/* Drug Type Groups */}
+            {drugTypes.map(drugType => (
+              <SelectGroup key={drugType.id}>
+                <SelectLabel className={cn(
+                  "py-1 px-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider sticky top-0",
+                  drugType.drug_type_key === 'injection' && "bg-blue-100/80 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+                  drugType.drug_type_key === 'nasal' && "bg-purple-100/80 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300",
+                  !['injection', 'nasal'].includes(drugType.drug_type_key) && "bg-muted/50 text-muted-foreground"
+                )}>
+                  {drugType.drug_type_key === 'injection' && '💉 '}
+                  {drugType.drug_type_key === 'nasal' && '👃 '}
                   {drugType.display_name}
                 </SelectLabel>
                 {drugType.field_schema.map(field => {
-              const fieldKey = `${drugType.drug_type_key}_${field.key}`;
-              const usedBy = usedFields.get(fieldKey);
-              const isUsed = usedBy && usedBy !== column.name;
-              return <SelectItem key={fieldKey} value={fieldKey} disabled={isUsed} className={cn(isUsed && "opacity-50")}>
-                      <span className="flex items-center gap-2">
-                        {field.label}
-                        {isUsed && <span className="text-[10px] text-muted-foreground">
-                            (used)
-                          </span>}
+                  const fieldKey = `${drugType.drug_type_key}_${field.key}`;
+                  const usedBy = usedFields.get(fieldKey);
+                  const isUsed = usedBy && usedBy !== column.name;
+                  return (
+                    <SelectItem 
+                      key={fieldKey} 
+                      value={fieldKey} 
+                      disabled={isUsed} 
+                      className={cn(
+                        "py-1 sm:py-1.5 pl-4 text-xs sm:text-sm",
+                        isUsed && "opacity-50",
+                        drugType.drug_type_key === 'injection' && "border-l-2 border-blue-400/50 ml-1",
+                        drugType.drug_type_key === 'nasal' && "border-l-2 border-purple-400/50 ml-1"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className={cn(
+                          "truncate",
+                          drugType.drug_type_key === 'injection' && "text-blue-700 dark:text-blue-300",
+                          drugType.drug_type_key === 'nasal' && "text-purple-700 dark:text-purple-300"
+                        )}>
+                          {field.label}
+                        </span>
+                        {isUsed && <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">(used)</span>}
                       </span>
-                    </SelectItem>;
-            })}
-              </SelectGroup>)}
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+            ))}
           </SelectContent>
         </Select>
       </CardContent>

@@ -48,15 +48,12 @@ export const STANDARD_ORDER_FIELDS: StandardField[] = [
   { key: 'shipping_date', label: 'Shipping Date', type: 'date' },
   { key: 'client_name', label: 'Client Name', type: 'text' },
   { key: 'email', label: 'Email', type: 'text' },
-  { key: 'phone', label: 'Phone', type: 'text' },
   { key: 'address_line_1', label: 'Address Line 1', type: 'text' },
   { key: 'address_line_2', label: 'Address Line 2', type: 'text' },
-  { key: 'city', label: 'City', type: 'text' },
-  { key: 'postal_code', label: 'Postal Code', type: 'text' },
   { key: 'health_card_no', label: 'Health Card No.', type: 'text' },
   { key: 'notes', label: 'Notes', type: 'text' },
   { key: 'warehouse_address', label: 'Warehouse Address', type: 'text' },
-  { key: 'doctor_name', label: 'Doctor Name', type: 'text' },
+  { key: 'authorizing_doctor_name', label: 'Doctor Name', type: 'text' },
 ];
 
 // Extended column mapping with position-based detection for duplicate headers

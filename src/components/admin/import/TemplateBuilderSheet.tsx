@@ -349,8 +349,8 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                 <CollapsibleContent>
                   <CardContent className={cn("pt-0 space-y-4", isMobile ? "pb-3 px-3" : "pb-4 px-4")}>
                     <Separator className="mb-4" />
-                    <div className="grid gap-8 sm:grid-cols-2">
-                      <div className="space-y-2">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-6">
                         <Label htmlFor="templateName" className={isMobile ? "text-sm" : ""}>
                           Template Name *
                         </Label>
@@ -571,7 +571,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                       {/* Mapped Columns Section */}
                       {mappedColumns.length > 0 && (
                         <div className="mb-4 sm:mb-6">
-                          <div className="flex items-center gap-4 mb-4 sm:mb-4 px-0">
+                          <div className="flex items-center gap-3 mb-4 sm:mb-4 px-0">
                             <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
                             <h4
                               className={cn(

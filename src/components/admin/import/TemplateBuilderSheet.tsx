@@ -614,7 +614,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                           </div>
                           <div
                             className={cn(
-                              "grid gap-2 sm:gap-3 w-full max-w-full",
+                              "grid gap-4 sm:gap-4 w-full max-w-full",
                               isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3",
                             )}
                           >

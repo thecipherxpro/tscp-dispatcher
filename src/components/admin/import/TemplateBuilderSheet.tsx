@@ -564,7 +564,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <CardContent
-                      className={cn("pt-0 overflow-hidden w-full max-w-full", isMobile ? "pb-3 px-6" : "pb-4 px-9")}
+                      className={cn("pt-0 overflow-hidden w-full max-w-full", isMobile ? "pb-3 px-6" : "pb-4 px-4")}
                     >
                       <Separator className="mb-3 sm:mb-4" />
 

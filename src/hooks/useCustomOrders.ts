@@ -102,6 +102,98 @@ export function useCustomOrders() {
     }
   }, [fetchOrders, toast]);
 
+  const moveToOrders = useCallback(async (orderIds: string[]) => {
+    try {
+      // Get the selected custom orders
+      const ordersToMove = orders.filter(o => orderIds.includes(o.id));
+      
+      if (ordersToMove.length === 0) {
+        toast({
+          title: 'Error',
+          description: 'No orders selected',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      // Insert into orders table
+      for (const order of ordersToMove) {
+        // Generate shipment and tracking IDs
+        const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
+        const shipmentId = shipmentIdData as string;
+
+        const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
+        const trackingId = trackingIdData as string;
+
+        const trackingUrl = `${window.location.origin}/track/${trackingId}`;
+
+        const { error: insertError } = await supabase
+          .from('orders')
+          .insert({
+            client_name: order.client_name,
+            email: order.email,
+            health_card_no: order.health_card_no,
+            address_line_1: order.address_line_1,
+            address_line_2: order.address_line_2,
+            warehouse_address: order.warehouse_address,
+            authorizing_doctor_name: order.authorizing_doctor_name,
+            order_date: order.order_date,
+            shipping_date: order.shipping_date,
+            notes: order.notes,
+            injection_rx_number: order.injection_rx_number,
+            injection_din: order.injection_din,
+            injection_drug_name: order.injection_drug_name,
+            injection_qty: order.injection_qty,
+            injection_strength: order.injection_strength,
+            injection_form: order.injection_form,
+            injection_package: order.injection_package,
+            injection_billing_date: order.injection_billing_date,
+            nasal_rx_number: order.nasal_rx_number,
+            nasal_din: order.nasal_din,
+            nasal_drug_name: order.nasal_drug_name,
+            nasal_qty: order.nasal_qty,
+            nasal_package: order.nasal_package,
+            nasal_billing_date: order.nasal_billing_date,
+            shipment_id: shipmentId,
+            tracking_id: trackingId,
+            tracking_url: trackingUrl,
+            latitude: order.latitude,
+            longitude: order.longitude,
+            geo_zone: order.geo_zone,
+            country: order.country,
+            timeline_status: 'PENDING',
+            pending_at: new Date().toISOString(),
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // Delete from custom_orders after successful move
+      const { error: deleteError } = await supabase
+        .from('custom_orders')
+        .delete()
+        .in('id', orderIds);
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: 'Moved Successfully',
+        description: `${ordersToMove.length} order(s) moved to Orders for delivery`,
+      });
+
+      await fetchOrders();
+      return true;
+    } catch (error: any) {
+      console.error('Error moving orders:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move orders',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [orders, fetchOrders, toast]);
+
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -111,5 +203,6 @@ export function useCustomOrders() {
     isLoading,
     refetch: fetchOrders,
     deleteOrders,
+    moveToOrders,
   };
 }

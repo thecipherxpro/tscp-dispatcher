@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Search, Upload, CheckSquare, X, Trash2, FileDown, Loader2 } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, X, Trash2, FileDown, Loader2, ArrowRight } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,13 +45,15 @@ const formatDate = (date: string | null): string => {
 };
 
 export default function CustomOrders() {
-  const { orders, isLoading, refetch, deleteOrders } = useCustomOrders();
+  const { orders, isLoading, refetch, deleteOrders, moveToOrders } = useCustomOrders();
   const [searchQuery, setSearchQuery] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showLabelGenerator, setShowLabelGenerator] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMoveConfirm, setShowMoveConfirm] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
   const haptic = useHapticFeedback();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -107,6 +109,17 @@ export default function CustomOrders() {
       clearSelection();
     }
     setShowDeleteConfirm(false);
+  };
+
+  const handleMoveToOrders = async () => {
+    setIsMoving(true);
+    const idsToMove = Array.from(selectedOrderIds);
+    const success = await moveToOrders(idsToMove);
+    if (success) {
+      clearSelection();
+    }
+    setIsMoving(false);
+    setShowMoveConfirm(false);
   };
 
   const OrderCardMobile = ({ order }: { order: CustomOrder }) => (
@@ -209,6 +222,17 @@ export default function CustomOrders() {
                 </Button>
                 {selectedOrderIds.size > 0 && (
                   <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        haptic.medium();
+                        setShowMoveConfirm(true);
+                      }}
+                      disabled={isMoving}
+                    >
+                      {isMoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                    </Button>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -362,6 +386,14 @@ export default function CustomOrders() {
                   Delete ({selectedOrderIds.size})
                 </Button>
                 <Button
+                  variant="outline"
+                  onClick={() => setShowMoveConfirm(true)}
+                  disabled={isMoving}
+                >
+                  {isMoving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRight className="w-4 h-4 mr-2" />}
+                  Move to Orders ({selectedOrderIds.size})
+                </Button>
+                <Button
                   onClick={() => setShowLabelGenerator(true)}
                 >
                   <FileDown className="w-4 h-4 mr-2" />
@@ -500,6 +532,25 @@ export default function CustomOrders() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showMoveConfirm} onOpenChange={setShowMoveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move to Orders</AlertDialogTitle>
+            <AlertDialogDescription>
+              Move {selectedOrderIds.size} order(s) to the Orders page for delivery? 
+              This will generate tracking IDs and remove them from Custom Orders.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMoving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMoveToOrders} disabled={isMoving}>
+              {isMoving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Move to Orders
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

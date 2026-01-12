@@ -25,9 +25,9 @@ export function AdminLayout({
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background safe-area-inset">
+      <div className="min-h-screen flex flex-col bg-background safe-area-inset">
         {title && (
-          <header className="sticky top-0 z-30 bg-card border-b border-border safe-area-top">
+          <header className="sticky top-0 z-30 bg-card border-b border-border safe-area-top flex-shrink-0">
             <div className="px-4 py-3 flex items-center gap-3">
               {showBackButton && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => navigate(-1)}>
@@ -38,7 +38,7 @@ export function AdminLayout({
             </div>
           </header>
         )}
-        <main className="pb-22">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-20">{children}</main>
         <MobileNav />
       </div>
     );

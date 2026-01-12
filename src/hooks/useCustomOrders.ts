@@ -59,7 +59,7 @@ export function useCustomOrders() {
       const { data, error } = await supabase
         .from('custom_orders')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('order_date', { ascending: false, nullsFirst: false });
 
       if (error) throw error;
       setOrders(data || []);

@@ -43,10 +43,13 @@ export interface StandardField {
   type: string;
 }
 
+// DEPRECATED: Use useStandardFields hook to fetch from database instead
+// This is kept for backwards compatibility but should not be used for new code
 export const STANDARD_ORDER_FIELDS: StandardField[] = [
   { key: 'order_date', label: 'Order Date', type: 'date' },
   { key: 'shipping_date', label: 'Shipping Date', type: 'date' },
   { key: 'client_name', label: 'Client Name', type: 'text' },
+  { key: 'phone', label: 'Phone Number', type: 'text' },
   { key: 'email', label: 'Email', type: 'text' },
   { key: 'address_line_1', label: 'Address Line 1', type: 'text' },
   { key: 'address_line_2', label: 'Address Line 2', type: 'text' },

@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface CustomOrder {
   id: string;
   client_name: string | null;
+  phone: string | null;
   email: string | null;
   health_card_no: string | null;
   address_line_1: string | null;
@@ -131,6 +132,7 @@ export function useCustomOrders() {
           .from('orders')
           .insert({
             client_name: order.client_name,
+            phone: order.phone,
             email: order.email,
             health_card_no: order.health_card_no,
             address_line_1: order.address_line_1,

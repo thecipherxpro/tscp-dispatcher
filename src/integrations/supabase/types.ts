@@ -71,6 +71,7 @@ export type Database = {
           nasal_rx_number: string | null
           notes: string | null
           order_date: string | null
+          phone: string | null
           shipment_id: string | null
           shipping_date: string | null
           tracking_id: string | null
@@ -110,6 +111,7 @@ export type Database = {
           nasal_rx_number?: string | null
           notes?: string | null
           order_date?: string | null
+          phone?: string | null
           shipment_id?: string | null
           shipping_date?: string | null
           tracking_id?: string | null
@@ -149,6 +151,7 @@ export type Database = {
           nasal_rx_number?: string | null
           notes?: string | null
           order_date?: string | null
+          phone?: string | null
           shipment_id?: string | null
           shipping_date?: string | null
           tracking_id?: string | null
@@ -513,6 +516,7 @@ export type Database = {
           notes: string | null
           order_date: string | null
           pending_at: string | null
+          phone: string | null
           picked_up_at: string | null
           review_notes: string | null
           review_reason: string | null
@@ -569,6 +573,7 @@ export type Database = {
           notes?: string | null
           order_date?: string | null
           pending_at?: string | null
+          phone?: string | null
           picked_up_at?: string | null
           review_notes?: string | null
           review_reason?: string | null
@@ -627,6 +632,7 @@ export type Database = {
           notes?: string | null
           order_date?: string | null
           pending_at?: string | null
+          phone?: string | null
           picked_up_at?: string | null
           review_notes?: string | null
           review_reason?: string | null
@@ -723,6 +729,7 @@ export type Database = {
           nasal_qty: number | null
           order_id: string | null
           pending_at: string | null
+          phone: string | null
           picked_up_at: string | null
           review_notes: string | null
           review_reason: string | null
@@ -759,6 +766,7 @@ export type Database = {
           nasal_qty?: number | null
           order_id?: string | null
           pending_at?: string | null
+          phone?: string | null
           picked_up_at?: string | null
           review_notes?: string | null
           review_reason?: string | null
@@ -797,6 +805,7 @@ export type Database = {
           nasal_qty?: number | null
           order_id?: string | null
           pending_at?: string | null
+          phone?: string | null
           picked_up_at?: string | null
           review_notes?: string | null
           review_reason?: string | null

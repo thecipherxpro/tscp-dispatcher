@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Package, User, Eye, FileDown } from 'lucide-react';
+import { MapPin, Calendar, Package, User, Eye, FileDown, Phone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -91,9 +91,18 @@ export function OrderCard({ order, onClick, isDriver = false, actionButton }: Or
             <p className="font-semibold text-foreground truncate text-sm leading-tight">
               {order.client_name || 'Unknown Client'}
             </p>
-            {!isDriver && order.email && (
+            {order.phone ? (
+              <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                <Phone className="w-3 h-3" />
+                {order.phone}
+              </p>
+            ) : !isDriver && order.email ? (
               <p className="text-xs text-muted-foreground truncate">
                 {order.email}
+              </p>
+            ) : !order.phone && (
+              <p className="text-xs text-muted-foreground/50 italic truncate">
+                No phone
               </p>
             )}
           </div>

@@ -2,8 +2,9 @@ import { Check, ArrowRight, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ParsedFileColumn, DrugType, STANDARD_ORDER_FIELDS } from '@/types/import';
+import { ParsedFileColumn, DrugType, StandardField, STANDARD_ORDER_FIELDS } from '@/types/import';
 import { cn } from '@/lib/utils';
+
 interface ColumnMappingCardProps {
   column: ParsedFileColumn;
   mappedTo: string;
@@ -11,6 +12,7 @@ interface ColumnMappingCardProps {
   drugTypes: DrugType[];
   usedFields: Map<string, string>;
   isMobile?: boolean;
+  standardFields?: StandardField[];
 }
 export function ColumnMappingCard({
   column,
@@ -18,14 +20,20 @@ export function ColumnMappingCard({
   onMappingChange,
   drugTypes,
   usedFields,
-  isMobile = false
+  isMobile = false,
+  standardFields
 }: ColumnMappingCardProps) {
   const isMapped = mappedTo && mappedTo !== 'skip';
+  
+  // Use provided standard fields or fall back to hardcoded ones
+  const activeStandardFields = standardFields && standardFields.length > 0 
+    ? standardFields 
+    : STANDARD_ORDER_FIELDS;
 
   // Get the display label for the mapped field
   const getMappedLabel = (): string => {
     if (!isMapped) return 'Not mapped';
-    const standardField = STANDARD_ORDER_FIELDS.find(f => f.key === mappedTo);
+    const standardField = activeStandardFields.find(f => f.key === mappedTo);
     if (standardField) return standardField.label;
     for (const drugType of drugTypes) {
       const prefix = `${drugType.drug_type_key}_`;
@@ -124,7 +132,7 @@ export function ColumnMappingCard({
               <SelectLabel className="text-[11px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider bg-muted sticky top-0 z-10 border-b border-border">
                 📋 Standard Fields
               </SelectLabel>
-              {STANDARD_ORDER_FIELDS.map(field => {
+              {activeStandardFields.map(field => {
                 const usedBy = usedFields.get(field.key);
                 const isUsed = usedBy && usedBy !== column.name;
                 return (

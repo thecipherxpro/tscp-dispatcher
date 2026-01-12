@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, X } from 'lucide-react';
+import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, X, User, Phone, Mail } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -250,6 +250,50 @@ export function OrderDetailSheet({
                     </div>
                   </div>
                 </div>}
+
+              {/* Customer Information Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Customer Information</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">
+                        {order.client_name || 'Unknown Client'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Phone</p>
+                        {order.phone ? (
+                          <p className="text-sm font-medium text-foreground">{order.phone}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground/50 italic">Not provided</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Email</p>
+                        {order.email ? (
+                          <p className="text-sm font-medium text-foreground truncate">{order.email}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground/50 italic">Not provided</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
               {/* Dates Section */}
               <section>

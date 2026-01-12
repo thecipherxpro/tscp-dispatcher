@@ -1017,16 +1017,17 @@ export async function generateCustomLabels(
     console.error("Failed to load delivered stamp:", e);
   }
   
-  // For 'completed' type (Mark Shipped & Delivered), create ZIP with individual order folders
-  if (options.type === 'completed') {
+  const dateStr = new Date().toISOString().split('T')[0];
+  
+  // For multiple orders OR 'completed' type, create ZIP with individual order folders
+  if (orders.length > 1 || options.type === 'completed') {
     const zip = new JSZip();
-    const dateStr = new Date().toISOString().split('T')[0];
     
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i];
-      const clientName = sanitizeFilename(order.client_name || 'Unknown');
       const shipmentId = order.shipment_id || order.id.substring(0, 8);
-      const folderName = `${clientName}_${shipmentId}`;
+      const clientName = sanitizeFilename(order.client_name || 'Unknown');
+      const folderName = `${shipmentId}_${clientName}`;
       
       // Generate label PDF
       const labelBytes = await generateSingleOrderLabelPdf(
@@ -1036,17 +1037,18 @@ export async function generateCustomLabels(
         fragileBytes
       );
       
-      // Generate receipt PDF
-      const receiptBytes = await generateSingleOrderReceiptPdf(
-        order,
-        options,
-        appLogoBytes,
-        deliveredStampBytes
-      );
+      // For 'completed' type, also generate receipt
+      if (options.type === 'completed') {
+        const receiptBytes = await generateSingleOrderReceiptPdf(
+          order,
+          options,
+          appLogoBytes,
+          deliveredStampBytes
+        );
+        zip.file(`${folderName}/receipt.pdf`, receiptBytes);
+      }
       
-      // Add to ZIP
       zip.file(`${folderName}/label.pdf`, labelBytes);
-      zip.file(`${folderName}/receipt.pdf`, receiptBytes);
       
       if (onProgress) {
         onProgress(Math.round(((i + 1) / orders.length) * 90));
@@ -1058,7 +1060,9 @@ export async function generateCustomLabels(
     const url = URL.createObjectURL(zipBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `shipped-delivered-orders-${dateStr}.zip`;
+    
+    const typeLabel = options.type === 'completed' ? 'shipped-delivered' : options.type;
+    link.download = `labels-${typeLabel}-${dateStr}.zip`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1070,35 +1074,29 @@ export async function generateCustomLabels(
     return;
   }
   
-  // For 'standard' and 'shipped' types, generate combined PDF as before
+  // For single order (non-completed), generate single PDF
   const pdfDoc = await PDFDocument.create();
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   
-  for (let i = 0; i < orders.length; i++) {
-    await generateSingleLabel(
-      pdfDoc,
-      orders[i],
-      options,
-      helveticaBold,
-      helvetica,
-      appLogoBytes,
-      fragileBytes
-    );
-    
-    if (onProgress) {
-      onProgress(Math.round(((i + 1) / orders.length) * 100));
-    }
-  }
+  await generateSingleLabel(
+    pdfDoc,
+    orders[0],
+    options,
+    helveticaBold,
+    helvetica,
+    appLogoBytes,
+    fragileBytes
+  );
   
   const pdfBytes = await pdfDoc.save();
   
-  // Download labels
+  // Download label
   const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `custom-labels-${options.type}-${new Date().toISOString().split('T')[0]}.pdf`;
+  link.download = `label-${options.type}-${dateStr}.pdf`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

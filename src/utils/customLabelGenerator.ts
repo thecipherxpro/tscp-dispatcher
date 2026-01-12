@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { CustomOrder } from '@/hooks/useCustomOrders';
 import QRCode from 'qrcode';
 
@@ -62,6 +62,9 @@ const dataUrlToBytes = async (dataUrl: string): Promise<Uint8Array> => {
   return bytes;
 };
 
+// ============================================
+// LABEL GENERATOR (4x6 inch) - No stamp, same as normal orders
+// ============================================
 async function generateSingleLabel(
   pdfDoc: PDFDocument,
   order: CustomOrder,
@@ -69,9 +72,9 @@ async function generateSingleLabel(
   helveticaBold: any,
   helvetica: any,
   appLogoBytes: Uint8Array | null,
-  fragileBytes: Uint8Array | null,
-  deliveredStampBytes: Uint8Array | null
+  fragileBytes: Uint8Array | null
 ): Promise<void> {
+  // 4x6 inches = 288x432 points
   const page = pdfDoc.addPage([288, 432]);
   const { width, height } = page.getSize();
   
@@ -224,7 +227,7 @@ async function generateSingleLabel(
     color: gray,
   });
   
-  const shippedDateStr = options.type !== 'standard' && options.shippedAt
+  const shippedDateStr = (options.type === 'shipped' || options.type === 'completed') && options.shippedAt
     ? `${formatDate(options.shippedAt)} ${formatTime(options.shippedAt)}`.trim()
     : formatDate(order.shipping_date);
   
@@ -384,46 +387,26 @@ async function generateSingleLabel(
     color: black,
   });
   
-  // ============================================
-  // DELIVERED STAMP IMAGE (for completed type)
-  // ============================================
-  if (options.type === 'completed' && deliveredStampBytes) {
-    try {
-      const stampImg = await pdfDoc.embedPng(deliveredStampBytes);
-      const stampWidth = 80;
-      const stampHeight = 80;
-      
-      page.drawImage(stampImg, {
-        x: trackingX,
-        y: trackingY - 95,
-        width: stampWidth,
-        height: stampHeight,
-      });
-    } catch (e) {
-      console.error("Failed to embed delivered stamp:", e);
-    }
-  } else {
-    // Show scan text for non-completed labels
-    page.drawText("Scan QR code to", {
-      x: trackingX,
-      y: trackingY - 40,
-      size: 8,
-      font: helvetica,
-      color: gray,
-    });
-    page.drawText("track your delivery", {
-      x: trackingX,
-      y: trackingY - 52,
-      size: 8,
-      font: helvetica,
-      color: gray,
-    });
-  }
+  // Scan text
+  page.drawText("Scan QR code to", {
+    x: trackingX,
+    y: trackingY - 40,
+    size: 8,
+    font: helvetica,
+    color: gray,
+  });
+  page.drawText("track your delivery", {
+    x: trackingX,
+    y: trackingY - 52,
+    size: 8,
+    font: helvetica,
+    color: gray,
+  });
   
   // ============================================
   // FRAGILE BADGE
   // ============================================
-  if (fragileBytes && options.type !== 'completed') {
+  if (fragileBytes) {
     try {
       const fragileImg = await pdfDoc.embedPng(fragileBytes);
       const badgeAspectRatio = 656 / 147;
@@ -465,7 +448,7 @@ async function generateSingleLabel(
 }
 
 // ============================================
-// DELIVERY RECEIPT GENERATOR (5x7 inch)
+// RECEIPT GENERATOR (4x6 inch) - Store receipt style
 // ============================================
 async function generateSingleReceipt(
   pdfDoc: PDFDocument,
@@ -473,43 +456,34 @@ async function generateSingleReceipt(
   options: LabelOptions,
   helveticaBold: any,
   helvetica: any,
-  appLogoBytes: Uint8Array | null
+  appLogoBytes: Uint8Array | null,
+  deliveredStampBytes: Uint8Array | null
 ): Promise<void> {
-  // 5x7 inches = 360x504 points (72 points per inch)
-  const page = pdfDoc.addPage([360, 504]);
+  // 4x6 inches = 288x432 points
+  const page = pdfDoc.addPage([288, 432]);
   const { width, height } = page.getSize();
   
   const black = rgb(0, 0, 0);
-  const gray = rgb(0.4, 0.4, 0.4);
-  const lightGray = rgb(0.85, 0.85, 0.85);
-  const darkGray = rgb(0.2, 0.2, 0.2);
+  const gray = rgb(0.5, 0.5, 0.5);
+  const lightGray = rgb(0.8, 0.8, 0.8);
   
-  const marginLeft = 24;
-  const marginRight = 24;
+  const marginLeft = 16;
+  const marginRight = 16;
   const contentWidth = width - marginLeft - marginRight;
+  const centerX = width / 2;
+  
+  let currentY = height - 20;
   
   // ============================================
-  // HEADER - Dark Background
+  // HEADER - Company Logo & Name (centered)
   // ============================================
-  const headerHeight = 60;
-  const headerY = height - headerHeight;
-  
-  page.drawRectangle({
-    x: 0,
-    y: headerY,
-    width: width,
-    height: headerHeight,
-    color: darkGray,
-  });
-  
-  // Logo
-  const logoSize = 40;
+  const logoSize = 36;
   if (appLogoBytes) {
     try {
       const logoImg = await pdfDoc.embedPng(appLogoBytes);
       page.drawImage(logoImg, {
-        x: marginLeft,
-        y: headerY + (headerHeight - logoSize) / 2,
+        x: centerX - logoSize / 2,
+        y: currentY - logoSize,
         width: logoSize,
         height: logoSize,
       });
@@ -518,355 +492,378 @@ async function generateSingleReceipt(
     }
   }
   
-  // Title
-  const titleText = "DELIVERY RECEIPT";
-  page.drawText(titleText, {
-    x: marginLeft + logoSize + 16,
-    y: headerY + headerHeight / 2 + 6,
-    size: 16,
-    font: helveticaBold,
-    color: rgb(1, 1, 1),
-  });
+  currentY -= logoSize + 8;
   
-  // Shipment ID in header
-  const shipmentIdText = `SHIPMENT ID: ${order.shipment_id || 'N/A'}`;
-  page.drawText(shipmentIdText, {
-    x: marginLeft + logoSize + 16,
-    y: headerY + headerHeight / 2 - 12,
-    size: 9,
-    font: helvetica,
-    color: rgb(0.7, 0.7, 0.7),
-  });
-  
-  // ============================================
-  // COMPANY INFO SECTION
-  // ============================================
-  let currentY = height - headerHeight - 30;
-  
-  page.drawText("EndOverdose", {
-    x: marginLeft,
+  const companyName = "EndOverdose";
+  const companyNameWidth = helveticaBold.widthOfTextAtSize(companyName, 14);
+  page.drawText(companyName, {
+    x: centerX - companyNameWidth / 2,
     y: currentY,
     size: 14,
     font: helveticaBold,
     color: black,
   });
   
-  currentY -= 16;
-  page.drawText("3265 Wharton Way #23, Mississauga, ON L4X 2X9", {
-    x: marginLeft,
+  currentY -= 14;
+  const tagline = "Healthcare Delivery Service";
+  const taglineWidth = helvetica.widthOfTextAtSize(tagline, 8);
+  page.drawText(tagline, {
+    x: centerX - taglineWidth / 2,
     y: currentY,
-    size: 9,
+    size: 8,
     font: helvetica,
     color: gray,
   });
   
   currentY -= 12;
-  page.drawText("Phone: (647) 494-4538 • Email: Info@endoverdose.ca", {
-    x: marginLeft,
+  const address1 = "3265 Wharton Way #23, Mississauga, ON";
+  const address1Width = helvetica.widthOfTextAtSize(address1, 7);
+  page.drawText(address1, {
+    x: centerX - address1Width / 2,
     y: currentY,
-    size: 9,
+    size: 7,
     font: helvetica,
     color: gray,
   });
   
-  // Divider
-  currentY -= 20;
-  page.drawLine({
-    start: { x: marginLeft, y: currentY },
-    end: { x: width - marginRight, y: currentY },
-    thickness: 1,
-    color: lightGray,
+  currentY -= 10;
+  const contact = "(647) 494-4538 • Info@endoverdose.ca";
+  const contactWidth = helvetica.widthOfTextAtSize(contact, 7);
+  page.drawText(contact, {
+    x: centerX - contactWidth / 2,
+    y: currentY,
+    size: 7,
+    font: helvetica,
+    color: gray,
   });
   
+  // Dashed divider
+  currentY -= 12;
+  for (let x = marginLeft; x < width - marginRight; x += 6) {
+    page.drawLine({
+      start: { x, y: currentY },
+      end: { x: x + 3, y: currentY },
+      thickness: 1,
+      color: lightGray,
+    });
+  }
+  
   // ============================================
-  // ORDER DETAILS SECTION
+  // RECEIPT TITLE
   // ============================================
-  currentY -= 25;
-  page.drawText("Order Details:", {
-    x: marginLeft,
+  currentY -= 16;
+  const receiptTitle = "DELIVERY RECEIPT";
+  const receiptTitleWidth = helveticaBold.widthOfTextAtSize(receiptTitle, 12);
+  page.drawText(receiptTitle, {
+    x: centerX - receiptTitleWidth / 2,
     y: currentY,
     size: 12,
     font: helveticaBold,
     color: black,
   });
   
-  // Client Name
-  currentY -= 22;
-  page.drawText("CLIENT:", {
+  currentY -= 12;
+  const shipmentIdText = `#${order.shipment_id || 'N/A'}`;
+  const shipmentIdWidth = helvetica.widthOfTextAtSize(shipmentIdText, 9);
+  page.drawText(shipmentIdText, {
+    x: centerX - shipmentIdWidth / 2,
+    y: currentY,
+    size: 9,
+    font: helvetica,
+    color: gray,
+  });
+  
+  // Dashed divider
+  currentY -= 12;
+  for (let x = marginLeft; x < width - marginRight; x += 6) {
+    page.drawLine({
+      start: { x, y: currentY },
+      end: { x: x + 3, y: currentY },
+      thickness: 1,
+      color: lightGray,
+    });
+  }
+  
+  // ============================================
+  // CLIENT INFO SECTION
+  // ============================================
+  currentY -= 16;
+  page.drawText("CLIENT", {
     x: marginLeft,
     y: currentY,
-    size: 8,
+    size: 7,
     font: helveticaBold,
     color: gray,
   });
+  
+  currentY -= 12;
   page.drawText(order.client_name || "N/A", {
-    x: marginLeft + 60,
+    x: marginLeft,
     y: currentY,
     size: 10,
     font: helveticaBold,
     color: black,
   });
   
-  // Address
-  currentY -= 16;
-  page.drawText("ADDRESS:", {
-    x: marginLeft,
-    y: currentY,
-    size: 8,
-    font: helveticaBold,
-    color: gray,
-  });
-  
-  const fullAddress = [order.address_line_1, order.address_line_2, order.country || 'Canada']
-    .filter(Boolean)
-    .join(', ');
-  
+  currentY -= 12;
+  const fullAddress = [order.address_line_1, order.address_line_2].filter(Boolean).join(', ');
   page.drawText(fullAddress || "N/A", {
-    x: marginLeft + 60,
+    x: marginLeft,
     y: currentY,
-    size: 9,
+    size: 8,
     font: helvetica,
     color: black,
   });
   
-  // Authorizing Doctor
+  currentY -= 10;
+  page.drawText(order.country || "Canada", {
+    x: marginLeft,
+    y: currentY,
+    size: 8,
+    font: helvetica,
+    color: black,
+  });
+  
+  // ============================================
+  // AUTHORIZED DOCTOR
+  // ============================================
   currentY -= 16;
-  page.drawText("DOCTOR:", {
+  page.drawText("AUTHORIZED BY", {
     x: marginLeft,
     y: currentY,
-    size: 8,
+    size: 7,
     font: helveticaBold,
     color: gray,
   });
-  page.drawText(order.authorizing_doctor_name || "N/A", {
-    x: marginLeft + 60,
+  
+  currentY -= 12;
+  page.drawText(`Dr. ${order.authorizing_doctor_name || 'N/A'}`, {
+    x: marginLeft,
     y: currentY,
     size: 9,
     font: helvetica,
     color: black,
   });
   
-  // Divider
-  currentY -= 20;
-  page.drawLine({
-    start: { x: marginLeft, y: currentY },
-    end: { x: width - marginRight, y: currentY },
-    thickness: 1,
-    color: lightGray,
-  });
+  // Dashed divider
+  currentY -= 12;
+  for (let x = marginLeft; x < width - marginRight; x += 6) {
+    page.drawLine({
+      start: { x, y: currentY },
+      end: { x: x + 3, y: currentY },
+      thickness: 1,
+      color: lightGray,
+    });
+  }
   
   // ============================================
-  // MEDICATION SECTION
+  // MEDICATION SECTION (receipt item style)
   // ============================================
-  currentY -= 25;
-  page.drawText("Medication:", {
+  currentY -= 14;
+  page.drawText("MEDICATION", {
     x: marginLeft,
     y: currentY,
-    size: 12,
+    size: 7,
     font: helveticaBold,
-    color: black,
+    color: gray,
   });
   
-  // Injection details (if any)
+  // Injection
   if (order.injection_drug_name || order.injection_qty) {
-    currentY -= 20;
-    page.drawText("INJECTION:", {
+    currentY -= 14;
+    const injName = order.injection_drug_name || 'Injection';
+    const injQty = order.injection_qty ? `x${order.injection_qty}` : '';
+    
+    page.drawText(injName, {
       x: marginLeft,
-      y: currentY,
-      size: 8,
-      font: helveticaBold,
-      color: gray,
-    });
-    
-    const injectionInfo = [
-      order.injection_drug_name,
-      order.injection_strength,
-      order.injection_qty ? `Qty: ${order.injection_qty}` : null,
-    ].filter(Boolean).join(' • ');
-    
-    page.drawText(injectionInfo || "N/A", {
-      x: marginLeft + 70,
       y: currentY,
       size: 9,
       font: helvetica,
       color: black,
     });
     
-    if (order.injection_rx_number) {
-      currentY -= 14;
-      page.drawText(`RX#: ${order.injection_rx_number}`, {
-        x: marginLeft + 70,
+    if (injQty) {
+      const qtyWidth = helvetica.widthOfTextAtSize(injQty, 9);
+      page.drawText(injQty, {
+        x: width - marginRight - qtyWidth,
         y: currentY,
-        size: 8,
+        size: 9,
+        font: helveticaBold,
+        color: black,
+      });
+    }
+    
+    if (order.injection_strength) {
+      currentY -= 10;
+      page.drawText(`  ${order.injection_strength}`, {
+        x: marginLeft,
+        y: currentY,
+        size: 7,
         font: helvetica,
         color: gray,
       });
     }
   }
   
-  // Nasal details (if any)
+  // Nasal
   if (order.nasal_drug_name || order.nasal_qty) {
-    currentY -= 20;
-    page.drawText("NASAL:", {
+    currentY -= 14;
+    const nasalName = order.nasal_drug_name || 'Nasal';
+    const nasalQty = order.nasal_qty ? `x${order.nasal_qty}` : '';
+    
+    page.drawText(nasalName, {
       x: marginLeft,
-      y: currentY,
-      size: 8,
-      font: helveticaBold,
-      color: gray,
-    });
-    
-    const nasalInfo = [
-      order.nasal_drug_name,
-      order.nasal_qty ? `Qty: ${order.nasal_qty}` : null,
-    ].filter(Boolean).join(' • ');
-    
-    page.drawText(nasalInfo || "N/A", {
-      x: marginLeft + 70,
       y: currentY,
       size: 9,
       font: helvetica,
       color: black,
     });
     
-    if (order.nasal_rx_number) {
-      currentY -= 14;
-      page.drawText(`RX#: ${order.nasal_rx_number}`, {
-        x: marginLeft + 70,
+    if (nasalQty) {
+      const qtyWidth = helvetica.widthOfTextAtSize(nasalQty, 9);
+      page.drawText(nasalQty, {
+        x: width - marginRight - qtyWidth,
         y: currentY,
-        size: 8,
-        font: helvetica,
-        color: gray,
+        size: 9,
+        font: helveticaBold,
+        color: black,
       });
     }
   }
   
-  // Divider
-  currentY -= 25;
-  page.drawLine({
-    start: { x: marginLeft, y: currentY },
-    end: { x: width - marginRight, y: currentY },
-    thickness: 1,
-    color: lightGray,
-  });
+  // Dashed divider
+  currentY -= 14;
+  for (let x = marginLeft; x < width - marginRight; x += 6) {
+    page.drawLine({
+      start: { x, y: currentY },
+      end: { x: x + 3, y: currentY },
+      thickness: 1,
+      color: lightGray,
+    });
+  }
   
   // ============================================
-  // DATES SECTION - SHIPPED & DELIVERED
+  // DATES SECTION (receipt style - aligned)
   // ============================================
-  currentY -= 30;
+  currentY -= 14;
   
-  // Two-column layout for dates
-  const colWidth = contentWidth / 2;
+  const labelWidth = 90;
   
-  // SHIPPED DATE box
-  page.drawRectangle({
+  // Ordered Date
+  page.drawText("Ordered:", {
     x: marginLeft,
-    y: currentY - 45,
-    width: colWidth - 10,
-    height: 55,
-    borderColor: lightGray,
-    borderWidth: 1,
-  });
-  
-  page.drawText("SHIPPED DATE:", {
-    x: marginLeft + 10,
-    y: currentY - 5,
+    y: currentY,
     size: 8,
-    font: helveticaBold,
+    font: helvetica,
     color: gray,
   });
+  page.drawText(formatDate(order.order_date), {
+    x: marginLeft + labelWidth,
+    y: currentY,
+    size: 8,
+    font: helvetica,
+    color: black,
+  });
   
-  const shippedDateStr = options.shippedAt ? formatDateTime(options.shippedAt) : formatDate(order.shipping_date);
-  page.drawText(shippedDateStr, {
-    x: marginLeft + 10,
-    y: currentY - 25,
-    size: 11,
+  // Shipped Date & Time
+  currentY -= 12;
+  page.drawText("Shipped:", {
+    x: marginLeft,
+    y: currentY,
+    size: 8,
+    font: helvetica,
+    color: gray,
+  });
+  const shippedStr = options.shippedAt ? formatDateTime(options.shippedAt) : formatDate(order.shipping_date);
+  page.drawText(shippedStr, {
+    x: marginLeft + labelWidth,
+    y: currentY,
+    size: 8,
     font: helveticaBold,
     color: black,
   });
   
-  // DELIVERED DATE box
-  page.drawRectangle({
-    x: marginLeft + colWidth,
-    y: currentY - 45,
-    width: colWidth - 10,
-    height: 55,
-    borderColor: lightGray,
-    borderWidth: 1,
-  });
-  
-  page.drawText("DELIVERED DATE:", {
-    x: marginLeft + colWidth + 10,
-    y: currentY - 5,
+  // Delivered Date & Time
+  currentY -= 12;
+  page.drawText("Delivered:", {
+    x: marginLeft,
+    y: currentY,
     size: 8,
-    font: helveticaBold,
+    font: helvetica,
     color: gray,
   });
-  
-  const deliveredDateStr = options.deliveredAt ? formatDateTime(options.deliveredAt) : "N/A";
-  page.drawText(deliveredDateStr, {
-    x: marginLeft + colWidth + 10,
-    y: currentY - 25,
-    size: 11,
+  const deliveredStr = options.deliveredAt ? formatDateTime(options.deliveredAt) : "N/A";
+  page.drawText(deliveredStr, {
+    x: marginLeft + labelWidth,
+    y: currentY,
+    size: 8,
     font: helveticaBold,
     color: rgb(0.1, 0.5, 0.1),
   });
   
   // ============================================
-  // SIGNATURE SECTION
+  // DELIVERED STAMP (non-distorted, bottom right)
   // ============================================
-  currentY -= 90;
-  
-  page.drawText("Recipient Signature:", {
-    x: marginLeft,
-    y: currentY,
-    size: 9,
-    font: helvetica,
-    color: gray,
-  });
-  
-  currentY -= 30;
-  page.drawLine({
-    start: { x: marginLeft, y: currentY },
-    end: { x: width - marginRight - 100, y: currentY },
-    thickness: 1,
-    color: black,
-  });
-  
-  page.drawText("Date:", {
-    x: width - marginRight - 90,
-    y: currentY + 16,
-    size: 9,
-    font: helvetica,
-    color: gray,
-  });
-  
-  page.drawLine({
-    start: { x: width - marginRight - 90, y: currentY },
-    end: { x: width - marginRight, y: currentY },
-    thickness: 1,
-    color: black,
-  });
+  if (deliveredStampBytes) {
+    try {
+      const stampImg = await pdfDoc.embedPng(deliveredStampBytes);
+      // Get original dimensions for aspect ratio
+      const stampOrigWidth = stampImg.width;
+      const stampOrigHeight = stampImg.height;
+      const aspectRatio = stampOrigWidth / stampOrigHeight;
+      
+      // Set stamp size maintaining aspect ratio
+      const stampHeight = 50;
+      const stampWidth = stampHeight * aspectRatio;
+      
+      // Position bottom right, above footer
+      const stampX = width - marginRight - stampWidth;
+      const stampY = 45;
+      
+      page.drawImage(stampImg, {
+        x: stampX,
+        y: stampY,
+        width: stampWidth,
+        height: stampHeight,
+      });
+    } catch (e) {
+      console.error("Failed to embed delivered stamp:", e);
+    }
+  }
   
   // ============================================
-  // FOOTER
+  // FOOTER - Thank you message
   // ============================================
-  const footerHeight = 30;
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: width,
-    height: footerHeight,
-    color: darkGray,
-  });
+  const footerY = 20;
   
-  const footerText = "Thank you for choosing EndOverdose Healthcare Delivery";
-  const footerTextWidth = helvetica.widthOfTextAtSize(footerText, 8);
-  page.drawText(footerText, {
-    x: (width - footerTextWidth) / 2,
-    y: 11,
+  // Dashed divider above footer
+  for (let x = marginLeft; x < width - marginRight; x += 6) {
+    page.drawLine({
+      start: { x, y: footerY + 18 },
+      end: { x: x + 3, y: footerY + 18 },
+      thickness: 1,
+      color: lightGray,
+    });
+  }
+  
+  const thankYou = "Thank you for choosing EndOverdose";
+  const thankYouWidth = helvetica.widthOfTextAtSize(thankYou, 8);
+  page.drawText(thankYou, {
+    x: centerX - thankYouWidth / 2,
+    y: footerY,
     size: 8,
     font: helvetica,
-    color: rgb(0.7, 0.7, 0.7),
+    color: gray,
+  });
+  
+  const website = "www.endoverdose.ca";
+  const websiteWidth = helvetica.widthOfTextAtSize(website, 7);
+  page.drawText(website, {
+    x: centerX - websiteWidth / 2,
+    y: footerY - 10,
+    size: 7,
+    font: helvetica,
+    color: gray,
   });
 }
 
@@ -905,6 +902,7 @@ export async function generateCustomLabels(
     console.error("Failed to load delivered stamp:", e);
   }
   
+  // Generate labels for all orders
   for (let i = 0; i < orders.length; i++) {
     await generateSingleLabel(
       pdfDoc,
@@ -913,8 +911,7 @@ export async function generateCustomLabels(
       helveticaBold,
       helvetica,
       appLogoBytes,
-      fragileBytes,
-      deliveredStampBytes
+      fragileBytes
     );
     
     if (onProgress) {
@@ -935,8 +932,8 @@ export async function generateCustomLabels(
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   
-  // Generate receipts for shipped and completed types
-  if (options.type === 'shipped' || options.type === 'completed') {
+  // Generate receipts ONLY for 'completed' type (Mark Shipped & Delivered)
+  if (options.type === 'completed') {
     const receiptPdfDoc = await PDFDocument.create();
     const receiptBold = await receiptPdfDoc.embedFont(StandardFonts.HelveticaBold);
     const receiptRegular = await receiptPdfDoc.embedFont(StandardFonts.Helvetica);
@@ -948,7 +945,8 @@ export async function generateCustomLabels(
         options,
         receiptBold,
         receiptRegular,
-        appLogoBytes
+        appLogoBytes,
+        deliveredStampBytes
       );
       
       if (onProgress) {
@@ -963,7 +961,7 @@ export async function generateCustomLabels(
     const receiptUrl = URL.createObjectURL(receiptBlob);
     const receiptLink = document.createElement('a');
     receiptLink.href = receiptUrl;
-    receiptLink.download = `delivery-receipts-${options.type}-${new Date().toISOString().split('T')[0]}.pdf`;
+    receiptLink.download = `delivery-receipts-${new Date().toISOString().split('T')[0]}.pdf`;
     document.body.appendChild(receiptLink);
     
     // Small delay to ensure first download starts

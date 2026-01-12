@@ -143,7 +143,7 @@ export default function CustomOrders() {
               Nasal: {order.nasal_qty}
             </Badge>
           )}
-          <span className="ml-auto">{formatDate(order.created_at)}</span>
+          <span className="ml-auto">{formatDate(order.order_date)}</span>
         </div>
       </CardContent>
     </Card>
@@ -396,7 +396,7 @@ export default function CustomOrders() {
                   <TableHead>Address</TableHead>
                   <TableHead>Zone</TableHead>
                   <TableHead>Medications</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Order Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -453,7 +453,7 @@ export default function CustomOrders() {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(order.created_at)}
+                        {formatDate(order.order_date)}
                       </TableCell>
                     </TableRow>
                   ))

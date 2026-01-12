@@ -14,7 +14,7 @@ export function useOrders(enableRealtime = true) {
       const { data } = await supabase
         .from('orders')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('order_date', { ascending: false, nullsFirst: false });
 
       if (data) {
         setOrders(data as Order[]);
@@ -46,8 +46,8 @@ export function useOrders(enableRealtime = true) {
               prev.map(order => 
                 order.id === payload.new.id ? (payload.new as Order) : order
               ).sort((a, b) => {
-                const dateA = new Date(a.created_at || 0).getTime();
-                const dateB = new Date(b.created_at || 0).getTime();
+                const dateA = new Date(a.order_date || 0).getTime();
+                const dateB = new Date(b.order_date || 0).getTime();
                 return dateB - dateA;
               })
             );

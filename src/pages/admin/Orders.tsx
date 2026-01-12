@@ -569,7 +569,7 @@ export default function Orders() {
                     <TableHead className="hidden xl:table-cell">Address</TableHead>
                     <TableHead className="hidden lg:table-cell">Zone</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="hidden lg:table-cell">Date</TableHead>
+                    <TableHead className="hidden lg:table-cell">Order Date</TableHead>
                     <TableHead className="w-20"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -628,7 +628,7 @@ export default function Orders() {
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                        {order.created_at ? new Date(order.created_at).toLocaleDateString() : '-'}
+                        {order.order_date ? new Date(order.order_date).toLocaleDateString() : '-'}
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm">

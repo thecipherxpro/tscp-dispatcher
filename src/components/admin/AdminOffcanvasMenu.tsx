@@ -9,7 +9,8 @@ import {
   History,
   DollarSign,
   FileSpreadsheet,
-  LogOut
+  LogOut,
+  Package
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const menuItems = [
+  { to: '/admin/custom-orders', icon: Package, label: 'Custom Orders' },
   { to: '/admin/payroll', icon: DollarSign, label: 'Payroll' },
   { to: '/admin/import-templates', icon: FileSpreadsheet, label: 'Import Templates' },
   { to: '/track', icon: MapPin, label: 'Tracking List' },

@@ -477,7 +477,7 @@ async function generateSingleReceipt(
   // ============================================
   // HEADER - Company Logo & Name (centered)
   // ============================================
-  const logoSize = 28;
+  const logoSize = 32;
   if (appLogoBytes) {
     try {
       const logoImg = await pdfDoc.embedPng(appLogoBytes);
@@ -492,7 +492,7 @@ async function generateSingleReceipt(
     }
   }
   
-  currentY -= logoSize + 6;
+  currentY -= logoSize + 12; // Added more gap after logo
   
   const companyName = "EndOverdose";
   const companyNameWidth = helveticaBold.widthOfTextAtSize(companyName, 12);
@@ -504,7 +504,7 @@ async function generateSingleReceipt(
     color: black,
   });
   
-  currentY -= 10;
+  currentY -= 11;
   const tagline = "Healthcare Delivery Service";
   const taglineWidth = helvetica.widthOfTextAtSize(tagline, 7);
   page.drawText(tagline, {
@@ -657,7 +657,7 @@ async function generateSingleReceipt(
   }
   
   // ============================================
-  // MEDICATION SECTION (detailed receipt style)
+  // MEDICATION SECTION (2-column layout with DIN)
   // ============================================
   currentY -= 12;
   page.drawText("MEDICATION DETAILS", {
@@ -667,6 +667,10 @@ async function generateSingleReceipt(
     font: helveticaBold,
     color: gray,
   });
+  
+  const col1X = marginLeft;
+  const col2X = marginLeft + 125; // Right column for values
+  const rowHeight = 9;
   
   // Injection details
   if (order.injection_drug_name || order.injection_qty || order.injection_rx_number) {
@@ -679,82 +683,64 @@ async function generateSingleReceipt(
       color: rgb(0.3, 0.3, 0.3),
     });
     
-    // Drug Name & Qty
-    currentY -= 10;
-    const injName = order.injection_drug_name || 'N/A';
-    page.drawText(injName, {
-      x: marginLeft + 4,
-      y: currentY,
-      size: 8,
-      font: helveticaBold,
-      color: black,
-    });
-    
+    // Qty on the right
     if (order.injection_qty) {
       const qtyText = `Qty: ${order.injection_qty}`;
-      const qtyWidth = helvetica.widthOfTextAtSize(qtyText, 8);
+      const qtyWidth = helveticaBold.widthOfTextAtSize(qtyText, 7);
       page.drawText(qtyText, {
         x: width - marginRight - qtyWidth,
         y: currentY,
-        size: 8,
+        size: 7,
         font: helveticaBold,
         color: black,
       });
     }
     
-    // Strength & Form (for injection)
-    if (order.injection_strength || order.injection_form) {
-      currentY -= 9;
-      const strengthForm = [order.injection_strength, order.injection_form].filter(Boolean).join(' • ');
-      page.drawText(strengthForm, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: gray,
-      });
+    // Drug Name
+    currentY -= rowHeight + 2;
+    page.drawText("Drug:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+    page.drawText(order.injection_drug_name || 'N/A', { x: col2X, y: currentY, size: 7, font: helveticaBold, color: black });
+    
+    // DIN
+    if (order.injection_din) {
+      currentY -= rowHeight;
+      page.drawText("DIN:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.injection_din, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
     
     // RX Number
     if (order.injection_rx_number) {
-      currentY -= 9;
-      page.drawText(`RX#: ${order.injection_rx_number}`, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: black,
-      });
+      currentY -= rowHeight;
+      page.drawText("RX#:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.injection_rx_number, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
+    }
+    
+    // Strength & Form
+    if (order.injection_strength || order.injection_form) {
+      currentY -= rowHeight;
+      page.drawText("Strength/Form:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      const strengthForm = [order.injection_strength, order.injection_form].filter(Boolean).join(' / ');
+      page.drawText(strengthForm, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
     
     // Package
     if (order.injection_package) {
-      currentY -= 9;
-      page.drawText(`Package: ${order.injection_package}`, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: gray,
-      });
+      currentY -= rowHeight;
+      page.drawText("Package:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.injection_package, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
     
     // Billing Date
     if (order.injection_billing_date) {
-      currentY -= 9;
-      page.drawText(`Billing: ${formatDate(order.injection_billing_date)}`, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: gray,
-      });
+      currentY -= rowHeight;
+      page.drawText("Billing:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(formatDate(order.injection_billing_date), { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
   }
   
   // Nasal details
   if (order.nasal_drug_name || order.nasal_qty || order.nasal_rx_number) {
-    currentY -= 12;
+    currentY -= 14;
     page.drawText("NASAL", {
       x: marginLeft,
       y: currentY,
@@ -763,63 +749,50 @@ async function generateSingleReceipt(
       color: rgb(0.3, 0.3, 0.3),
     });
     
-    // Drug Name & Qty
-    currentY -= 10;
-    const nasalName = order.nasal_drug_name || 'N/A';
-    page.drawText(nasalName, {
-      x: marginLeft + 4,
-      y: currentY,
-      size: 8,
-      font: helveticaBold,
-      color: black,
-    });
-    
+    // Qty on the right
     if (order.nasal_qty) {
       const qtyText = `Qty: ${order.nasal_qty}`;
-      const qtyWidth = helvetica.widthOfTextAtSize(qtyText, 8);
+      const qtyWidth = helveticaBold.widthOfTextAtSize(qtyText, 7);
       page.drawText(qtyText, {
         x: width - marginRight - qtyWidth,
         y: currentY,
-        size: 8,
+        size: 7,
         font: helveticaBold,
         color: black,
       });
     }
     
+    // Drug Name
+    currentY -= rowHeight + 2;
+    page.drawText("Drug:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+    page.drawText(order.nasal_drug_name || 'N/A', { x: col2X, y: currentY, size: 7, font: helveticaBold, color: black });
+    
+    // DIN
+    if (order.nasal_din) {
+      currentY -= rowHeight;
+      page.drawText("DIN:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.nasal_din, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
+    }
+    
     // RX Number
     if (order.nasal_rx_number) {
-      currentY -= 9;
-      page.drawText(`RX#: ${order.nasal_rx_number}`, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: black,
-      });
+      currentY -= rowHeight;
+      page.drawText("RX#:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.nasal_rx_number, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
     
     // Package
     if (order.nasal_package) {
-      currentY -= 9;
-      page.drawText(`Package: ${order.nasal_package}`, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: gray,
-      });
+      currentY -= rowHeight;
+      page.drawText("Package:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.nasal_package, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
     
     // Billing Date
     if (order.nasal_billing_date) {
-      currentY -= 9;
-      page.drawText(`Billing: ${formatDate(order.nasal_billing_date)}`, {
-        x: marginLeft + 4,
-        y: currentY,
-        size: 7,
-        font: helvetica,
-        color: gray,
-      });
+      currentY -= rowHeight;
+      page.drawText("Billing:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(formatDate(order.nasal_billing_date), { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
   }
   

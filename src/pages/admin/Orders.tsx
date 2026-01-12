@@ -628,7 +628,7 @@ export default function Orders() {
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                        {order.order_date ? new Date(order.order_date).toLocaleDateString() : '-'}
+                        {order.order_date ? new Date(order.order_date + 'T00:00:00Z').toLocaleDateString('en-CA', { timeZone: 'UTC' }) : '-'}
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm">

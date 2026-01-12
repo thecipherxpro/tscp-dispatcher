@@ -1,6 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { CustomOrder } from '@/hooks/useCustomOrders';
 import QRCode from 'qrcode';
+import JSZip from 'jszip';
 
 export interface LabelOptions {
   type: 'standard' | 'shipped' | 'completed';
@@ -932,15 +933,64 @@ async function generateSingleReceipt(
   });
 }
 
+// Helper to generate a single order's label PDF bytes
+async function generateSingleOrderLabelPdf(
+  order: CustomOrder,
+  options: LabelOptions,
+  appLogoBytes: Uint8Array | null,
+  fragileBytes: Uint8Array | null
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  
+  await generateSingleLabel(
+    pdfDoc,
+    order,
+    options,
+    helveticaBold,
+    helvetica,
+    appLogoBytes,
+    fragileBytes
+  );
+  
+  return await pdfDoc.save();
+}
+
+// Helper to generate a single order's receipt PDF bytes
+async function generateSingleOrderReceiptPdf(
+  order: CustomOrder,
+  options: LabelOptions,
+  appLogoBytes: Uint8Array | null,
+  deliveredStampBytes: Uint8Array | null
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  
+  await generateSingleReceipt(
+    pdfDoc,
+    order,
+    options,
+    helveticaBold,
+    helvetica,
+    appLogoBytes,
+    deliveredStampBytes
+  );
+  
+  return await pdfDoc.save();
+}
+
+// Sanitize filename
+function sanitizeFilename(name: string): string {
+  return (name || 'unknown').replace(/[^a-zA-Z0-9-_]/g, '_').substring(0, 50);
+}
+
 export async function generateCustomLabels(
   orders: CustomOrder[],
   options: LabelOptions,
   onProgress?: (progress: number) => void
 ): Promise<void> {
-  const pdfDoc = await PDFDocument.create();
-  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  
   // Load images once
   let appLogoBytes: Uint8Array | null = null;
   let fragileBytes: Uint8Array | null = null;
@@ -967,7 +1017,64 @@ export async function generateCustomLabels(
     console.error("Failed to load delivered stamp:", e);
   }
   
-  // Generate labels for all orders
+  // For 'completed' type (Mark Shipped & Delivered), create ZIP with individual order folders
+  if (options.type === 'completed') {
+    const zip = new JSZip();
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    for (let i = 0; i < orders.length; i++) {
+      const order = orders[i];
+      const clientName = sanitizeFilename(order.client_name || 'Unknown');
+      const shipmentId = order.shipment_id || order.id.substring(0, 8);
+      const folderName = `${clientName}_${shipmentId}`;
+      
+      // Generate label PDF
+      const labelBytes = await generateSingleOrderLabelPdf(
+        order,
+        options,
+        appLogoBytes,
+        fragileBytes
+      );
+      
+      // Generate receipt PDF
+      const receiptBytes = await generateSingleOrderReceiptPdf(
+        order,
+        options,
+        appLogoBytes,
+        deliveredStampBytes
+      );
+      
+      // Add to ZIP
+      zip.file(`${folderName}/label.pdf`, labelBytes);
+      zip.file(`${folderName}/receipt.pdf`, receiptBytes);
+      
+      if (onProgress) {
+        onProgress(Math.round(((i + 1) / orders.length) * 90));
+      }
+    }
+    
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `shipped-delivered-orders-${dateStr}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    if (onProgress) {
+      onProgress(100);
+    }
+    return;
+  }
+  
+  // For 'standard' and 'shipped' types, generate combined PDF as before
+  const pdfDoc = await PDFDocument.create();
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  
   for (let i = 0; i < orders.length; i++) {
     await generateSingleLabel(
       pdfDoc,
@@ -980,7 +1087,7 @@ export async function generateCustomLabels(
     );
     
     if (onProgress) {
-      onProgress(Math.round(((i + 1) / orders.length) * 50)); // 0-50% for labels
+      onProgress(Math.round(((i + 1) / orders.length) * 100));
     }
   }
   
@@ -996,46 +1103,6 @@ export async function generateCustomLabels(
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  
-  // Generate receipts ONLY for 'completed' type (Mark Shipped & Delivered)
-  if (options.type === 'completed') {
-    const receiptPdfDoc = await PDFDocument.create();
-    const receiptBold = await receiptPdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const receiptRegular = await receiptPdfDoc.embedFont(StandardFonts.Helvetica);
-    
-    for (let i = 0; i < orders.length; i++) {
-      await generateSingleReceipt(
-        receiptPdfDoc,
-        orders[i],
-        options,
-        receiptBold,
-        receiptRegular,
-        appLogoBytes,
-        deliveredStampBytes
-      );
-      
-      if (onProgress) {
-        onProgress(50 + Math.round(((i + 1) / orders.length) * 50)); // 50-100% for receipts
-      }
-    }
-    
-    const receiptBytes = await receiptPdfDoc.save();
-    
-    // Download receipts
-    const receiptBlob = new Blob([new Uint8Array(receiptBytes)], { type: 'application/pdf' });
-    const receiptUrl = URL.createObjectURL(receiptBlob);
-    const receiptLink = document.createElement('a');
-    receiptLink.href = receiptUrl;
-    receiptLink.download = `delivery-receipts-${new Date().toISOString().split('T')[0]}.pdf`;
-    document.body.appendChild(receiptLink);
-    
-    // Small delay to ensure first download starts
-    setTimeout(() => {
-      receiptLink.click();
-      document.body.removeChild(receiptLink);
-      URL.revokeObjectURL(receiptUrl);
-    }, 500);
-  }
   
   if (onProgress) {
     onProgress(100);

@@ -124,7 +124,6 @@ export interface PublicTracking {
   order_id: string | null;
   driver_id: string | null;
   client_initials: string | null;
-  phone: string | null;
   // Drug quantities for public display
   injection_qty: number | null;
   nasal_qty: number | null;

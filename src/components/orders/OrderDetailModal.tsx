@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Package, Truck, Clock, Copy, ExternalLink, Eye, FileDown, Phone, Mail } from 'lucide-react';
+import { User, MapPin, Package, Truck, Clock, Copy, ExternalLink, Eye, FileDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -150,18 +150,8 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
                     <p className="text-xs text-muted-foreground">Health Card</p>
                     <p className="text-foreground">{order.health_card_no || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Phone className="w-3 h-3" />
-                      Phone
-                    </p>
-                    <p className="text-foreground">{order.phone || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Mail className="w-3 h-3" />
-                      Email
-                    </p>
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Email</p>
                     <p className="text-foreground truncate">{order.email || 'N/A'}</p>
                   </div>
                 </div>

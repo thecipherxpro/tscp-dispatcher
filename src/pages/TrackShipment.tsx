@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
-import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search, ArrowLeft, Phone, User } from 'lucide-react';
+import { Package, Truck, MapPin, CheckCircle, Clock, AlertCircle, Search, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -254,34 +254,16 @@ export default function TrackShipment() {
                 )}
 
                 <div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    Delivery Address
-                  </p>
+                  <p className="text-xs text-muted-foreground">Destination</p>
                   <p className="font-medium text-foreground">
                     {tracking.warehouse_city || tracking.country || 'N/A'}
                   </p>
                 </div>
 
                 {tracking.client_initials && (
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-                      <User className="w-3 h-3" />
-                      Client Information
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Name</p>
-                        <p className="font-medium text-foreground">{tracking.client_initials}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          Phone
-                        </p>
-                        <p className="font-medium text-foreground">{tracking.phone || 'Not provided'}</p>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Client</p>
+                    <p className="font-medium text-foreground">{tracking.client_initials}</p>
                   </div>
                 )}
               </CardContent>

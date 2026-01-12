@@ -123,7 +123,7 @@ export function CustomLabelGeneratorDialog({ orders, isOpen, onClose }: CustomLa
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">Mark Shipped and Download</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Labels with custom shipped date/time (shown on PDF only)
+                      Labels + 5x7" delivery receipts with shipped date
                     </p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground" />
@@ -142,7 +142,7 @@ export function CustomLabelGeneratorDialog({ orders, isOpen, onClose }: CustomLa
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">Mark Shipped & Delivered</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Labels with shipped + delivered dates and "COMPLETED" stamp
+                      Labels with stamp + 5x7" delivery receipts
                     </p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground" />
@@ -237,10 +237,11 @@ export function CustomLabelGeneratorDialog({ orders, isOpen, onClose }: CustomLa
                   <div className="text-xs text-muted-foreground space-y-1">
                     <p>• Shipped: {new Date(`${shippedDate}T${shippedTime}`).toLocaleString()}</p>
                     {labelType === 'completed' && (
-                      <>
-                        <p>• Delivered: {new Date(`${deliveredDate}T${deliveredTime}`).toLocaleString()}</p>
-                        <p className="text-green-600 font-medium">• "COMPLETED" stamp will be added</p>
-                      </>
+                      <p>• Delivered: {new Date(`${deliveredDate}T${deliveredTime}`).toLocaleString()}</p>
+                    )}
+                    <p className="text-primary font-medium">• 5x7" delivery receipt will also be generated</p>
+                    {labelType === 'completed' && (
+                      <p className="text-green-600 font-medium">• Delivered stamp will be added to labels</p>
                     )}
                   </div>
                 </CardContent>

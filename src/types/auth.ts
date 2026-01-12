@@ -59,6 +59,7 @@ export interface Order {
   order_date: string | null;
   shipping_date: string | null;
   client_name: string | null;
+  phone: string | null;
   email: string | null;
   health_card_no: string | null;
   notes: string | null;

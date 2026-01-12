@@ -29,9 +29,11 @@ import {
   ParsedFileColumn,
   FileParseResult,
   DrugType,
+  StandardField,
   STANDARD_ORDER_FIELDS,
 } from "@/types/import";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useStandardFields } from "@/hooks/useStandardFields";
 import { cn } from "@/lib/utils";
 interface TemplateBuilderSheetProps {
   isOpen: boolean;
@@ -58,11 +60,11 @@ function normalizeColumnName(name: string): string {
 }
 
 // Auto-match column to field
-function autoMatchColumn(columnName: string, drugTypes: DrugType[]): string | null {
+function autoMatchColumn(columnName: string, drugTypes: DrugType[], standardFields: StandardField[]): string | null {
   const normalized = normalizeColumnName(columnName);
 
-  // Check standard fields
-  for (const field of STANDARD_ORDER_FIELDS) {
+  // Check standard fields from database
+  for (const field of standardFields) {
     const fieldNorm = normalizeColumnName(field.label);
     if (normalized === fieldNorm || normalized === field.key) {
       return field.key;
@@ -94,6 +96,15 @@ function autoMatchColumn(columnName: string, drugTypes: DrugType[]): string | nu
 export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onSave }: TemplateBuilderSheetProps) {
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { standardFields: dbStandardFields } = useStandardFields();
+  
+  // Convert database standard fields to import format
+  const activeStandardFields: StandardField[] = dbStandardFields.length > 0 
+    ? dbStandardFields
+        .filter(f => f.is_active)
+        .map(f => ({ key: f.field_key, label: f.field_label, type: f.field_type }))
+    : STANDARD_ORDER_FIELDS;
+  
   const [templateName, setTemplateName] = useState("");
   const [description, setDescription] = useState("");
   const [isDefault, setIsDefault] = useState(false);
@@ -209,7 +220,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
           if (!isEditing || columnMappings.size === 0) {
             const newMappings = new Map<string, string>();
             columns.forEach((col) => {
-              const match = autoMatchColumn(col.name, drugTypes);
+              const match = autoMatchColumn(col.name, drugTypes, activeStandardFields);
               if (match) {
                 newMappings.set(col.name, match);
               }
@@ -222,7 +233,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
       };
       reader.readAsArrayBuffer(file);
     },
-    [drugTypes, isEditing, columnMappings.size],
+    [drugTypes, isEditing, columnMappings.size, activeStandardFields],
   );
   const clearFile = () => {
     setFileName(null);
@@ -252,7 +263,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
       if (fieldKey === "skip") return;
       let fieldLabel = fieldKey;
       let drugTypeKey: string | undefined;
-      const standardField = STANDARD_ORDER_FIELDS.find((f) => f.key === fieldKey);
+      const standardField = activeStandardFields.find((f) => f.key === fieldKey);
       if (standardField) {
         fieldLabel = standardField.label;
       } else {
@@ -310,7 +321,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
     if (fieldKey.startsWith('injection_')) return 'injection';
     if (fieldKey.startsWith('nasal_')) return 'nasal';
     // Check if it's a standard field
-    const isStandard = STANDARD_ORDER_FIELDS.some(f => f.key === fieldKey);
+    const isStandard = activeStandardFields.some(f => f.key === fieldKey);
     if (isStandard) return 'standard';
     return 'other';
   };
@@ -642,6 +653,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
                                     isMobile={isMobile}
+                                    standardFields={activeStandardFields}
                                   />
                                 ))}
                               </div>
@@ -667,6 +679,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
                                     isMobile={isMobile}
+                                    standardFields={activeStandardFields}
                                   />
                                 ))}
                               </div>
@@ -692,6 +705,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
                                     isMobile={isMobile}
+                                    standardFields={activeStandardFields}
                                   />
                                 ))}
                               </div>
@@ -729,6 +743,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
                                     isMobile={isMobile}
+                                    standardFields={activeStandardFields}
                                   />
                                 ))}
                               </div>
@@ -759,6 +774,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                                     drugTypes={drugTypes}
                                     usedFields={usedFields}
                                     isMobile={isMobile}
+                                    standardFields={activeStandardFields}
                                   />
                                 ))}
                               </div>

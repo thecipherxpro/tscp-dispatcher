@@ -647,7 +647,9 @@ export default function Orders() {
                       <TableCell>
                         <div>
                           <p className="font-medium">{order.client_name || 'Unknown'}</p>
-                          <p className="text-xs text-muted-foreground">{order.email || '-'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.phone || <span className="italic text-muted-foreground/50">No phone</span>}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell className="hidden xl:table-cell">

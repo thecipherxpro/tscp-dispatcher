@@ -35,9 +35,12 @@ import {
 
 const formatDate = (date: string | null): string => {
   if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('en-CA', {
+  // Parse as UTC to avoid timezone shifts for date-only values
+  const d = new Date(date + 'T00:00:00Z');
+  return d.toLocaleDateString('en-CA', {
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   });
 };
 

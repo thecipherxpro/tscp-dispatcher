@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2, Filter } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2, Filter, Trash2 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type FilterType = 'all' | 'pending' | 'assigned' | 'confirmed' | 'in_route' | 'delivered' | 'incomplete' | 'review' | 'no_geo';
 
@@ -58,7 +68,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Orders() {
-  const { orders, isLoading, refetch } = useOrders(true);
+  const { orders, isLoading, refetch, deleteOrders } = useOrders(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -66,6 +76,7 @@ export default function Orders() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeocoding, setIsRegeocoding] = useState(false);
   const haptic = useHapticFeedback();
   const { toast } = useToast();
@@ -144,6 +155,25 @@ export default function Orders() {
     setShowBulkAssignModal(false);
     clearSelection();
     refetch();
+  };
+
+  const handleDeleteOrders = async () => {
+    const idsToDelete = Array.from(selectedOrderIds);
+    const result = await deleteOrders(idsToDelete);
+    if (result.success) {
+      toast({
+        title: 'Deleted',
+        description: `${idsToDelete.length} order(s) deleted successfully`,
+      });
+      clearSelection();
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to delete orders',
+        variant: 'destructive',
+      });
+    }
+    setShowDeleteConfirm(false);
   };
 
   const handleRegeocode = async () => {
@@ -287,19 +317,28 @@ export default function Orders() {
                   }}
                   disabled={filteredPendingOrders.length === 0}
                 >
-                  {allFilteredSelected ? 'Deselect All' : `Select All (${filteredPendingOrders.length})`}
+                {allFilteredSelected ? 'Deselect All' : `Select All (${filteredPendingOrders.length})`}
                 </Button>
                 {selectedOrderIds.size > 0 && (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      haptic.medium();
-                      setShowBulkAssignModal(true);
-                    }}
-                  >
-                    <Users className="w-4 h-4 mr-1" />
-                    Assign
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        haptic.medium();
+                        setShowBulkAssignModal(true);
+                      }}
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      Assign
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -513,10 +552,16 @@ export default function Orders() {
               {allFilteredSelected ? 'Deselect All' : `Select All Pending (${filteredPendingOrders.length})`}
             </Button>
             {selectedOrderIds.size > 0 && (
-              <Button onClick={() => setShowBulkAssignModal(true)}>
-                <Users className="w-4 h-4 mr-2" />
-                Bulk Assign
-              </Button>
+              <>
+                <Button onClick={() => setShowBulkAssignModal(true)}>
+                  <Users className="w-4 h-4 mr-2" />
+                  Bulk Assign
+                </Button>
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete ({selectedOrderIds.size})
+                </Button>
+              </>
             )}
           </div>
         )}
@@ -685,6 +730,23 @@ export default function Orders() {
         onClose={() => setShowBulkAssignModal(false)}
         onSuccess={handleBulkAssignSuccess}
       />
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Orders</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedOrderIds.size} order(s)? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteOrders} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

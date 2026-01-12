@@ -63,7 +63,37 @@ export function useOrders(enableRealtime = true) {
     };
   }, [enableRealtime]);
 
-  return { orders, isLoading, refetch: fetchOrders };
+  const deleteOrders = useCallback(async (orderIds: string[]) => {
+    try {
+      // First delete related records from public_tracking
+      const { error: trackingError } = await supabase
+        .from('public_tracking')
+        .delete()
+        .in('order_id', orderIds);
+
+      if (trackingError) {
+        console.warn('Error deleting tracking records:', trackingError);
+      }
+
+      // Delete from orders table
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', orderIds);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(prev => prev.filter(order => !orderIds.includes(order.id)));
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting orders:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  }, []);
+
+  return { orders, isLoading, refetch: fetchOrders, deleteOrders };
 }
 
 export function useDrivers() {

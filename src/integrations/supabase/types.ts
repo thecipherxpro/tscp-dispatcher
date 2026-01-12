@@ -828,6 +828,42 @@ export type Database = {
           },
         ]
       }
+      standard_fields: {
+        Row: {
+          created_at: string
+          field_key: string
+          field_label: string
+          field_type: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          field_label: string
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          field_label?: string
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

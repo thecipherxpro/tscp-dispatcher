@@ -532,6 +532,10 @@ export default function OrderAuditTrail() {
               </div>
               <div class="separator"></div>
               <div class="info-row">
+                <span class="info-icon">${icons.phone}</span>
+                ${order?.phone || 'No phone'}
+              </div>
+              <div class="info-row">
                 <span class="info-icon">${icons.mail}</span>
                 ${order?.email || 'No email'}
               </div>
@@ -954,6 +958,10 @@ export default function OrderAuditTrail() {
               </div>
               <Separator />
               <div className="grid grid-cols-1 gap-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  {order.phone || <EmptyField label="No phone" />}
+                </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   {order.email || <EmptyField label="No email" />}

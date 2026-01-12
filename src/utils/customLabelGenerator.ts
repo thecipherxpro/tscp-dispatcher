@@ -472,12 +472,12 @@ async function generateSingleReceipt(
   const contentWidth = width - marginLeft - marginRight;
   const centerX = width / 2;
   
-  let currentY = height - 20;
+  let currentY = height - 16;
   
   // ============================================
   // HEADER - Company Logo & Name (centered)
   // ============================================
-  const logoSize = 36;
+  const logoSize = 28;
   if (appLogoBytes) {
     try {
       const logoImg = await pdfDoc.embedPng(appLogoBytes);
@@ -492,47 +492,47 @@ async function generateSingleReceipt(
     }
   }
   
-  currentY -= logoSize + 8;
+  currentY -= logoSize + 6;
   
   const companyName = "EndOverdose";
-  const companyNameWidth = helveticaBold.widthOfTextAtSize(companyName, 14);
+  const companyNameWidth = helveticaBold.widthOfTextAtSize(companyName, 12);
   page.drawText(companyName, {
     x: centerX - companyNameWidth / 2,
     y: currentY,
-    size: 14,
+    size: 12,
     font: helveticaBold,
     color: black,
   });
   
-  currentY -= 14;
+  currentY -= 10;
   const tagline = "Healthcare Delivery Service";
-  const taglineWidth = helvetica.widthOfTextAtSize(tagline, 8);
+  const taglineWidth = helvetica.widthOfTextAtSize(tagline, 7);
   page.drawText(tagline, {
     x: centerX - taglineWidth / 2,
     y: currentY,
-    size: 8,
+    size: 7,
     font: helvetica,
     color: gray,
   });
   
-  currentY -= 12;
+  currentY -= 9;
   const address1 = "3265 Wharton Way #23, Mississauga, ON";
-  const address1Width = helvetica.widthOfTextAtSize(address1, 7);
+  const address1Width = helvetica.widthOfTextAtSize(address1, 6);
   page.drawText(address1, {
     x: centerX - address1Width / 2,
     y: currentY,
-    size: 7,
+    size: 6,
     font: helvetica,
     color: gray,
   });
   
-  currentY -= 10;
+  currentY -= 8;
   const contact = "(647) 494-4538 • Info@endoverdose.ca";
-  const contactWidth = helvetica.widthOfTextAtSize(contact, 7);
+  const contactWidth = helvetica.widthOfTextAtSize(contact, 6);
   page.drawText(contact, {
     x: centerX - contactWidth / 2,
     y: currentY,
-    size: 7,
+    size: 6,
     font: helvetica,
     color: gray,
   });
@@ -657,10 +657,10 @@ async function generateSingleReceipt(
   }
   
   // ============================================
-  // MEDICATION SECTION (receipt item style)
+  // MEDICATION SECTION (detailed receipt style)
   // ============================================
-  currentY -= 14;
-  page.drawText("MEDICATION", {
+  currentY -= 12;
+  page.drawText("MEDICATION DETAILS", {
     x: marginLeft,
     y: currentY,
     size: 7,
@@ -668,35 +668,82 @@ async function generateSingleReceipt(
     color: gray,
   });
   
-  // Injection
-  if (order.injection_drug_name || order.injection_qty) {
-    currentY -= 14;
-    const injName = order.injection_drug_name || 'Injection';
-    const injQty = order.injection_qty ? `x${order.injection_qty}` : '';
-    
-    page.drawText(injName, {
+  // Injection details
+  if (order.injection_drug_name || order.injection_qty || order.injection_rx_number) {
+    currentY -= 12;
+    page.drawText("INJECTION", {
       x: marginLeft,
       y: currentY,
-      size: 9,
-      font: helvetica,
+      size: 6,
+      font: helveticaBold,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+    
+    // Drug Name & Qty
+    currentY -= 10;
+    const injName = order.injection_drug_name || 'N/A';
+    page.drawText(injName, {
+      x: marginLeft + 4,
+      y: currentY,
+      size: 8,
+      font: helveticaBold,
       color: black,
     });
     
-    if (injQty) {
-      const qtyWidth = helvetica.widthOfTextAtSize(injQty, 9);
-      page.drawText(injQty, {
+    if (order.injection_qty) {
+      const qtyText = `Qty: ${order.injection_qty}`;
+      const qtyWidth = helvetica.widthOfTextAtSize(qtyText, 8);
+      page.drawText(qtyText, {
         x: width - marginRight - qtyWidth,
         y: currentY,
-        size: 9,
+        size: 8,
         font: helveticaBold,
         color: black,
       });
     }
     
-    if (order.injection_strength) {
-      currentY -= 10;
-      page.drawText(`  ${order.injection_strength}`, {
-        x: marginLeft,
+    // Strength & Form (for injection)
+    if (order.injection_strength || order.injection_form) {
+      currentY -= 9;
+      const strengthForm = [order.injection_strength, order.injection_form].filter(Boolean).join(' • ');
+      page.drawText(strengthForm, {
+        x: marginLeft + 4,
+        y: currentY,
+        size: 7,
+        font: helvetica,
+        color: gray,
+      });
+    }
+    
+    // RX Number
+    if (order.injection_rx_number) {
+      currentY -= 9;
+      page.drawText(`RX#: ${order.injection_rx_number}`, {
+        x: marginLeft + 4,
+        y: currentY,
+        size: 7,
+        font: helvetica,
+        color: black,
+      });
+    }
+    
+    // Package
+    if (order.injection_package) {
+      currentY -= 9;
+      page.drawText(`Package: ${order.injection_package}`, {
+        x: marginLeft + 4,
+        y: currentY,
+        size: 7,
+        font: helvetica,
+        color: gray,
+      });
+    }
+    
+    // Billing Date
+    if (order.injection_billing_date) {
+      currentY -= 9;
+      page.drawText(`Billing: ${formatDate(order.injection_billing_date)}`, {
+        x: marginLeft + 4,
         y: currentY,
         size: 7,
         font: helvetica,
@@ -705,28 +752,73 @@ async function generateSingleReceipt(
     }
   }
   
-  // Nasal
-  if (order.nasal_drug_name || order.nasal_qty) {
-    currentY -= 14;
-    const nasalName = order.nasal_drug_name || 'Nasal';
-    const nasalQty = order.nasal_qty ? `x${order.nasal_qty}` : '';
-    
-    page.drawText(nasalName, {
+  // Nasal details
+  if (order.nasal_drug_name || order.nasal_qty || order.nasal_rx_number) {
+    currentY -= 12;
+    page.drawText("NASAL", {
       x: marginLeft,
       y: currentY,
-      size: 9,
-      font: helvetica,
+      size: 6,
+      font: helveticaBold,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+    
+    // Drug Name & Qty
+    currentY -= 10;
+    const nasalName = order.nasal_drug_name || 'N/A';
+    page.drawText(nasalName, {
+      x: marginLeft + 4,
+      y: currentY,
+      size: 8,
+      font: helveticaBold,
       color: black,
     });
     
-    if (nasalQty) {
-      const qtyWidth = helvetica.widthOfTextAtSize(nasalQty, 9);
-      page.drawText(nasalQty, {
+    if (order.nasal_qty) {
+      const qtyText = `Qty: ${order.nasal_qty}`;
+      const qtyWidth = helvetica.widthOfTextAtSize(qtyText, 8);
+      page.drawText(qtyText, {
         x: width - marginRight - qtyWidth,
         y: currentY,
-        size: 9,
+        size: 8,
         font: helveticaBold,
         color: black,
+      });
+    }
+    
+    // RX Number
+    if (order.nasal_rx_number) {
+      currentY -= 9;
+      page.drawText(`RX#: ${order.nasal_rx_number}`, {
+        x: marginLeft + 4,
+        y: currentY,
+        size: 7,
+        font: helvetica,
+        color: black,
+      });
+    }
+    
+    // Package
+    if (order.nasal_package) {
+      currentY -= 9;
+      page.drawText(`Package: ${order.nasal_package}`, {
+        x: marginLeft + 4,
+        y: currentY,
+        size: 7,
+        font: helvetica,
+        color: gray,
+      });
+    }
+    
+    // Billing Date
+    if (order.nasal_billing_date) {
+      currentY -= 9;
+      page.drawText(`Billing: ${formatDate(order.nasal_billing_date)}`, {
+        x: marginLeft + 4,
+        y: currentY,
+        size: 7,
+        font: helvetica,
+        color: gray,
       });
     }
   }

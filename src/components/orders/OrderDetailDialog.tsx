@@ -274,13 +274,23 @@ export function OrderDetailDialog({
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Email</p>
-                        <p className="text-sm text-foreground">{order.email || 'Not provided'}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1 flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          Phone
+                        </p>
+                        <p className="text-sm text-foreground">{order.phone || 'Not provided'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Health Card</p>
-                        <p className="text-sm text-foreground">{order.health_card_no || 'Not provided'}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1 flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          Email
+                        </p>
+                        <p className="text-sm text-foreground">{order.email || 'Not provided'}</p>
                       </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Health Card</p>
+                      <p className="text-sm text-foreground">{order.health_card_no || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>

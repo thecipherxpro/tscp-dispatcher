@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, X, User, Phone, Mail } from 'lucide-react';
+import { Package, Copy, ExternalLink, Truck, Eye, Hash, Calendar, FileDown, X, User, Phone, Mail, MapPin } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -372,6 +372,32 @@ export function OrderDetailSheet({
                   )}
               </div>
             </section>
+
+              {/* Delivery Address Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Delivery Address</h3>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  {order.address_line_1 ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">{order.address_line_1}</p>
+                      {order.address_line_2 && (
+                        <p className="text-sm text-foreground">{order.address_line_2}</p>
+                      )}
+                      {order.geo_zone && (
+                        <Badge variant="outline" className="mt-2">{order.geo_zone}</Badge>
+                      )}
+                      {order.country && (
+                        <p className="text-xs text-muted-foreground mt-1">{order.country}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground/50 italic">No address provided</p>
+                  )}
+                </div>
+              </section>
 
             {/* Medication Details Section */}
             {(order.injection_drug_name || order.injection_rx_number || order.nasal_drug_name || order.nasal_rx_number) && <section>

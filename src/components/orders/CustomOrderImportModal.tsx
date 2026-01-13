@@ -301,22 +301,56 @@ export function CustomOrderImportModal({ isOpen, onClose, onSuccess }: CustomOrd
     const errors: string[] = [];
 
     // Pre-generate all shipment IDs and tracking IDs BEFORE insertion to ensure uniqueness
+    // NOTE: The backend generate_shipment_id() function is for the main orders flow and may
+    // return the same value for custom_orders. So we generate a unique TSCP shipment_id here.
     const generatedIds: Array<{ shipmentId: string; trackingId: string }> = [];
-    
+
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const shipmentPrefix = `TSCP${yy}${mm}${dd}`;
+
+    // Try to continue the counter from the latest custom_orders shipment_id for today.
+    // If we can't read it (RLS/network), fall back to a time-based counter.
+    let startCounter = (Date.now() % 10000); // 0-9999
+    try {
+      const { data: latestToday, error: latestErr } = await supabase
+        .from('custom_orders')
+        .select('shipment_id, created_at')
+        .like('shipment_id', `${shipmentPrefix}%`)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!latestErr) {
+        const last = latestToday?.[0]?.shipment_id;
+        if (last && last.startsWith(shipmentPrefix)) {
+          const suffix = Number(last.slice(shipmentPrefix.length));
+          if (!Number.isNaN(suffix) && suffix >= 0) {
+            startCounter = (suffix + 1) % 10000;
+          }
+        }
+      }
+    } catch {
+      // ignore and use fallback
+    }
+
     for (let i = 0; i < mappedData.length; i++) {
+      // Keep within 4 digits while staying unique inside the batch
+      const counter = (startCounter + i) % 10000;
+      const suffix4 = String(counter).padStart(4, '0');
+      const shipmentId = `${shipmentPrefix}${suffix4}`;
+
       try {
-        // Generate IDs sequentially to ensure unique counters
-        const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
-        const shipmentId = shipmentIdData as string;
+        // Tracking IDs are generated from the backend and are already unique
         const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
         const trackingId = trackingIdData as string;
         generatedIds.push({ shipmentId, trackingId });
-      } catch (error) {
-        // Fallback with random suffix if RPC fails
-        const fallbackShipment = `TSCP${Date.now()}${i.toString().padStart(4, '0')}`;
+      } catch {
         const fallbackTracking = `${Math.random().toString(36).substring(2, 5).toUpperCase()}T${i.toString().padStart(2, '0')}SCP`;
-        generatedIds.push({ shipmentId: fallbackShipment, trackingId: fallbackTracking });
+        generatedIds.push({ shipmentId, trackingId: fallbackTracking });
       }
+
       setImportProgress(Math.round(((i + 1) / mappedData.length) * 30)); // First 30% is ID generation
     }
 

@@ -399,8 +399,8 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
           }
         }
         
-        // Parse quantities
-        ['injection_qty', 'nasal_qty', 'oral_qty'].forEach(qtyField => {
+        // Parse quantities for all drug types
+        ['injection_qty', 'nasal_qty', 'oral_qty', 'naloxone_kit_x4_qty'].forEach(qtyField => {
           if (orderData[qtyField]) {
             const num = Number(orderData[qtyField]);
             orderData[qtyField] = !isNaN(num) ? num : null;
@@ -427,8 +427,10 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
           shipment_id: shipmentId,
           order_id: insertedOrder.id,
           client_initials: clientInitials,
+          phone: orderData.phone || null,
           injection_qty: orderData.injection_qty || null,
           nasal_qty: orderData.nasal_qty || null,
+          naloxone_kit_x4_qty: orderData.naloxone_kit_x4_qty || null,
           warehouse_city: warehouseCity,
           country: geoData.country || 'Canada',
           latitude: geoData.latitude,

@@ -148,7 +148,7 @@ export default function CustomOrders() {
         <p className="text-sm text-muted-foreground truncate">
           {order.address_line_1 || 'No address'}
         </p>
-        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground flex-wrap">
           {order.injection_qty && order.injection_qty > 0 && (
             <Badge variant="outline" className="text-xs">
               Inj: {order.injection_qty}
@@ -159,8 +159,18 @@ export default function CustomOrders() {
               Nasal: {order.nasal_qty}
             </Badge>
           )}
+          {order.naloxone_kit_x4_qty && order.naloxone_kit_x4_qty > 0 && (
+            <Badge variant="outline" className="text-xs">
+              Kit X4: {order.naloxone_kit_x4_qty}
+            </Badge>
+          )}
           <span className="ml-auto">{formatDate(order.order_date)}</span>
         </div>
+        {order.phone && (
+          <p className="text-xs text-muted-foreground mt-1">
+            📞 {order.phone}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -474,7 +484,7 @@ export default function CustomOrders() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-wrap">
                           {order.injection_qty && order.injection_qty > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               Inj: {order.injection_qty}
@@ -483,6 +493,11 @@ export default function CustomOrders() {
                           {order.nasal_qty && order.nasal_qty > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               Nasal: {order.nasal_qty}
+                            </Badge>
+                          )}
+                          {order.naloxone_kit_x4_qty && order.naloxone_kit_x4_qty > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              Kit X4: {order.naloxone_kit_x4_qty}
                             </Badge>
                           )}
                         </div>

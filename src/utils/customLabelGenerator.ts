@@ -1024,23 +1024,33 @@ export async function generateCustomLabels(
     const zip = new JSZip();
     
     for (let i = 0; i < orders.length; i++) {
-      const order = orders[i];
-      const shipmentId = order.shipment_id || order.id.substring(0, 8);
-      const clientName = sanitizeFilename(order.client_name || 'Unknown');
+      // Get the current order directly from the passed orders array
+      const currentOrder = orders[i];
+      
+      // Use the order's actual shipment_id and client_name
+      const shipmentId = currentOrder.shipment_id || `ORDER_${i + 1}`;
+      const clientName = sanitizeFilename(currentOrder.client_name || `Client_${i + 1}`);
       const folderName = `${shipmentId}_${clientName}`;
       
-      // Generate label PDF
+      console.log(`Generating label for order ${i + 1}:`, {
+        id: currentOrder.id,
+        shipment_id: currentOrder.shipment_id,
+        client_name: currentOrder.client_name,
+        folderName
+      });
+      
+      // Generate label PDF for this specific order
       const labelBytes = await generateSingleOrderLabelPdf(
-        order,
+        currentOrder,
         options,
         appLogoBytes,
         fragileBytes
       );
       
-      // For 'completed' type, also generate receipt
+      // For 'completed' type, also generate receipt for this order
       if (options.type === 'completed') {
         const receiptBytes = await generateSingleOrderReceiptPdf(
-          order,
+          currentOrder,
           options,
           appLogoBytes,
           deliveredStampBytes

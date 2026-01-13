@@ -300,16 +300,33 @@ export function CustomOrderImportModal({ isOpen, onClose, onSuccess }: CustomOrd
     let failed = 0;
     const errors: string[] = [];
 
+    // Pre-generate all shipment IDs and tracking IDs BEFORE insertion to ensure uniqueness
+    const generatedIds: Array<{ shipmentId: string; trackingId: string }> = [];
+    
     for (let i = 0; i < mappedData.length; i++) {
-      const row = mappedData[i];
-      setImportProgress(Math.round(((i + 1) / mappedData.length) * 100));
-      
       try {
-        // Generate IDs for label purposes
+        // Generate IDs sequentially to ensure unique counters
         const { data: shipmentIdData } = await supabase.rpc('generate_shipment_id');
         const shipmentId = shipmentIdData as string;
         const { data: trackingIdData } = await supabase.rpc('generate_tracking_id');
         const trackingId = trackingIdData as string;
+        generatedIds.push({ shipmentId, trackingId });
+      } catch (error) {
+        // Fallback with random suffix if RPC fails
+        const fallbackShipment = `TSCP${Date.now()}${i.toString().padStart(4, '0')}`;
+        const fallbackTracking = `${Math.random().toString(36).substring(2, 5).toUpperCase()}T${i.toString().padStart(2, '0')}SCP`;
+        generatedIds.push({ shipmentId: fallbackShipment, trackingId: fallbackTracking });
+      }
+      setImportProgress(Math.round(((i + 1) / mappedData.length) * 30)); // First 30% is ID generation
+    }
+
+    // Now insert orders with pre-generated IDs
+    for (let i = 0; i < mappedData.length; i++) {
+      const row = mappedData[i];
+      const { shipmentId, trackingId } = generatedIds[i];
+      setImportProgress(30 + Math.round(((i + 1) / mappedData.length) * 70)); // 30-100% is insertion
+      
+      try {
         const trackingUrl = `${window.location.origin}/track/${trackingId}`;
         
         // Geocode address

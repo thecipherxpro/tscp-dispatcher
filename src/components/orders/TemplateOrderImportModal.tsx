@@ -372,9 +372,22 @@ export function TemplateOrderImportModal({ isOpen, onClose, onSuccess }: Templat
         Object.entries(row).forEach(([key, value]) => {
           if (key.includes('_') && value !== undefined && value !== '') {
             // Handle drug type prefixed fields
-            orderData[key] = value;
+            // Map phone_number to phone (database column name)
+            if (key === 'phone_number') {
+              orderData['phone'] = value;
+            } else {
+              orderData[key] = value;
+            }
           }
         });
+        
+        // Also check for phone_number at top level (not prefixed)
+        if (row['phone_number'] !== undefined && row['phone_number'] !== '') {
+          orderData['phone'] = row['phone_number'];
+        }
+        if (row['phone'] !== undefined && row['phone'] !== '') {
+          orderData['phone'] = row['phone'];
+        }
         
         // Parse dates
         if (orderData.order_date) {

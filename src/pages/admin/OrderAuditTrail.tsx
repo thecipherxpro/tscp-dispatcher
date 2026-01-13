@@ -1058,6 +1058,38 @@ export default function OrderAuditTrail() {
                   </div>
                 </div>
               )}
+              {/* Naloxone Kit X4 Drug Section */}
+              {(order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty) && (
+                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-primary">Naloxone Kit X4</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Qty</p>
+                      <p className="text-sm font-semibold">{order.naloxone_kit_x4_qty ?? <EmptyField label="—" />}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Billing Date</p>
+                      <p className="text-sm font-medium">{formatDate(order.naloxone_kit_x4_billing_date)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Drug Name</p>
+                      <p className="text-sm">{order.naloxone_kit_x4_drug_name || <EmptyField label="—" />}</p>
+                    </div>
+                    {order.naloxone_kit_x4_includes && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Includes</p>
+                        <p className="text-sm">{order.naloxone_kit_x4_includes}</p>
+                      </div>
+                    )}
+                    {order.naloxone_kit_x4_type && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Type</p>
+                        <p className="text-sm font-medium">{order.naloxone_kit_x4_type}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {!order.nasal_rx_number && !order.nasal_qty && !order.injection_rx_number && !order.injection_qty && (
                 <p className="text-sm text-muted-foreground text-center py-2">No drug information available</p>
               )}

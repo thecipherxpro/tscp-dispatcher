@@ -190,34 +190,54 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate, isAdmin = f
             </Card>
 
             {/* Medication Info */}
-            <Card className="bg-card border-border">
-              <CardContent className="p-4 space-y-2">
-                <h4 className="font-medium text-foreground flex items-center gap-2">
-                  <Package className="w-4 h-4" />
-                  Medication
-                </h4>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  {(order.nasal_qty || order.nasal_rx_number) && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Nasal</p>
-                      <p className="text-foreground">
-                        {order.nasal_qty || 0} qty
-                        {order.nasal_rx_number && <span className="text-muted-foreground"> ({order.nasal_rx_number})</span>}
-                      </p>
-                    </div>
-                  )}
-                  {(order.injection_qty || order.injection_rx_number) && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Injectable</p>
-                      <p className="text-foreground">
-                        {order.injection_qty || 0} qty
-                        {order.injection_rx_number && <span className="text-muted-foreground"> ({order.injection_rx_number})</span>}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {(order.nasal_qty || order.nasal_rx_number || order.injection_qty || order.injection_rx_number || order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty) && (
+              <Card className="bg-card border-border">
+                <CardContent className="p-4 space-y-3">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Medication
+                  </h4>
+                  <div className="space-y-2">
+                    {/* Nasal Drug */}
+                    {(order.nasal_qty || order.nasal_rx_number) && (
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <p className="text-[10px] uppercase tracking-wide mb-1 font-semibold text-ring">Nasal</p>
+                        <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+                          {order.nasal_rx_number && <p><span className="text-muted-foreground">Rx:</span> {order.nasal_rx_number}</p>}
+                          {order.nasal_din && <p><span className="text-muted-foreground">DIN:</span> {order.nasal_din}</p>}
+                          {order.nasal_qty && <p><span className="text-muted-foreground">Qty:</span> {order.nasal_qty}</p>}
+                          {order.nasal_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.nasal_drug_name}</p>}
+                        </div>
+                      </div>
+                    )}
+                    {/* Injection Drug */}
+                    {(order.injection_qty || order.injection_rx_number) && (
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <p className="text-[10px] uppercase tracking-wide mb-1 font-semibold text-ring">Injection</p>
+                        <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+                          {order.injection_rx_number && <p><span className="text-muted-foreground">Rx:</span> {order.injection_rx_number}</p>}
+                          {order.injection_din && <p><span className="text-muted-foreground">DIN:</span> {order.injection_din}</p>}
+                          {order.injection_qty && <p><span className="text-muted-foreground">Qty:</span> {order.injection_qty}</p>}
+                          {order.injection_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.injection_drug_name}</p>}
+                        </div>
+                      </div>
+                    )}
+                    {/* Naloxone Kit X4 Drug */}
+                    {(order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty) && (
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <p className="text-[10px] uppercase tracking-wide mb-1 font-semibold text-ring">Naloxone Kit X4</p>
+                        <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+                          {order.naloxone_kit_x4_qty && <p><span className="text-muted-foreground">Qty:</span> {order.naloxone_kit_x4_qty}</p>}
+                          {order.naloxone_kit_x4_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.naloxone_kit_x4_drug_name}</p>}
+                          {order.naloxone_kit_x4_includes && <p className="col-span-3"><span className="text-muted-foreground">Includes:</span> {order.naloxone_kit_x4_includes}</p>}
+                          {order.naloxone_kit_x4_type && <p><span className="text-muted-foreground">Type:</span> {order.naloxone_kit_x4_type}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Timeline */}
             <Card className="bg-card border-border">

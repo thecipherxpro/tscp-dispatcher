@@ -85,6 +85,12 @@ export interface Order {
   nasal_package: string | null;
   nasal_qty: number | null;
   nasal_billing_date: string | null;
+  // Drug Data (Naloxone Kit X4)
+  naloxone_kit_x4_drug_name: string | null;
+  naloxone_kit_x4_qty: number | null;
+  naloxone_kit_x4_includes: string | null;
+  naloxone_kit_x4_type: string | null;
+  naloxone_kit_x4_billing_date: string | null;
   // Delivery system fields
   assigned_driver_id: string | null;
   tracking_id: string | null;
@@ -127,6 +133,7 @@ export interface PublicTracking {
   // Drug quantities for public display
   injection_qty: number | null;
   nasal_qty: number | null;
+  naloxone_kit_x4_qty: number | null;
   // Location - only warehouse city for privacy
   warehouse_city: string | null;
   country: string | null;

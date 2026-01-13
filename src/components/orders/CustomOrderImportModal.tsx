@@ -387,9 +387,22 @@ export function CustomOrderImportModal({ isOpen, onClose, onSuccess }: CustomOrd
         // Map drug type fields
         Object.entries(row).forEach(([key, value]) => {
           if (key.includes('_') && value !== undefined && value !== '') {
-            orderData[key] = value;
+            // Map phone_number to phone (database column name)
+            if (key === 'phone_number') {
+              orderData['phone'] = value;
+            } else {
+              orderData[key] = value;
+            }
           }
         });
+        
+        // Also check for phone_number at top level (not prefixed)
+        if (row['phone_number'] !== undefined && row['phone_number'] !== '') {
+          orderData['phone'] = row['phone_number'];
+        }
+        if (row['phone'] !== undefined && row['phone'] !== '') {
+          orderData['phone'] = row['phone'];
+        }
         
         // Parse dates
         if (orderData.order_date) {
@@ -401,8 +414,8 @@ export function CustomOrderImportModal({ isOpen, onClose, onSuccess }: CustomOrd
           }
         }
         
-        // Parse quantities
-        ['injection_qty', 'nasal_qty', 'oral_qty'].forEach(qtyField => {
+        // Parse quantities for all drug types
+        ['injection_qty', 'nasal_qty', 'oral_qty', 'naloxone_kit_x4_qty'].forEach(qtyField => {
           if (orderData[qtyField]) {
             const num = Number(orderData[qtyField]);
             orderData[qtyField] = !isNaN(num) ? num : null;

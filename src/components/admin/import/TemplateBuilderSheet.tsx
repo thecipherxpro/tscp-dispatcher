@@ -314,12 +314,13 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
   const mappedColumns = displayColumns.filter((col) => columnMappings.has(col.name));
   const unmappedColumns = displayColumns.filter((col) => !columnMappings.has(col.name));
   
-  // Group columns by category (Standard, Injection, Nasal) for editing view
-  const getColumnCategory = (colName: string): 'standard' | 'injection' | 'nasal' | 'other' => {
+  // Group columns by category (Standard, Injection, Nasal, Naloxone Kit X4) for editing view
+  const getColumnCategory = (colName: string): 'standard' | 'injection' | 'nasal' | 'naloxone_kit_x4' | 'other' => {
     const fieldKey = columnMappings.get(colName);
     if (!fieldKey) return 'other';
     if (fieldKey.startsWith('injection_')) return 'injection';
     if (fieldKey.startsWith('nasal_')) return 'nasal';
+    if (fieldKey.startsWith('naloxone_kit_x4_')) return 'naloxone_kit_x4';
     // Check if it's a standard field
     const isStandard = activeStandardFields.some(f => f.key === fieldKey);
     if (isStandard) return 'standard';
@@ -329,6 +330,7 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
   const standardColumns = mappedColumns.filter(col => getColumnCategory(col.name) === 'standard');
   const injectionColumns = mappedColumns.filter(col => getColumnCategory(col.name) === 'injection');
   const nasalColumns = mappedColumns.filter(col => getColumnCategory(col.name) === 'nasal');
+  const naloxoneKitX4Columns = mappedColumns.filter(col => getColumnCategory(col.name) === 'naloxone_kit_x4');
   
   // Show mapping section if we have file parsed OR if editing with saved mappings
   const showMappingSection = displayColumns.length > 0;
@@ -697,6 +699,32 @@ export function TemplateBuilderSheet({ isOpen, onClose, template, drugTypes, onS
                               </div>
                               <div className={cn("grid gap-3 sm:gap-4 w-full max-w-full", isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3")}>
                                 {nasalColumns.map((column) => (
+                                  <ColumnMappingCard
+                                    key={column.name}
+                                    column={column}
+                                    mappedTo={columnMappings.get(column.name) || "skip"}
+                                    onMappingChange={handleMappingChange}
+                                    drugTypes={drugTypes}
+                                    usedFields={usedFields}
+                                    isMobile={isMobile}
+                                    standardFields={activeStandardFields}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Naloxone Kit X4 Fields */}
+                          {naloxoneKitX4Columns.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3 px-0">
+                                <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                                <h4 className={cn("font-medium text-amber-600 dark:text-amber-400", isMobile ? "text-xs" : "text-sm")}>
+                                  📦 Naloxone Kit X4 Fields ({naloxoneKitX4Columns.length})
+                                </h4>
+                              </div>
+                              <div className={cn("grid gap-3 sm:gap-4 w-full max-w-full", isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3")}>
+                                {naloxoneKitX4Columns.map((column) => (
                                   <ColumnMappingCard
                                     key={column.name}
                                     column={column}

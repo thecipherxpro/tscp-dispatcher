@@ -606,6 +606,18 @@ async function generateSingleReceipt(
     color: black,
   });
   
+  // Phone number
+  if (order.phone) {
+    currentY -= 11;
+    page.drawText(order.phone, {
+      x: marginLeft,
+      y: currentY,
+      size: 8,
+      font: helvetica,
+      color: black,
+    });
+  }
+  
   currentY -= 12;
   const fullAddress = [order.address_line_1, order.address_line_2].filter(Boolean).join(', ');
   page.drawText(fullAddress || "N/A", {
@@ -794,6 +806,59 @@ async function generateSingleReceipt(
       currentY -= rowHeight;
       page.drawText("Billing:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
       page.drawText(formatDate(order.nasal_billing_date), { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
+    }
+  }
+  
+  // Naloxone Kit X4 details
+  if (order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty || order.naloxone_kit_x4_type) {
+    currentY -= 14;
+    page.drawText("NALOXONE KIT X4", {
+      x: marginLeft,
+      y: currentY,
+      size: 6,
+      font: helveticaBold,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+    
+    // Qty on the right
+    if (order.naloxone_kit_x4_qty) {
+      const qtyText = `Qty: ${order.naloxone_kit_x4_qty}`;
+      const qtyWidth = helveticaBold.widthOfTextAtSize(qtyText, 7);
+      page.drawText(qtyText, {
+        x: width - marginRight - qtyWidth,
+        y: currentY,
+        size: 7,
+        font: helveticaBold,
+        color: black,
+      });
+    }
+    
+    // Drug Name
+    if (order.naloxone_kit_x4_drug_name) {
+      currentY -= rowHeight + 2;
+      page.drawText("Drug:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.naloxone_kit_x4_drug_name, { x: col2X, y: currentY, size: 7, font: helveticaBold, color: black });
+    }
+    
+    // Type
+    if (order.naloxone_kit_x4_type) {
+      currentY -= rowHeight;
+      page.drawText("Type:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.naloxone_kit_x4_type, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
+    }
+    
+    // Includes
+    if (order.naloxone_kit_x4_includes) {
+      currentY -= rowHeight;
+      page.drawText("Includes:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(order.naloxone_kit_x4_includes, { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
+    }
+    
+    // Billing Date
+    if (order.naloxone_kit_x4_billing_date) {
+      currentY -= rowHeight;
+      page.drawText("Billing:", { x: col1X, y: currentY, size: 7, font: helvetica, color: gray });
+      page.drawText(formatDate(order.naloxone_kit_x4_billing_date), { x: col2X, y: currentY, size: 7, font: helvetica, color: black });
     }
   }
   

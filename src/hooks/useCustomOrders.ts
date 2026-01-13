@@ -31,6 +31,12 @@ export interface CustomOrder {
   nasal_qty: number | null;
   nasal_package: string | null;
   nasal_billing_date: string | null;
+  // Naloxone Kit X4 fields
+  naloxone_kit_x4_drug_name: string | null;
+  naloxone_kit_x4_qty: number | null;
+  naloxone_kit_x4_includes: string | null;
+  naloxone_kit_x4_type: string | null;
+  naloxone_kit_x4_billing_date: string | null;
   // Generated IDs
   shipment_id: string | null;
   tracking_id: string | null;
@@ -156,6 +162,12 @@ export function useCustomOrders() {
             nasal_qty: order.nasal_qty,
             nasal_package: order.nasal_package,
             nasal_billing_date: order.nasal_billing_date,
+            // Naloxone Kit X4 fields
+            naloxone_kit_x4_drug_name: order.naloxone_kit_x4_drug_name,
+            naloxone_kit_x4_qty: order.naloxone_kit_x4_qty,
+            naloxone_kit_x4_includes: order.naloxone_kit_x4_includes,
+            naloxone_kit_x4_type: order.naloxone_kit_x4_type,
+            naloxone_kit_x4_billing_date: order.naloxone_kit_x4_billing_date,
             shipment_id: shipmentId,
             tracking_id: trackingId,
             tracking_url: trackingUrl,

@@ -488,6 +488,40 @@ export default function AdminTracking() {
                       </div>
                     </div>
                   )}
+
+                  {/* Naloxone Kit X4 Card */}
+                  {order.naloxone_kit_x4_qty && order.naloxone_kit_x4_qty > 0 && (
+                    <div className="bg-purple-50 dark:bg-purple-950/30 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                          <span className="text-sm font-bold text-purple-700 dark:text-purple-300">K</span>
+                        </div>
+                        <h4 className="font-semibold text-purple-900 dark:text-purple-100">Naloxone Kit X4</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div>
+                          <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Qty</p>
+                          <p className="text-sm font-medium text-purple-900 dark:text-purple-100">{order.naloxone_kit_x4_qty}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Drug</p>
+                          <p className="text-sm font-medium text-purple-900 dark:text-purple-100">{order.naloxone_kit_x4_drug_name || '—'}</p>
+                        </div>
+                        {order.naloxone_kit_x4_includes && (
+                          <div className="col-span-2">
+                            <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Includes</p>
+                            <p className="text-sm font-medium text-purple-900 dark:text-purple-100">{order.naloxone_kit_x4_includes}</p>
+                          </div>
+                        )}
+                        {order.naloxone_kit_x4_type && (
+                          <div>
+                            <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Type</p>
+                            <p className="text-sm font-medium text-purple-900 dark:text-purple-100">{order.naloxone_kit_x4_type}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
             )}

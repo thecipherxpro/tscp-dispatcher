@@ -569,7 +569,18 @@ export default function OrderEditDetail() {
                 </div>
               </div>
               ` : ''}
-              ${!order.nasal_rx_number && !order.nasal_qty && !order.injection_rx_number && !order.injection_qty ? `
+              ${order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty ? `
+              <div class="drug-section">
+                <div class="drug-title">Naloxone Kit X4</div>
+                <div class="grid-2">
+                  <div><div class="field-label">Drug Name</div><div class="field-value">${order.naloxone_kit_x4_drug_name || '—'}</div></div>
+                  <div><div class="field-label">Qty</div><div class="field-value">${order.naloxone_kit_x4_qty ?? '—'}</div></div>
+                  ${order.naloxone_kit_x4_includes ? `<div style="grid-column: span 2;"><div class="field-label">Includes</div><div class="field-value">${order.naloxone_kit_x4_includes}</div></div>` : ''}
+                  ${order.naloxone_kit_x4_type ? `<div><div class="field-label">Type</div><div class="field-value">${order.naloxone_kit_x4_type}</div></div>` : ''}
+                </div>
+              </div>
+              ` : ''}
+              ${!order.nasal_rx_number && !order.nasal_qty && !order.injection_rx_number && !order.injection_qty && !order.naloxone_kit_x4_drug_name && !order.naloxone_kit_x4_qty ? `
               <div style="text-align: center; padding: 12px; color: #9ca3af;">No drug information available</div>
               ` : ''}
             </div>
@@ -909,11 +920,37 @@ export default function OrderEditDetail() {
                           {order.injection_package && <div className="col-span-2">
                               <p className="text-xs text-muted-foreground">Package</p>
                               <p className="text-sm">{order.injection_package}</p>
+                          </div>}
+                        </div>
+                      </div>}
+
+                    {/* Naloxone Kit X4 */}
+                    {(order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty) && <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-primary" />
+                          <span className="font-semibold text-sm">Naloxone Kit X4</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Drug Name</p>
+                            <p className="text-sm font-medium">{order.naloxone_kit_x4_drug_name || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Quantity</p>
+                            <p className="text-sm font-medium">{order.naloxone_kit_x4_qty || '-'}</p>
+                          </div>
+                          {order.naloxone_kit_x4_includes && <div className="col-span-2">
+                              <p className="text-xs text-muted-foreground">Includes</p>
+                              <p className="text-sm">{order.naloxone_kit_x4_includes}</p>
+                            </div>}
+                          {order.naloxone_kit_x4_type && <div>
+                              <p className="text-xs text-muted-foreground">Type</p>
+                              <p className="text-sm">{order.naloxone_kit_x4_type}</p>
                             </div>}
                         </div>
                       </div>}
 
-                    {!order.nasal_drug_name && !order.nasal_qty && !order.injection_drug_name && !order.injection_qty && <p className="text-sm text-muted-foreground text-center py-4">No drug information available</p>}
+                    {!order.nasal_drug_name && !order.nasal_qty && !order.injection_drug_name && !order.injection_qty && !order.naloxone_kit_x4_drug_name && !order.naloxone_kit_x4_qty && <p className="text-sm text-muted-foreground text-center py-4">No drug information available</p>}
                   </CardContent>
                 </Card>
 

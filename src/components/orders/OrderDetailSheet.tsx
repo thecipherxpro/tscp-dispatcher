@@ -400,7 +400,7 @@ export function OrderDetailSheet({
               </section>
 
             {/* Medication Details Section */}
-            {(order.injection_drug_name || order.injection_rx_number || order.nasal_drug_name || order.nasal_rx_number) && <section>
+            {(order.injection_drug_name || order.injection_rx_number || order.nasal_drug_name || order.nasal_rx_number || order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty) && <section>
                 <div className="flex items-center gap-2 mb-2">
                   <Package className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Medication Details</h3>
@@ -427,6 +427,16 @@ export function OrderDetailSheet({
                         {order.nasal_qty && <p><span className="text-muted-foreground">Qty:</span> {order.nasal_qty}</p>}
                         {order.nasal_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.nasal_drug_name}</p>}
                         {order.nasal_package && <p><span className="text-muted-foreground">Pkg:</span> {order.nasal_package}</p>}
+                      </div>
+                    </div>}
+                  {/* Naloxone Kit X4 Drug */}
+                  {(order.naloxone_kit_x4_drug_name || order.naloxone_kit_x4_qty) && <div className="bg-muted/30 rounded-lg p-3">
+                      <p className="text-[10px] uppercase tracking-wide mb-1 font-semibold text-ring">Naloxone Kit X4</p>
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+                        {order.naloxone_kit_x4_qty && <p><span className="text-muted-foreground">Qty:</span> {order.naloxone_kit_x4_qty}</p>}
+                        {order.naloxone_kit_x4_drug_name && <p className="col-span-3"><span className="text-muted-foreground">Drug:</span> {order.naloxone_kit_x4_drug_name}</p>}
+                        {order.naloxone_kit_x4_includes && <p className="col-span-3"><span className="text-muted-foreground">Includes:</span> {order.naloxone_kit_x4_includes}</p>}
+                        {order.naloxone_kit_x4_type && <p><span className="text-muted-foreground">Type:</span> {order.naloxone_kit_x4_type}</p>}
                       </div>
                     </div>}
                 </div>

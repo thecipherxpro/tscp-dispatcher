@@ -63,6 +63,11 @@ export type Database = {
           label_status: string | null
           latitude: number | null
           longitude: number | null
+          naloxone_kit_x4_billing_date: string | null
+          naloxone_kit_x4_drug_name: string | null
+          naloxone_kit_x4_includes: string | null
+          naloxone_kit_x4_qty: number | null
+          naloxone_kit_x4_type: string | null
           nasal_billing_date: string | null
           nasal_din: string | null
           nasal_drug_name: string | null
@@ -103,6 +108,11 @@ export type Database = {
           label_status?: string | null
           latitude?: number | null
           longitude?: number | null
+          naloxone_kit_x4_billing_date?: string | null
+          naloxone_kit_x4_drug_name?: string | null
+          naloxone_kit_x4_includes?: string | null
+          naloxone_kit_x4_qty?: number | null
+          naloxone_kit_x4_type?: string | null
           nasal_billing_date?: string | null
           nasal_din?: string | null
           nasal_drug_name?: string | null
@@ -143,6 +153,11 @@ export type Database = {
           label_status?: string | null
           latitude?: number | null
           longitude?: number | null
+          naloxone_kit_x4_billing_date?: string | null
+          naloxone_kit_x4_drug_name?: string | null
+          naloxone_kit_x4_includes?: string | null
+          naloxone_kit_x4_qty?: number | null
+          naloxone_kit_x4_type?: string | null
           nasal_billing_date?: string | null
           nasal_din?: string | null
           nasal_drug_name?: string | null
@@ -507,6 +522,11 @@ export type Database = {
           injection_strength: string | null
           latitude: number | null
           longitude: number | null
+          naloxone_kit_x4_billing_date: string | null
+          naloxone_kit_x4_drug_name: string | null
+          naloxone_kit_x4_includes: string | null
+          naloxone_kit_x4_qty: number | null
+          naloxone_kit_x4_type: string | null
           nasal_billing_date: string | null
           nasal_din: string | null
           nasal_drug_name: string | null
@@ -564,6 +584,11 @@ export type Database = {
           injection_strength?: string | null
           latitude?: number | null
           longitude?: number | null
+          naloxone_kit_x4_billing_date?: string | null
+          naloxone_kit_x4_drug_name?: string | null
+          naloxone_kit_x4_includes?: string | null
+          naloxone_kit_x4_qty?: number | null
+          naloxone_kit_x4_type?: string | null
           nasal_billing_date?: string | null
           nasal_din?: string | null
           nasal_drug_name?: string | null
@@ -623,6 +648,11 @@ export type Database = {
           injection_strength?: string | null
           latitude?: number | null
           longitude?: number | null
+          naloxone_kit_x4_billing_date?: string | null
+          naloxone_kit_x4_drug_name?: string | null
+          naloxone_kit_x4_includes?: string | null
+          naloxone_kit_x4_qty?: number | null
+          naloxone_kit_x4_type?: string | null
           nasal_billing_date?: string | null
           nasal_din?: string | null
           nasal_drug_name?: string | null
@@ -726,6 +756,7 @@ export type Database = {
           injection_qty: number | null
           latitude: number | null
           longitude: number | null
+          naloxone_kit_x4_qty: number | null
           nasal_qty: number | null
           order_id: string | null
           pending_at: string | null
@@ -763,6 +794,7 @@ export type Database = {
           injection_qty?: number | null
           latitude?: number | null
           longitude?: number | null
+          naloxone_kit_x4_qty?: number | null
           nasal_qty?: number | null
           order_id?: string | null
           pending_at?: string | null
@@ -802,6 +834,7 @@ export type Database = {
           injection_qty?: number | null
           latitude?: number | null
           longitude?: number | null
+          naloxone_kit_x4_qty?: number | null
           nasal_qty?: number | null
           order_id?: string | null
           pending_at?: string | null

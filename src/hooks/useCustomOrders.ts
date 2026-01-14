@@ -2,6 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+const chunkArray = <T,>(items: T[], chunkSize: number): T[][] => {
+  if (chunkSize <= 0) return [items];
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
+
 export interface CustomOrder {
   id: string;
   client_name: string | null;
@@ -82,20 +91,31 @@ export function useCustomOrders() {
     }
   }, [toast]);
 
+
   const deleteOrders = useCallback(async (orderIds: string[]) => {
     try {
-      const { error } = await supabase
-        .from('custom_orders')
-        .delete()
-        .in('id', orderIds);
+      if (orderIds.length === 0) return true;
 
-      if (error) throw error;
-      
+      // IMPORTANT: PostgREST sends `.in()` as a querystring. If the user selects
+      // a large number of orders, the URL can exceed limits and cause 400 errors.
+      // Delete in small batches to avoid request URL size limits.
+      const DELETE_BATCH_SIZE = 50;
+      const batches = chunkArray(orderIds, DELETE_BATCH_SIZE);
+
+      for (const batch of batches) {
+        const { error } = await supabase
+          .from('custom_orders')
+          .delete()
+          .in('id', batch);
+
+        if (error) throw error;
+      }
+
       toast({
         title: 'Deleted',
         description: `${orderIds.length} order(s) deleted successfully`,
       });
-      
+
       await fetchOrders();
       return true;
     } catch (error: any) {
@@ -182,13 +202,18 @@ export function useCustomOrders() {
         if (insertError) throw insertError;
       }
 
-      // Delete from custom_orders after successful move
-      const { error: deleteError } = await supabase
-        .from('custom_orders')
-        .delete()
-        .in('id', orderIds);
+      // Delete from custom_orders after successful move (batch to avoid URL limits)
+      const DELETE_BATCH_SIZE = 50;
+      const batches = chunkArray(orderIds, DELETE_BATCH_SIZE);
 
-      if (deleteError) throw deleteError;
+      for (const batch of batches) {
+        const { error: deleteError } = await supabase
+          .from('custom_orders')
+          .delete()
+          .in('id', batch);
+
+        if (deleteError) throw deleteError;
+      }
 
       toast({
         title: 'Moved Successfully',

@@ -17,23 +17,68 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Check for recovery session in URL hash
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    if (type === 'recovery') {
-      setIsValidSession(true);
-    }
+    let mounted = true;
 
-    // Also listen for auth state change (recovery event)
+    const checkSession = async () => {
+      // Check for PKCE code in query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      if (code) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error && mounted) {
+            setIsValidSession(true);
+            setIsChecking(false);
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+      }
+
+      // Check hash params (legacy)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+      if (type === 'recovery' && accessToken) {
+        if (mounted) {
+          setIsValidSession(true);
+          setIsChecking(false);
+        }
+        return;
+      }
+
+      // Check if already in a recovery session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && mounted) {
+        setIsValidSession(true);
+        setIsChecking(false);
+        return;
+      }
+
+      if (mounted) setIsChecking(false);
+    };
+
+    // Listen for auth state change
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsValidSession(true);
+        setIsChecking(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    checkSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {

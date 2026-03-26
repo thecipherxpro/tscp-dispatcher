@@ -202,7 +202,7 @@ export default function Auth() {
       setIsLoading(true);
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: 'https://blackcross.ca/reset-password',
         });
         if (error) throw error;
         setForgotSent(true);

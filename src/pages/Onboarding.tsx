@@ -41,7 +41,7 @@ export default function Onboarding() {
   };
 
   const handleSkip = () => {
-    localStorage.setItem('tscp-onboarding-complete', 'true');
+    localStorage.setItem('medexpress-onboarding-complete', 'true');
     navigate('/auth');
   };
 

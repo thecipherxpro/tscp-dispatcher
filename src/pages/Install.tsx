@@ -38,13 +38,13 @@ export default function Install() {
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <img 
-          src={endoverdoseLogo} 
-          alt="EndOverdose" 
+          src={medexpressLogo} 
+          alt="MedeXpress" 
           className="w-24 h-24 object-contain mb-6"
         />
-        <h1 className="text-3xl font-bold text-foreground mb-2">Install EndOverdose</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Install MedeXpress</h1>
         <p className="text-muted-foreground max-w-sm mb-8">
-          Add EndOverdose to your home screen for quick access and offline functionality.
+          Add MedeXpress to your home screen for quick access and offline functionality.
         </p>
 
         {/* Benefits */}

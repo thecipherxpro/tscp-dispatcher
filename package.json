@@ -54,7 +54,7 @@
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
     "jsbarcode": "^3.12.1",
-    "jspdf": "^3.0.4",
+    "jspdf": "4.0.0",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.462.0",

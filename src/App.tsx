@@ -36,6 +36,7 @@ import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
 import DriverWallet from "./pages/driver/DriverWallet";
 import TrackShipment from "./pages/TrackShipment";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -114,6 +115,7 @@ function AppRoutes() {
       <Route path="/track/:trackingId" element={<TrackShipment />} />
       <Route path="/TrackShipment" element={<TrackShipment />} />
       <Route path="/install" element={<Install />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Auth routes */}
       <Route

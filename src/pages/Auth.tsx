@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import endoverdoseLogo from '@/assets/endoverdose-logo.png';
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -24,7 +25,7 @@ const signUpSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"]
 });
-type AuthStep = 'login' | 'signup' | 'success';
+type AuthStep = 'login' | 'signup' | 'success' | 'forgot';
 export default function Auth() {
   const navigate = useNavigate();
   const {
@@ -38,6 +39,8 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
 
   // Login fields
   const [email, setEmail] = useState(() => localStorage.getItem('rememberedEmail') || '');
@@ -192,6 +195,76 @@ export default function Auth() {
       </div>;
   }
 
+  // Forgot password screen
+  if (step === 'forgot') {
+    const handleForgotPassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setForgotSent(true);
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message || 'Failed to send reset email', variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (forgotSent) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
+          <div className="flex-1 flex flex-col justify-center px-6 py-12">
+            <div className="text-center space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Mail className="w-10 h-10 text-emerald-400" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold text-white">Check Your Email</h1>
+                <p className="text-gray-400">We've sent a password reset link to <span className="text-emerald-400 font-medium">{forgotEmail}</span>. Click the link in the email to set a new password.</p>
+              </div>
+              <Button onClick={() => { setStep('login'); setForgotSent(false); setForgotEmail(''); }} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-xl font-semibold">
+                Back to Sign In
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
+        <div className="px-6 pt-12">
+          <button onClick={() => setStep('login')} className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="flex-1 flex flex-col justify-center px-6 py-12">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white">Forgot Password</h1>
+            <p className="text-gray-400 mt-2">Enter your email address and we'll send you a link to reset your password.</p>
+          </div>
+          <form onSubmit={handleForgotPassword} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="forgotEmail" className="text-gray-300 text-sm font-medium">Email Address</Label>
+              <div className="relative">
+                <Input id="forgotEmail" type="email" placeholder="nurse@hospital.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="bg-[#0d3535]/50 border-[#1a4a4a] text-white placeholder:text-gray-500 h-14 pr-12 rounded-xl focus:border-emerald-500" required />
+                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+              </div>
+            </div>
+            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-xl font-semibold" disabled={isLoading}>
+              {isLoading ? 'Sending...' : 'Send Reset Link'}
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   // Signup screen
   if (step === 'signup') {
     return <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">
@@ -323,7 +396,7 @@ export default function Auth() {
               <Label htmlFor="password" className="text-gray-300 text-sm font-medium uppercase tracking-wide">
                 Password
               </Label>
-              <button type="button" className="text-emerald-400 text-sm hover:underline">
+              <button type="button" onClick={() => setStep('forgot')} className="text-emerald-400 text-sm hover:underline">
                 Forgot?
               </button>
             </div>

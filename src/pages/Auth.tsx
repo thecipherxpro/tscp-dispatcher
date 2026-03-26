@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import medexpressLogo from '@/assets/logo.png';
+import medexpressLogoDark from '@/assets/logo-dark.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),

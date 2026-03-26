@@ -68,17 +68,7 @@ export default function TrackShipment() {
         setTracking(data as PublicTracking);
         setLastUpdated(new Date());
         
-        if (data.driver_id) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', data.driver_id)
-            .maybeSingle();
-          
-          if (profile) {
-            setDriverName(profile.full_name);
-          }
-        }
+        // Driver identity is not exposed in public tracking for privacy
       } else {
         setError('Tracking not found. Please check your tracking ID.');
       }

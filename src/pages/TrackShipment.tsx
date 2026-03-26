@@ -1,20 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate, useParams, Link } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, AlertCircle, Search, ArrowLeft, Shield } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Search, ArrowLeft, Shield, Clock, Package, Send, CheckCircle2, XCircle, Timer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicTracking } from '@/types/auth';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
-import endoverdoseLogo from '@/assets/endoverdose-logo.png';
+import medxpressLogo from '@/assets/logo-dark.png';
 
 const timelineSteps = [
-  { status: 'PENDING', label: 'Order Received', description: 'Your prescription order has been received and is being prepared.', icon: Clock },
-  { status: 'PICKED_UP_AND_ASSIGNED', label: 'Picked Up', description: 'A driver has picked up your package from the pharmacy.', icon: Package },
-  { status: 'IN_ROUTE', label: 'On The Way', description: 'Your delivery is in transit to your address.', icon: Truck },
-  { status: 'COMPLETED', label: 'Delivered', description: 'Your package has been delivered successfully.', icon: CheckCircle },
+  { status: 'PENDING', label: 'Pending', pendingText: 'Awaiting processing', icon: Timer },
+  { status: 'PICKED_UP_AND_ASSIGNED', label: 'Picked Up', pendingText: 'Not yet assigned', icon: Package },
+  { status: 'IN_ROUTE', label: 'Shipped', pendingText: 'Driver not started', icon: Send },
+  { status: 'COMPLETED', label: 'Delivered', pendingText: 'Awaiting delivery', icon: CheckCircle2 },
 ];
 
 const getPublicStatusIndex = (status: string) => {
@@ -55,11 +55,10 @@ export default function TrackShipment() {
         setTracking(data as PublicTracking);
         setLastUpdated(new Date());
       } else {
-        setError('No shipment found with that tracking ID. Please double-check and try again.');
+        setError('No shipment found with that tracking ID.');
       }
-    } catch (err) {
-      setError('Something went wrong. Please try again in a moment.');
-      console.error('Tracking error:', err);
+    } catch {
+      setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +100,7 @@ export default function TrackShipment() {
     if (!timestamp) return null;
     return new Date(timestamp).toLocaleString('en-CA', {
       timeZone: 'America/Toronto',
-      year: 'numeric', month: 'short', day: 'numeric',
+      month: 'short', day: 'numeric',
       hour: '2-digit', minute: '2-digit',
     });
   };
@@ -121,274 +120,212 @@ export default function TrackShipment() {
     }
   };
 
+  const buildLocation = () => {
+    if (!tracking) return '—';
+    const parts = [tracking.warehouse_city, tracking.geo_zone, tracking.country].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '—';
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <img src={endoverdoseLogo} alt="TSCP" className="h-8 w-8 rounded-lg" />
-              <span className="font-bold text-foreground">TSCP Dispatch</span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="text-muted-foreground">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Home
-              </Button>
-            </Link>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+            <img src={medxpressLogo} alt="MedXpress" className="h-7 w-7 rounded object-contain" />
+            <span className="font-semibold text-sm text-foreground">MedXpress</span>
+          </Link>
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="text-muted-foreground text-xs gap-1">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Home
+            </Button>
+          </Link>
         </div>
       </header>
 
       <PullToRefresh onRefresh={handleRefresh} className="flex-1">
-        <main className="max-w-3xl mx-auto px-4 py-8 space-y-8 w-full">
-          {/* Search Section */}
-          <div className="text-center space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+        <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8 w-full space-y-6">
+          {/* Search */}
+          <div className="space-y-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
                 Track Your Delivery
               </h1>
-              <p className="text-muted-foreground">
-                Enter your tracking ID to see the latest status of your shipment.
+              <p className="text-sm text-muted-foreground mt-1">
+                Enter your tracking ID to view shipment status.
               </p>
             </div>
-
-            <div className="max-w-lg mx-auto">
-              <div className="flex gap-2 p-2 rounded-xl bg-card border border-border shadow-sm">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="e.g., 123T45S67CP"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    className="pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 font-mono"
-                  />
-                </div>
-                <Button onClick={handleSearch} disabled={isLoading} className="bg-primary text-primary-foreground px-6">
-                  {isLoading ? (
-                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Search className="w-4 h-4 mr-1" />
-                      Track
-                    </>
-                  )}
-                </Button>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Enter tracking ID"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-9 font-mono text-sm h-10"
+                />
               </div>
+              <Button onClick={handleSearch} disabled={isLoading} size="default" className="px-5 h-10">
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                ) : 'Track'}
+              </Button>
             </div>
           </div>
 
-          {/* Error State */}
+          {/* Error */}
           {error && (
-            <Card className="border-destructive/30 bg-destructive/5">
-              <CardContent className="p-6 text-center space-y-2">
-                <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
-                <p className="font-medium text-foreground">Tracking Not Found</p>
-                <p className="text-sm text-muted-foreground">{error}</p>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/20 bg-destructive/5">
+              <XCircle className="w-5 h-5 text-destructive shrink-0" />
+              <p className="text-sm text-foreground">{error}</p>
+            </div>
           )}
 
-          {/* Loading State */}
+          {/* Loading */}
           {isLoading && !tracking && (
-            <Card className="border-border">
-              <CardContent className="p-12 text-center space-y-4">
-                <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-muted-foreground">Looking up your shipment...</p>
-              </CardContent>
-            </Card>
+            <div className="py-16 text-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-sm text-muted-foreground mt-3">Looking up shipment…</p>
+            </div>
           )}
 
-          {/* Tracking Results */}
+          {/* Results */}
           {tracking && !isLoading && (
             <div className="space-y-6">
-              {/* Status Hero Card */}
-              <Card className={`overflow-hidden border-2 ${
-                isDelivered ? 'border-primary/30 bg-primary/5' :
-                isIncomplete ? 'border-destructive/30 bg-destructive/5' :
-                'border-secondary/30 bg-secondary/5'
-              }`}>
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 ${
-                      isDelivered ? 'bg-primary text-primary-foreground' :
-                      isIncomplete ? 'bg-destructive text-destructive-foreground' :
-                      'bg-secondary text-secondary-foreground'
+              {/* Summary row */}
+              <div className="rounded-lg border border-border bg-card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Status</p>
+                    <p className={`text-lg font-semibold mt-0.5 ${
+                      isDelivered ? 'text-primary' :
+                      isIncomplete ? 'text-destructive' :
+                      'text-foreground'
                     }`}>
-                      {isDelivered ? <CheckCircle className="w-10 h-10" /> :
-                       isIncomplete ? <AlertCircle className="w-10 h-10" /> :
-                       <Truck className="w-10 h-10" />}
-                    </div>
-                    <div className="text-center sm:text-left flex-1 space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                        Current Status
-                      </p>
-                      <h2 className="text-2xl font-bold text-foreground">
-                        {isDelivered ? 'Successfully Delivered' :
-                         isIncomplete ? 'Delivery Incomplete' :
-                         currentStatusIndex === 2 ? 'On The Way' :
-                         currentStatusIndex === 1 ? 'Picked Up' : 'Order Received'}
-                      </h2>
-                      {tracking.delivery_status && (
-                        <p className="text-sm text-muted-foreground">
-                          {tracking.delivery_status.replace(/_/g, ' ')}
-                        </p>
-                      )}
-                    </div>
+                      {isDelivered ? 'Delivered' :
+                       isIncomplete ? 'Incomplete' :
+                       currentStatusIndex === 2 ? 'In Transit' :
+                       currentStatusIndex === 1 ? 'Picked Up' : 'Processing'}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                  {lastUpdated && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                      Live
+                    </div>
+                  )}
+                </div>
 
-              {/* Shipment Details */}
-              <div className="grid sm:grid-cols-3 gap-4">
-                <Card className="border-border">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Shipment ID</p>
-                    <p className="font-mono font-semibold text-foreground text-sm">
-                      {tracking.shipment_id || '—'}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="border-border">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Destination</p>
-                    <p className="font-semibold text-foreground text-sm">
-                      {tracking.warehouse_city || tracking.country || '—'}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="border-border">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Recipient</p>
-                    <p className="font-semibold text-foreground text-sm">
-                      {tracking.client_initials || '—'}
-                    </p>
-                  </CardContent>
-                </Card>
+                <Separator className="mb-4" />
+
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Tracking ID</p>
+                    <p className="font-mono font-medium text-foreground text-xs">{tracking.tracking_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Recipient</p>
+                    <p className="font-medium text-foreground">{tracking.client_initials || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Destination</p>
+                    <p className="font-medium text-foreground text-xs">{buildLocation()}</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Timeline */}
-              <Card className="border-border">
-                <CardContent className="p-6 sm:p-8">
-                  <h3 className="text-lg font-semibold text-foreground mb-6">Delivery Progress</h3>
-                  
-                  {/* Progress Bar */}
-                  <div className="mb-8">
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ease-out ${
-                          isIncomplete ? 'bg-destructive' : 'bg-primary'
-                        }`}
-                        style={{ width: `${Math.max(((currentStatusIndex + 1) / timelineSteps.length) * 100, 5)}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-2">
-                      {timelineSteps.map((step, index) => (
-                        <div key={step.status} className="flex flex-col items-center" style={{ width: `${100 / timelineSteps.length}%` }}>
-                          <div className={`w-3 h-3 rounded-full -mt-[0.9rem] border-2 border-card ${
-                            index <= currentStatusIndex
-                              ? isIncomplete && index === timelineSteps.length - 1
-                                ? 'bg-destructive'
-                                : 'bg-primary'
-                              : 'bg-muted'
-                          }`} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Timeline Steps */}
-                  <div className="space-y-6">
-                    {timelineSteps.map((step, index) => {
-                      const isCompleted = index <= currentStatusIndex;
-                      const isCurrent = index === currentStatusIndex;
-                      const Icon = step.icon;
-                      const timestamp = getTimestamp(step.status);
-                      const isFinalStep = step.status === 'COMPLETED';
-                      const showAsIncomplete = isFinalStep && isIncomplete;
-
-                      return (
-                        <div key={step.status} className={`flex gap-4 ${!isCompleted ? 'opacity-40' : ''}`}>
-                          <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${
-                            showAsIncomplete
-                              ? 'bg-destructive text-destructive-foreground'
-                              : isCompleted
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground'
-                          } ${isCurrent && !showAsIncomplete ? 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : ''}`}>
-                            {showAsIncomplete ? <AlertCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <p className={`font-semibold ${
-                                showAsIncomplete ? 'text-destructive' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                              }`}>
-                                {showAsIncomplete ? 'Delivery Incomplete' : step.label}
-                              </p>
-                              {timestamp && (
-                                <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatTimestamp(timestamp)}
-                                </p>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                              {showAsIncomplete ? 'The delivery could not be completed. Please contact your pharmacy.' : step.description}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Live Updates Indicator */}
-              {lastUpdated && (
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  <span>Live updates active</span>
-                  <span className="text-muted-foreground/50">•</span>
-                  <span>Last updated {lastUpdated.toLocaleTimeString('en-CA', { timeZone: 'America/Toronto' })}</span>
+              {/* Delivery Timeline — vertical stepper */}
+              <div className="rounded-lg border border-border bg-card p-5">
+                <div className="flex items-center gap-2 mb-5">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Delivery Timeline</h3>
                 </div>
-              )}
 
-              {/* Privacy Note */}
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pb-4">
-                <Shield className="w-3.5 h-3.5" />
-                <span>Your personal information is protected and never shared publicly.</span>
+                <div className="relative">
+                  {timelineSteps.map((step, index) => {
+                    const isCompleted = index <= currentStatusIndex;
+                    const isCurrent = index === currentStatusIndex;
+                    const isFinalStep = step.status === 'COMPLETED';
+                    const showAsIncomplete = isFinalStep && isIncomplete;
+                    const timestamp = getTimestamp(step.status);
+                    const isLast = index === timelineSteps.length - 1;
+                    const Icon = step.icon;
+
+                    // Connector line color
+                    const nextCompleted = (index + 1) <= currentStatusIndex;
+
+                    return (
+                      <div key={step.status} className="flex gap-4 relative">
+                        {/* Vertical line + dot */}
+                        <div className="flex flex-col items-center">
+                          {/* Dot */}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors ${
+                            showAsIncomplete
+                              ? 'border-destructive bg-destructive/10 text-destructive'
+                              : isCompleted
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border bg-muted text-muted-foreground'
+                          }`}>
+                            {showAsIncomplete ? (
+                              <XCircle className="w-4 h-4" />
+                            ) : (
+                              <Icon className="w-4 h-4" />
+                            )}
+                          </div>
+                          {/* Connector */}
+                          {!isLast && (
+                            <div className={`w-0.5 flex-1 min-h-[2rem] transition-colors ${
+                              nextCompleted
+                                ? isIncomplete ? 'bg-destructive/30' : 'bg-primary/30'
+                                : 'bg-border'
+                            }`} />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className={`pb-6 ${isLast ? 'pb-0' : ''}`}>
+                          <p className={`text-sm font-medium leading-8 ${
+                            showAsIncomplete ? 'text-destructive' :
+                            isCompleted ? 'text-foreground' :
+                            'text-muted-foreground'
+                          }`}>
+                            {showAsIncomplete ? 'Delivery Incomplete' : step.label}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {isCompleted && timestamp
+                              ? formatTimestamp(timestamp)
+                              : showAsIncomplete
+                                ? 'Contact your pharmacy for assistance'
+                                : step.pendingText}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer info */}
+              <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground py-2">
+                <Shield className="w-3 h-3" />
+                <span>Personal information is protected and never shared publicly.</span>
               </div>
             </div>
           )}
 
-          {/* Empty State when no tracking searched */}
+          {/* Empty state */}
           {!tracking && !isLoading && !error && !trackingId && (
-            <div className="text-center py-12 space-y-6">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                <Package className="w-10 h-10 text-primary" />
+            <div className="text-center py-16 space-y-4">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto">
+                <Package className="w-7 h-7 text-muted-foreground" />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-foreground">Enter Your Tracking ID</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto">
-                  Your tracking ID was provided by your pharmacy when your prescription was dispatched for delivery.
+              <div>
+                <p className="font-medium text-foreground">Enter Your Tracking ID</p>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+                  Your tracking ID was provided by your pharmacy when your order was dispatched.
                 </p>
-              </div>
-              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  <span>Secure</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" />
-                  <span>Real-Time</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-primary" />
-                  <span>Reliable</span>
-                </div>
               </div>
             </div>
           )}
@@ -396,13 +333,13 @@ export default function TrackShipment() {
       </PullToRefresh>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card py-6">
-        <div className="max-w-3xl mx-auto px-4 flex items-center justify-between text-xs text-muted-foreground">
+      <footer className="border-t border-border py-4">
+        <div className="max-w-2xl mx-auto px-4 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={endoverdoseLogo} alt="TSCP" className="h-5 w-5 rounded" />
-            <span>TSCP Dispatch</span>
+            <img src={medxpressLogo} alt="MedXpress" className="h-4 w-4 rounded object-contain" />
+            <span>MedXpress</span>
           </div>
-          <span>© {new Date().getFullYear()} All rights reserved.</span>
+          <span>© {new Date().getFullYear()}</span>
         </div>
       </footer>
     </div>

@@ -126,6 +126,14 @@ export default function ResetPassword() {
     );
   }
 
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col items-center justify-center safe-area-inset">
+        <p className="text-gray-400">Verifying reset link...</p>
+      </div>
+    );
+  }
+
   if (!isValidSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0a1f1f] via-[#0d2b2b] to-[#0a1f1f] flex flex-col safe-area-inset">

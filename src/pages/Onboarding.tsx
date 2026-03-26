@@ -7,7 +7,7 @@ import { OnboardingSlide } from '@/components/onboarding/OnboardingSlide';
 const slides = [
   {
     icon: <Truck className="w-full h-full" />,
-    title: "Welcome to MedeXpress",
+    title: "Welcome to MedXpress",
     description: "Your complete pharmaceutical delivery management solution designed for efficiency and compliance.",
   },
   {
@@ -35,13 +35,13 @@ export default function Onboarding() {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      localStorage.setItem('medexpress-onboarding-complete', 'true');
+      localStorage.setItem('medxpress-onboarding-complete', 'true');
       navigate('/auth');
     }
   };
 
   const handleSkip = () => {
-    localStorage.setItem('medexpress-onboarding-complete', 'true');
+    localStorage.setItem('medxpress-onboarding-complete', 'true');
     navigate('/auth');
   };
 

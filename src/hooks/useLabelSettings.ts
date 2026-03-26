@@ -11,12 +11,12 @@ export interface PackageLabelSettings {
 }
 
 const defaultLabelSettings: PackageLabelSettings = {
-  from_company: "MedeXpress",
+  from_company: "MedXpress",
   from_tagline: "Healthcare Delivery Service",
-  from_website: "www.medexpress.ca",
+  from_website: "www.medxpress.ca",
   contact_address: "3426 Lake Shore Blvd W",
   contact_phone: "(844) 722-8829",
-  contact_email: "info@medexpress.ca",
+  contact_email: "info@medxpress.ca",
 };
 
 export function useLabelSettings() {

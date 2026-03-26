@@ -33,7 +33,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         <img 
           src={appIcon} 
-          alt="MedeXpress" 
+          alt="MedXpress" 
           className="w-48 h-48 object-contain rounded-3xl shadow-2xl"
         />
       </div>

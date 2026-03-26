@@ -33,8 +33,8 @@ export default function LandingPage() {
       <nav className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={medexpressLogo} alt="MedeXpress" className="h-9 w-auto" />
-            <span className="font-bold text-lg text-foreground tracking-tight">MedeXpress</span>
+            <img src={medexpressLogo} alt="MedXpress" className="h-9 w-auto" />
+            <span className="font-bold text-lg text-foreground tracking-tight">MedXpress</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/TrackShipment">
@@ -59,7 +59,7 @@ export default function LandingPage() {
               Your Prescriptions,{' '}<span className="text-primary">Delivered Safely</span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              MedeXpress provides secure, confidential prescription delivery right to your door. Track your order in real-time with complete peace of mind.
+              MedXpress provides secure, confidential prescription delivery right to your door. Track your order in real-time with complete peace of mind.
             </p>
             <div className="max-w-md mx-auto">
               <div className="flex gap-2 p-2 rounded-xl bg-card border border-border shadow-lg">
@@ -80,7 +80,7 @@ export default function LandingPage() {
       <section className="py-20 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Why Choose MedeXpress</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Why Choose MedXpress</h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Professional, secure, and reliable prescription delivery you can trust.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -137,14 +137,14 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img src={medexpressLogo} alt="MedeXpress" className="h-8 w-auto" />
-              <span className="font-bold text-foreground">MedeXpress</span>
+              <img src={medexpressLogo} alt="MedXpress" className="h-8 w-auto" />
+              <span className="font-bold text-foreground">MedXpress</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link to="/TrackShipment" className="hover:text-foreground transition-colors">Track Order</Link>
               <Link to="/auth" className="hover:text-foreground transition-colors">Sign In</Link>
             </div>
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} MedeXpress. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} MedXpress. All rights reserved.</p>
           </div>
         </div>
       </footer>

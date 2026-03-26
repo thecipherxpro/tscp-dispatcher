@@ -26,7 +26,7 @@ export default function Install() {
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">Already Installed!</h1>
           <p className="text-muted-foreground">
-            MedeXpress is installed on your device. Open it from your home screen for the best experience.
+            MedXpress is installed on your device. Open it from your home screen for the best experience.
           </p>
         </div>
       </div>
@@ -39,12 +39,12 @@ export default function Install() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <img 
           src={medexpressLogo} 
-          alt="MedeXpress" 
+          alt="MedXpress" 
           className="w-24 h-24 object-contain mb-6"
         />
-        <h1 className="text-3xl font-bold text-foreground mb-2">Install MedeXpress</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Install MedXpress</h1>
         <p className="text-muted-foreground max-w-sm mb-8">
-          Add MedeXpress to your home screen for quick access and offline functionality.
+          Add MedXpress to your home screen for quick access and offline functionality.
         </p>
 
         {/* Benefits */}

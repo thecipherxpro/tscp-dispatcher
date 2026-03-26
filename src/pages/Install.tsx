@@ -2,7 +2,7 @@ import { Download, Share, Plus, Smartphone, Wifi, Zap, Check } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import medexpressLogo from '@/assets/logo.png';
+import medxpressLogo from '@/assets/logo-dark.png';
 
 export default function Install() {
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();

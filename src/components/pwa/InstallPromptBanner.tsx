@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Download, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import medexpressLogo from '@/assets/logo.png';
+import medxpressLogo from '@/assets/logo-dark.png';
 
 export function InstallPromptBanner() {
   const { isInstallable, isInstalled, isIOS, promptInstall, dismissPrompt, shouldShowPrompt } = usePWAInstall();

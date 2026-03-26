@@ -396,7 +396,7 @@ export default function Auth() {
               <Label htmlFor="password" className="text-gray-300 text-sm font-medium uppercase tracking-wide">
                 Password
               </Label>
-              <button type="button" className="text-emerald-400 text-sm hover:underline">
+              <button type="button" onClick={() => setStep('forgot')} className="text-emerald-400 text-sm hover:underline">
                 Forgot?
               </button>
             </div>

@@ -115,6 +115,7 @@ function AppRoutes() {
       <Route path="/track/:trackingId" element={<TrackShipment />} />
       <Route path="/TrackShipment" element={<TrackShipment />} />
       <Route path="/install" element={<Install />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Auth routes */}
       <Route

@@ -7,7 +7,7 @@ import { OnboardingSlide } from '@/components/onboarding/OnboardingSlide';
 const slides = [
   {
     icon: <Truck className="w-full h-full" />,
-    title: "Welcome to TSCP Dispatch",
+    title: "Welcome to MedeXpress",
     description: "Your complete pharmaceutical delivery management solution designed for efficiency and compliance.",
   },
   {
@@ -35,13 +35,13 @@ export default function Onboarding() {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      localStorage.setItem('tscp-onboarding-complete', 'true');
+      localStorage.setItem('medexpress-onboarding-complete', 'true');
       navigate('/auth');
     }
   };
 
   const handleSkip = () => {
-    localStorage.setItem('tscp-onboarding-complete', 'true');
+    localStorage.setItem('medexpress-onboarding-complete', 'true');
     navigate('/auth');
   };
 

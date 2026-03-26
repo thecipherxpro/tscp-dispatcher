@@ -35,7 +35,7 @@ export default function Onboarding() {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      localStorage.setItem('tscp-onboarding-complete', 'true');
+      localStorage.setItem('medexpress-onboarding-complete', 'true');
       navigate('/auth');
     }
   };

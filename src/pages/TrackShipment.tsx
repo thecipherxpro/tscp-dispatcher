@@ -56,13 +56,13 @@ export default function TrackShipment() {
     setError(null);
     
     try {
-      const { data, error } = await supabase
-        .from('public_tracking')
-        .select('*')
-        .eq('tracking_id', id)
-        .maybeSingle();
+      // Use secure RPC function that excludes phone/GPS data
+      const { data: rpcData, error } = await supabase
+        .rpc('get_public_tracking', { p_tracking_id: id });
 
       if (error) throw error;
+
+      const data = rpcData?.[0] || null;
 
       if (data) {
         setTracking(data as PublicTracking);

@@ -38,7 +38,7 @@ export default function Install() {
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <img 
-          src={medexpressLogo} 
+          src={medxpressLogo} 
           alt="MedXpress" 
           className="w-24 h-24 object-contain mb-6"
         />

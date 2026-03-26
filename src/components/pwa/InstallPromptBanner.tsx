@@ -37,7 +37,7 @@ export function InstallPromptBanner() {
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-card border-t border-border shadow-lg animate-in slide-in-from-bottom-5 duration-300">
       <div className="flex items-center gap-4 max-w-lg mx-auto">
         <img 
-          src={medexpressLogo} 
+          src={medxpressLogo} 
           alt="MedXpress" 
           className="w-12 h-12 rounded-xl object-contain flex-shrink-0"
         />

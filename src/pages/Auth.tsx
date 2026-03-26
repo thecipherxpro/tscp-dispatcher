@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import medexpressLogo from '@/assets/logo.png';
+import medexpressLogoDark from '@/assets/logo-dark.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -113,9 +114,9 @@ export default function Auth() {
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
       
       <div className="relative z-10">
-        <img src={medexpressLogo} alt="MedeXpress" className="h-16 w-auto mb-4" />
-        <h1 className="text-4xl font-bold text-white leading-tight">
-          MedeXpress<br />Dispatch
+        <img src={medexpressLogo} alt="MedXpress" className="h-20 w-auto mb-4" />
+        <h1 className="text-4xl font-bold text-white leading-tight italic -rotate-2">
+          MedXpress<br /><span className="not-italic rotate-0 inline-block text-white/80 text-xl font-normal">Dispatch</span>
         </h1>
         <p className="text-white/70 mt-3 text-lg">
           Pharmaceutical Delivery Management System
@@ -139,7 +140,7 @@ export default function Auth() {
 
       <div className="relative z-10">
         <p className="text-white/50 text-sm">Secure pharmaceutical delivery dispatch platform</p>
-        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} MedeXpress. All rights reserved.</p>
+        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} MedXpress. All rights reserved.</p>
       </div>
     </div>
   );
@@ -266,7 +267,7 @@ export default function Auth() {
             </button>
             {/* Mobile logo */}
             <div className="lg:hidden mb-6">
-              <img src={medexpressLogo} alt="MedeXpress" className="h-10 w-auto" />
+              <img src={medexpressLogoDark} alt="MedXpress" className="h-14 w-auto" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">Create Account</h1>
             <p className="text-muted-foreground mt-2 mb-6">Sign up to start delivering vital supplies.</p>
@@ -340,8 +341,8 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
-            <img src={medexpressLogo} alt="MedeXpress" className="h-12 w-auto mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-foreground">MedeXpress Dispatch</h1>
+            <img src={medexpressLogoDark} alt="MedXpress" className="h-14 w-auto mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-foreground italic -rotate-1">MedXpress Dispatch</h1>
             <p className="text-muted-foreground mt-1">Pharmaceutical Delivery Management System</p>
           </div>
 

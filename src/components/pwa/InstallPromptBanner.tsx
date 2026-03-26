@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Download, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import medexpressLogo from '@/assets/logo.png';
+import medxpressLogo from '@/assets/logo-dark.png';
 
 export function InstallPromptBanner() {
   const { isInstallable, isInstalled, isIOS, promptInstall, dismissPrompt, shouldShowPrompt } = usePWAInstall();
@@ -37,13 +37,13 @@ export function InstallPromptBanner() {
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-card border-t border-border shadow-lg animate-in slide-in-from-bottom-5 duration-300">
       <div className="flex items-center gap-4 max-w-lg mx-auto">
         <img 
-          src={medexpressLogo} 
-          alt="MedeXpress" 
+          src={medxpressLogo} 
+          alt="MedXpress" 
           className="w-12 h-12 rounded-xl object-contain flex-shrink-0"
         />
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground text-sm">Install MedeXpress</h3>
+          <h3 className="font-semibold text-foreground text-sm">Install MedXpress</h3>
           {isIOS ? (
             <p className="text-xs text-muted-foreground mt-0.5">
               Tap <Share className="inline w-3 h-3 mx-0.5" /> then "Add to Home Screen" <Plus className="inline w-3 h-3 mx-0.5" />

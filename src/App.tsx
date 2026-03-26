@@ -37,6 +37,7 @@ import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
 import DriverWallet from "./pages/driver/DriverWallet";
 import TrackShipment from "./pages/TrackShipment";
+import LandingPage from "./pages/LandingPage";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 

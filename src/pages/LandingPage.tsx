@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Package, Truck, Shield, Clock, Search, ArrowRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import medexpressLogo from '@/assets/logo.png';
+import medxpressLogoDark from '@/assets/logo-dark.png';
 
 const features = [
   { icon: Truck, title: 'Real-Time Tracking', description: 'Follow your delivery every step of the way with live status updates.' },

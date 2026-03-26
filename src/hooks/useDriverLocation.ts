@@ -90,7 +90,7 @@ async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`,
       {
-        headers: { 'User-Agent': 'TSCP-Delivery-App' },
+        headers: { 'User-Agent': 'MedeXpress-Delivery-App' },
         signal: AbortSignal.timeout(5000)
       }
     );

@@ -122,7 +122,7 @@ export default function TrackShipment() {
 
   const buildLocation = () => {
     if (!tracking) return '—';
-    const parts = [tracking.warehouse_city, tracking.geo_zone, tracking.country].filter(Boolean);
+    const parts = [tracking.geo_zone, tracking.country].filter(Boolean);
     return parts.length > 0 ? parts.join(', ') : '—';
   };
 

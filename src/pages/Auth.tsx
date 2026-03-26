@@ -24,7 +24,7 @@ const signUpSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"]
 });
-type AuthStep = 'login' | 'signup' | 'success';
+type AuthStep = 'login' | 'signup' | 'success' | 'forgot';
 export default function Auth() {
   const navigate = useNavigate();
   const {

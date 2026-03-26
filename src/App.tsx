@@ -36,6 +36,7 @@ import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
 import DriverWallet from "./pages/driver/DriverWallet";
 import TrackShipment from "./pages/TrackShipment";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

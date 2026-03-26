@@ -277,6 +277,7 @@ export type Database = {
       driver_payout_settings: {
         Row: {
           account_number: string | null
+          account_number_encrypted: string | null
           auto_deposit: boolean | null
           bank_name: string | null
           created_at: string | null
@@ -286,15 +287,19 @@ export type Database = {
           id: string
           institution_name: string | null
           institution_number: string | null
+          institution_number_encrypted: string | null
           legal_name: string | null
           payout_method: string | null
           security_answer: string | null
+          security_answer_encrypted: string | null
           security_question: string | null
           transit_number: string | null
+          transit_number_encrypted: string | null
           updated_at: string | null
         }
         Insert: {
           account_number?: string | null
+          account_number_encrypted?: string | null
           auto_deposit?: boolean | null
           bank_name?: string | null
           created_at?: string | null
@@ -304,15 +309,19 @@ export type Database = {
           id?: string
           institution_name?: string | null
           institution_number?: string | null
+          institution_number_encrypted?: string | null
           legal_name?: string | null
           payout_method?: string | null
           security_answer?: string | null
+          security_answer_encrypted?: string | null
           security_question?: string | null
           transit_number?: string | null
+          transit_number_encrypted?: string | null
           updated_at?: string | null
         }
         Update: {
           account_number?: string | null
+          account_number_encrypted?: string | null
           auto_deposit?: boolean | null
           bank_name?: string | null
           created_at?: string | null
@@ -322,11 +331,14 @@ export type Database = {
           id?: string
           institution_name?: string | null
           institution_number?: string | null
+          institution_number_encrypted?: string | null
           legal_name?: string | null
           payout_method?: string | null
           security_answer?: string | null
+          security_answer_encrypted?: string | null
           security_question?: string | null
           transit_number?: string | null
+          transit_number_encrypted?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -929,10 +941,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_sensitive_field: {
+        Args: { encrypted_data: string }
+        Returns: string
+      }
+      encrypt_sensitive_field: { Args: { plain_text: string }; Returns: string }
       generate_driver_id: { Args: never; Returns: string }
       generate_shipment_id: { Args: never; Returns: string }
       generate_tracking_id: { Args: never; Returns: string }
       get_client_initials: { Args: { full_name: string }; Returns: string }
+      get_public_tracking: {
+        Args: { p_tracking_id: string }
+        Returns: {
+          address_review_requested_at: string
+          arrived_at: string
+          assigned_at: string
+          client_initials: string
+          completed_at: string
+          confirmed_at: string
+          country: string
+          created_at: string
+          delivery_route_snapshot_status: string
+          delivery_route_snapshot_url: string
+          delivery_status: Database["public"]["Enums"]["delivery_status"]
+          id: string
+          in_route_at: string
+          injection_qty: number
+          naloxone_kit_x4_qty: number
+          nasal_qty: number
+          order_id: string
+          pending_at: string
+          picked_up_at: string
+          review_notes: string
+          review_reason: string
+          review_requested_at: string
+          shipment_id: string
+          shipped_at: string
+          timeline_status: Database["public"]["Enums"]["timeline_status"]
+          tracking_id: string
+          tracking_url: string
+          updated_at: string
+          warehouse_city: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

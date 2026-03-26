@@ -1,3 +1,4 @@
+/// <reference types="@types/google.maps" />
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Package, MapPin, ChevronRight, ChevronDown, ChevronUp, Navigation } from 'lucide-react';

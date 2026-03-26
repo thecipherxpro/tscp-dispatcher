@@ -137,8 +137,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img src={medexpressLogo} alt="MedXpress" className="h-8 w-auto" />
-              <span className="font-bold text-foreground">MedXpress</span>
+              <img src={medxpressLogoDark} alt="MedXpress" className="h-10 w-auto" />
+              <span className="font-bold text-foreground italic -rotate-1">MedXpress</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link to="/TrackShipment" className="hover:text-foreground transition-colors">Track Order</Link>

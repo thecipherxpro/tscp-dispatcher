@@ -340,8 +340,8 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
-            <img src={medexpressLogo} alt="MedXpress" className="h-12 w-auto mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-foreground">MedXpress Dispatch</h1>
+            <img src={medexpressLogoDark} alt="MedXpress" className="h-14 w-auto mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-foreground italic -rotate-1">MedXpress Dispatch</h1>
             <p className="text-muted-foreground mt-1">Pharmaceutical Delivery Management System</p>
           </div>
 

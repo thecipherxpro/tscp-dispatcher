@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,6 +37,7 @@ import MyOrders from "./pages/driver/MyOrders";
 import DriverScan from "./pages/driver/DriverScan";
 import DriverWallet from "./pages/driver/DriverWallet";
 import TrackShipment from "./pages/TrackShipment";
+import LandingPage from "./pages/LandingPage";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
@@ -135,11 +137,7 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          !user ? (
-            onboardingComplete ? <Navigate to="/auth" replace /> : <Navigate to="/onboarding" replace />
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+          user ? <Navigate to="/dashboard" replace /> : <LandingPage />
         }
       />
       

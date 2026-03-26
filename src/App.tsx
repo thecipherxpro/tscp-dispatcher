@@ -137,11 +137,7 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          !user ? (
-            onboardingComplete ? <Navigate to="/auth" replace /> : <Navigate to="/onboarding" replace />
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+          user ? <Navigate to="/dashboard" replace /> : <LandingPage />
         }
       />
       

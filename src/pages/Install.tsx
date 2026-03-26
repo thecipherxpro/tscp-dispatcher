@@ -2,7 +2,7 @@ import { Download, Share, Plus, Smartphone, Wifi, Zap, Check } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import endoverdoseLogo from '@/assets/endoverdose-logo.png';
+import medexpressLogo from '@/assets/logo.png';
 
 export default function Install() {
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();

@@ -7,7 +7,7 @@ import { OnboardingSlide } from '@/components/onboarding/OnboardingSlide';
 const slides = [
   {
     icon: <Truck className="w-full h-full" />,
-    title: "Welcome to MedXpress",
+    title: "Welcome to KitKin Express",
     description: "Your complete pharmaceutical delivery management solution designed for efficiency and compliance.",
   },
   {

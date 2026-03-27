@@ -114,7 +114,7 @@ export default function Auth() {
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
       
       <div className="relative z-10">
-        <img src={medexpressLogo} alt="MedXpress" className="h-32 w-auto mb-4" />
+        <img src={medexpressLogo} alt="KitKin Express" className="h-32 w-auto mb-4" />
         <p className="text-white/70 mt-3 text-lg">
           Pharmaceutical Delivery Management System
         </p>

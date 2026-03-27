@@ -117,7 +117,7 @@ export default function Auth() {
       <div className="absolute top-1/2 right-1/4 w-40 h-40 rounded-full" style={{ background: 'radial-gradient(circle, hsl(193 88% 40% / 0.08) 0%, transparent 70%)' }} />
       
       <div className="relative z-10">
-        <img src={medexpressLogoLight} alt="KitKin Express" className="h-28 w-auto mb-6" />
+        <img src="/lovable-uploads/0ec92f10-90b9-41ee-b2c0-cf9ae0447343.png" alt="KitKin Express" className="h-28 w-auto mb-6" />
         <p className="text-white/60 text-base font-light tracking-wide">
           Pharmaceutical Delivery Management
         </p>

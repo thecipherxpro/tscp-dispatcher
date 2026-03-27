@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import medexpressLogo from '@/assets/logo.png';
 import medexpressLogoDark from '@/assets/logo-dark.png';
+import medexpressLogoLight from '@/assets/logo-light.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -106,38 +107,41 @@ export default function Auth() {
     }
   };
 
-  // Branding sidebar (desktop only)
+  // Branding sidebar (desktop only) — now on the RIGHT with dark radial gradient
   const BrandingSidebar = () => (
-    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-[hsl(193,75%,18%)] to-[hsl(193,88%,10%)] flex-col justify-between p-10 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+    <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden order-2"
+      style={{ background: 'radial-gradient(ellipse at 30% 20%, hsl(193 88% 18%) 0%, hsl(193 88% 10%) 50%, hsl(200 90% 6%) 100%)' }}>
+      {/* Decorative circles */}
+      <div className="absolute top-0 right-0 w-80 h-80 rounded-full -translate-y-1/3 translate-x-1/3" style={{ background: 'radial-gradient(circle, hsl(193 88% 30% / 0.15) 0%, transparent 70%)' }} />
+      <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full translate-y-1/3 -translate-x-1/3" style={{ background: 'radial-gradient(circle, hsl(27 95% 60% / 0.1) 0%, transparent 70%)' }} />
+      <div className="absolute top-1/2 right-1/4 w-40 h-40 rounded-full" style={{ background: 'radial-gradient(circle, hsl(193 88% 40% / 0.08) 0%, transparent 70%)' }} />
       
       <div className="relative z-10">
-        <img src={medexpressLogo} alt="KitKin Express" className="h-32 w-auto mb-4" />
-        <p className="text-white/70 mt-3 text-lg">
-          Pharmaceutical Delivery Management System
+        <img src={medexpressLogoLight} alt="KitKin Express" className="h-28 w-auto mb-6" />
+        <p className="text-white/60 text-base font-light tracking-wide">
+          Pharmaceutical Delivery Management
         </p>
       </div>
 
-      <div className="relative z-10 space-y-2">
-        <h2 className="text-xl font-bold text-white mb-6">Key Features</h2>
+      <div className="relative z-10 space-y-3">
         <div className="space-y-5">
           {features.map((f) => (
-            <div key={f.title} className="flex items-start gap-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+            <div key={f.title} className="flex items-start gap-4 group">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.07] border border-white/[0.08] flex items-center justify-center flex-shrink-0 group-hover:bg-white/[0.12] transition-colors">
+                <f.icon className="w-5 h-5 text-white/70" />
+              </div>
               <div>
-                <h3 className="font-semibold text-white">{f.title}</h3>
-                <p className="text-white/60 text-sm">{f.description}</p>
+                <h3 className="font-medium text-white/90 text-sm">{f.title}</h3>
+                <p className="text-white/40 text-xs mt-0.5 leading-relaxed">{f.description}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="relative z-10">
-        <p className="text-white/50 text-sm">Secure pharmaceutical delivery dispatch platform</p>
-        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} KitKin Express. All rights reserved.</p>
+      <div className="relative z-10 border-t border-white/[0.06] pt-5">
+        <p className="text-white/35 text-xs">Secure pharmaceutical delivery dispatch platform</p>
+        <p className="text-white/25 text-xs mt-1">© {new Date().getFullYear()} KitKin Express. All rights reserved.</p>
       </div>
     </div>
   );
@@ -147,7 +151,7 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex">
         <BrandingSidebar />
-        <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background">
+        <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background order-1">
           <div className="w-full max-w-md text-center space-y-6">
             <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
               <CheckCircle className="w-10 h-10 text-emerald-500" />
@@ -206,7 +210,7 @@ export default function Auth() {
       return (
         <div className="min-h-screen flex">
           <BrandingSidebar />
-          <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background">
+           <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background order-1">
             <div className="w-full max-w-md text-center space-y-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
                 <Mail className="w-10 h-10 text-primary" />
@@ -227,7 +231,7 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex">
         <BrandingSidebar />
-        <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background">
+        <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background order-1">
           <div className="w-full max-w-md">
             <button onClick={() => setStep('login')} className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
               <ArrowLeft className="w-6 h-6" />
@@ -257,7 +261,7 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex">
         <BrandingSidebar />
-        <div className="flex-1 flex flex-col items-center px-6 py-8 bg-background overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center px-6 py-8 bg-background overflow-y-auto order-1">
           <div className="w-full max-w-md">
             <button onClick={() => setStep('login')} className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors mb-4">
               <ArrowLeft className="w-6 h-6" />
@@ -334,7 +338,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex">
       <BrandingSidebar />
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background order-1">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">

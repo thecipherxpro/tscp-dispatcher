@@ -34,7 +34,7 @@ export default function LandingPage() {
       <nav className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={medxpressLogoDark} alt="MedXpress" className="h-14 w-auto" />
+            <img src={medxpressLogoDark} alt="KitKin Express" className="h-14 w-auto" />
           </div>
           <div className="flex items-center gap-3">
             <Link to="/TrackShipment">

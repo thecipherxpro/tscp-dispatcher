@@ -59,7 +59,7 @@ export default function LandingPage() {
               Your Prescriptions,{' '}<span className="text-primary">Delivered Safely</span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              MedXpress provides secure, confidential prescription delivery right to your door. Track your order in real-time with complete peace of mind.
+              KitKin Express provides secure, confidential prescription delivery right to your door. Track your order in real-time with complete peace of mind.
             </p>
             <div className="max-w-md mx-auto">
               <div className="flex gap-2 p-2 rounded-xl bg-card border border-border shadow-lg">

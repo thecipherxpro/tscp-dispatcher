@@ -264,7 +264,7 @@ export default function Auth() {
             </button>
             {/* Mobile logo */}
             <div className="lg:hidden mb-6">
-              <img src={medexpressLogoDark} alt="MedXpress" className="h-14 w-auto" />
+              <img src={medexpressLogoDark} alt="KitKin Express" className="h-14 w-auto" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">Create Account</h1>
             <p className="text-muted-foreground mt-2 mb-6">Sign up to start delivering vital supplies.</p>

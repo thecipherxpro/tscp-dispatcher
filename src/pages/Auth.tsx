@@ -210,7 +210,7 @@ export default function Auth() {
       return (
         <div className="min-h-screen flex">
           <BrandingSidebar />
-          <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background">
+           <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background order-1">
             <div className="w-full max-w-md text-center space-y-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
                 <Mail className="w-10 h-10 text-primary" />

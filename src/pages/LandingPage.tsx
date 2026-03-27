@@ -4,6 +4,7 @@ import { Package, Truck, Shield, Clock, Search, ArrowRight, MapPin } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import medxpressLogoDark from '@/assets/logo-dark.png';
+import medxpressLogoLight from '@/assets/logo-light.png';
 
 const features = [
   { icon: Truck, title: 'Real-Time Tracking', description: 'Follow your delivery every step of the way with live status updates.' },

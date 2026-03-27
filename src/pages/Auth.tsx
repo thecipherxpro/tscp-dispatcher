@@ -137,7 +137,7 @@ export default function Auth() {
 
       <div className="relative z-10">
         <p className="text-white/50 text-sm">Secure pharmaceutical delivery dispatch platform</p>
-        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} MedXpress. All rights reserved.</p>
+        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} KitKin Express. All rights reserved.</p>
       </div>
     </div>
   );

@@ -338,7 +338,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex">
       <BrandingSidebar />
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-background order-1">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">

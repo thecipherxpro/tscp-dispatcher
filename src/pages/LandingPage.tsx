@@ -144,7 +144,7 @@ export default function LandingPage() {
               <Link to="/TrackShipment" className="hover:text-foreground transition-colors">Track Order</Link>
               <Link to="/auth" className="hover:text-foreground transition-colors">Sign In</Link>
             </div>
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} MedXpress. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} KitKin Express. All rights reserved.</p>
           </div>
         </div>
       </footer>

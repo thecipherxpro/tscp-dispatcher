@@ -91,7 +91,7 @@ export function AdminSidebar() {
             <Package className="w-4 h-4 text-primary-foreground" />
           </div>
           {!collapsed && <div className="flex flex-col">
-              <span className="font-semibold text-foreground">​End-Overdose</span>
+              <span className="font-semibold text-foreground">KitKin Express</span>
               <span className="text-xs text-muted-foreground">Admin Portal</span>
             </div>}
         </div>

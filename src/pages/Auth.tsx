@@ -261,7 +261,7 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex">
         <BrandingSidebar />
-        <div className="flex-1 flex flex-col items-center px-6 py-8 bg-background overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center px-6 py-8 bg-background overflow-y-auto order-1">
           <div className="w-full max-w-md">
             <button onClick={() => setStep('login')} className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors mb-4">
               <ArrowLeft className="w-6 h-6" />

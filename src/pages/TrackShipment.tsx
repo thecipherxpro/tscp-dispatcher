@@ -132,8 +132,7 @@ export default function TrackShipment() {
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <img src={medxpressLogo} alt="MedXpress" className="h-7 w-7 rounded object-contain" />
-            <span className="font-semibold text-sm text-foreground">MedXpress</span>
+            <img src={medxpressLogo} alt="MedXpress" className="h-10 w-auto object-contain" />
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm" className="text-muted-foreground text-xs gap-1">

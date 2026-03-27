@@ -26,7 +26,7 @@ export default function Install() {
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">Already Installed!</h1>
           <p className="text-muted-foreground">
-            MedXpress is installed on your device. Open it from your home screen for the best experience.
+            KitKin Express is installed on your device. Open it from your home screen for the best experience.
           </p>
         </div>
       </div>

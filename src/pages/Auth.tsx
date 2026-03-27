@@ -114,10 +114,7 @@ export default function Auth() {
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
       
       <div className="relative z-10">
-        <img src={medexpressLogo} alt="MedXpress" className="h-20 w-auto mb-4" />
-        <h1 className="text-4xl font-bold text-white leading-tight italic -rotate-2 rounded-none">
-          MedXpress<br /><span className="not-italic rotate-0 inline-block text-white/80 text-xl font-normal">Dispatch</span>
-        </h1>
+        <img src={medexpressLogo} alt="MedXpress" className="h-32 w-auto mb-4" />
         <p className="text-white/70 mt-3 text-lg">
           Pharmaceutical Delivery Management System
         </p>

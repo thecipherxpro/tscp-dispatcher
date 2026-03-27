@@ -38,12 +38,12 @@ export function InstallPromptBanner() {
       <div className="flex items-center gap-4 max-w-lg mx-auto">
         <img 
           src={medxpressLogo} 
-          alt="MedXpress" 
+          alt="KitKin Express" 
           className="w-12 h-12 rounded-xl object-contain flex-shrink-0"
         />
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground text-sm">Install MedXpress</h3>
+          <h3 className="font-semibold text-foreground text-sm">Install KitKin Express</h3>
           {isIOS ? (
             <p className="text-xs text-muted-foreground mt-0.5">
               Tap <Share className="inline w-3 h-3 mx-0.5" /> then "Add to Home Screen" <Plus className="inline w-3 h-3 mx-0.5" />

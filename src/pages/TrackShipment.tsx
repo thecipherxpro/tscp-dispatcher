@@ -132,7 +132,7 @@ export default function TrackShipment() {
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <img src={medxpressLogo} alt="MedXpress" className="h-10 w-auto object-contain" />
+            <img src={medxpressLogo} alt="KitKin Express" className="h-10 w-auto object-contain" />
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm" className="text-muted-foreground text-xs gap-1">
@@ -335,7 +335,7 @@ export default function TrackShipment() {
       <footer className="border-t border-border py-4">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={medxpressLogo} alt="MedXpress" className="h-5 w-auto object-contain" />
+            <img src={medxpressLogo} alt="KitKin Express" className="h-5 w-auto object-contain" />
           </div>
           <span>© {new Date().getFullYear()}</span>
         </div>

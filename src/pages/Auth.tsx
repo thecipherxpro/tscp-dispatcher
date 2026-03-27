@@ -114,7 +114,7 @@ export default function Auth() {
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
       
       <div className="relative z-10">
-        <img src={medexpressLogo} alt="MedXpress" className="h-32 w-auto mb-4" />
+        <img src={medexpressLogo} alt="KitKin Express" className="h-32 w-auto mb-4" />
         <p className="text-white/70 mt-3 text-lg">
           Pharmaceutical Delivery Management System
         </p>
@@ -137,7 +137,7 @@ export default function Auth() {
 
       <div className="relative z-10">
         <p className="text-white/50 text-sm">Secure pharmaceutical delivery dispatch platform</p>
-        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} MedXpress. All rights reserved.</p>
+        <p className="text-white/40 text-xs mt-1">© {new Date().getFullYear()} KitKin Express. All rights reserved.</p>
       </div>
     </div>
   );
@@ -264,7 +264,7 @@ export default function Auth() {
             </button>
             {/* Mobile logo */}
             <div className="lg:hidden mb-6">
-              <img src={medexpressLogoDark} alt="MedXpress" className="h-14 w-auto" />
+              <img src={medexpressLogoDark} alt="KitKin Express" className="h-14 w-auto" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">Create Account</h1>
             <p className="text-muted-foreground mt-2 mb-6">Sign up to start delivering vital supplies.</p>
@@ -338,8 +338,8 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
-            <img src={medexpressLogoDark} alt="MedXpress" className="h-14 w-auto mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-foreground italic -rotate-1">MedXpress Dispatch</h1>
+             <img src={medexpressLogoDark} alt="KitKin Express" className="h-14 w-auto mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-foreground italic -rotate-1">KitKin Express Dispatch</h1>
             <p className="text-muted-foreground mt-1">Pharmaceutical Delivery Management System</p>
           </div>
 

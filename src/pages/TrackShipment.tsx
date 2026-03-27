@@ -335,8 +335,7 @@ export default function TrackShipment() {
       <footer className="border-t border-border py-4">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={medxpressLogo} alt="MedXpress" className="h-4 w-4 rounded object-contain" />
-            <span>MedXpress</span>
+            <img src={medxpressLogo} alt="MedXpress" className="h-5 w-auto object-contain" />
           </div>
           <span>© {new Date().getFullYear()}</span>
         </div>

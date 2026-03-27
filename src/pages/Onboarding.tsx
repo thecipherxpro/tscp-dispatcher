@@ -35,13 +35,13 @@ export default function Onboarding() {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      localStorage.setItem('medxpress-onboarding-complete', 'true');
+    localStorage.setItem('kitkinexpress-onboarding-complete', 'true');
       navigate('/auth');
     }
   };
 
   const handleSkip = () => {
-    localStorage.setItem('medxpress-onboarding-complete', 'true');
+    localStorage.setItem('kitkinexpress-onboarding-complete', 'true');
     navigate('/auth');
   };
 

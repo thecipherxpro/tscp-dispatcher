@@ -87,6 +87,30 @@ export default function Orders() {
     await refetch();
   };
 
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+  const handleDownloadTemplate = async () => {
+    try {
+      setIsDownloadingTemplate(true);
+      haptic.light();
+      const csv = await generateOrderImportTemplateCSV();
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadCSV(`order-upload-template-${stamp}.csv`, csv);
+      toast({
+        title: 'Template downloaded',
+        description: 'Fill in your orders and use Import Orders to upload.',
+      });
+    } catch (e) {
+      console.error('Template download failed', e);
+      toast({
+        title: 'Download failed',
+        description: 'Could not generate the template. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  };
+
   const filterOrders = (orders: Order[]) => {
     let filtered = orders;
 

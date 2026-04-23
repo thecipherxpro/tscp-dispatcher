@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2, Filter, Trash2 } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2, Filter, Trash2, Download } from 'lucide-react';
+import { generateOrderImportTemplateCSV, downloadCSV } from '@/utils/orderImportTemplate';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -84,6 +85,30 @@ export default function Orders() {
 
   const handleRefresh = async () => {
     await refetch();
+  };
+
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+  const handleDownloadTemplate = async () => {
+    try {
+      setIsDownloadingTemplate(true);
+      haptic.light();
+      const csv = await generateOrderImportTemplateCSV();
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadCSV(`order-upload-template-${stamp}.csv`, csv);
+      toast({
+        title: 'Template downloaded',
+        description: 'Fill in your orders and use Import Orders to upload.',
+      });
+    } catch (e) {
+      console.error('Template download failed', e);
+      toast({
+        title: 'Download failed',
+        description: 'Could not generate the template. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
   };
 
   const filterOrders = (orders: Order[]) => {
@@ -265,6 +290,18 @@ export default function Orders() {
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Import Orders
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleDownloadTemplate}
+                disabled={isDownloadingTemplate}
+                title="Download Upload Template"
+              >
+                {isDownloadingTemplate ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
               </Button>
               {ordersNeedingGeo.length > 0 && (
                 <Button
@@ -519,6 +556,18 @@ export default function Orders() {
             >
               {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />}
               {isSelectionMode ? 'Cancel' : 'Select'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadTemplate}
+              disabled={isDownloadingTemplate}
+            >
+              {isDownloadingTemplate ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Download Upload Template
             </Button>
             <Button onClick={() => setShowImportModal(true)}>
               <Upload className="w-4 h-4 mr-2" />

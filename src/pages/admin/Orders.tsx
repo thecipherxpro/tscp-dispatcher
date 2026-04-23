@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2, Filter, Trash2 } from 'lucide-react';
+import { Package, Search, Upload, CheckSquare, X, Users, MapPin, Loader2, Filter, Trash2, Download } from 'lucide-react';
+import { generateOrderImportTemplateCSV, downloadCSV } from '@/utils/orderImportTemplate';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

@@ -557,6 +557,18 @@ export default function Orders() {
               {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />}
               {isSelectionMode ? 'Cancel' : 'Select'}
             </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadTemplate}
+              disabled={isDownloadingTemplate}
+            >
+              {isDownloadingTemplate ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Download Upload Template
+            </Button>
             <Button onClick={() => setShowImportModal(true)}>
               <Upload className="w-4 h-4 mr-2" />
               Import Orders

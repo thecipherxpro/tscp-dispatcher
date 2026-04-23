@@ -291,6 +291,18 @@ export default function Orders() {
                 <Upload className="w-4 h-4 mr-2" />
                 Import Orders
               </Button>
+              <Button
+                variant="outline"
+                onClick={handleDownloadTemplate}
+                disabled={isDownloadingTemplate}
+                title="Download Upload Template"
+              >
+                {isDownloadingTemplate ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+              </Button>
               {ordersNeedingGeo.length > 0 && (
                 <Button
                   variant="outline"
